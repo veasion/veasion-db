@@ -49,6 +49,9 @@ public class FieldUtils {
         if (fieldColumnMap != null) {
             return fieldColumnMap;
         }
+        if (TypeUtils.isSimpleClass(entityClazz)) {
+            return new HashMap<>();
+        }
         fieldColumnMap = new HashMap<>();
         Map<String, Field> fieldMap = fields(entityClazz);
         for (Field field : fieldMap.values()) {

@@ -85,4 +85,10 @@ public class TypeUtils {
         return null;
     }
 
+    public static boolean isSimpleClass(Class<?> clazz) {
+        return clazz == BigDecimal.class || clazz == Long.class || clazz == Integer.class || clazz == String.class
+                || clazz == Double.class || clazz == Float.class || clazz == Boolean.class || clazz == Date.class
+                || clazz == Byte.class || clazz == java.sql.Date.class || clazz == java.sql.Timestamp.class;
+    }
+
 }

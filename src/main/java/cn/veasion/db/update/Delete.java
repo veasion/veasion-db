@@ -22,7 +22,8 @@ public class Delete extends AbstractFilter<Delete> {
         return entityClass;
     }
 
-    public void setEntityClass(Class<?> entityClass) {
+    public Delete setEntityClass(Class<?> entityClass) {
         this.entityClass = entityClass;
+        return this;
     }
 }

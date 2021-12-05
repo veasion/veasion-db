@@ -26,7 +26,8 @@ public class Query extends AbstractQuery<Query> {
         return entityClass;
     }
 
-    public void setEntityClass(Class<?> entityClass) {
+    public Query setEntityClass(Class<?> entityClass) {
         this.entityClass = entityClass;
+        return this;
     }
 }

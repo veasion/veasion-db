@@ -129,6 +129,13 @@ public abstract class AbstractFilter<T> {
         return (T) this;
     }
 
+    public boolean hasFilters() {
+        return filters != null && !filters.isEmpty() && filters.stream().anyMatch(f ->
+                !Filter.AND.equals(f) && !Filter.OR.equals(f) &&
+                        !Filter.LEFT_BRACKET.equals(f) && !Filter.RIGHT_BRACKET.equals(f)
+        );
+    }
+
     public void check() {
         checkFilter(filters, skipNullValueFilter);
     }

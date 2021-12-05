@@ -74,4 +74,17 @@ public class UserInfoPO extends BasePO {
     public void setIds(List<Long> ids) {
         this.ids = ids;
     }
+
+    @Override
+    public String toString() {
+        return "UserInfoPO{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", userNike='" + userNike + '\'' +
+                ", age=" + age +
+                ", version=" + version +
+                ", test='" + test + '\'' +
+                ", ids=" + ids +
+                '}';
+    }
 }

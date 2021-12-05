@@ -27,6 +27,11 @@ public @interface Table {
     boolean autoIncrement() default false;
 
     /**
+     * Id 字段
+     */
+    String idField() default "id";
+
+    /**
      * 映射到 PO 实体类
      */
     Class<?> entityClass() default Void.class;

@@ -1,6 +1,8 @@
 package cn.veasion.db.jdbc;
 
+import cn.veasion.db.DbException;
 import cn.veasion.db.utils.FieldUtils;
+import cn.veasion.db.utils.TypeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,21 +20,21 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * CommonJdbcDao
+ * JdbcDao
  *
  * @author luozhuowei
  * @date 2021/12/3
  */
-public class CommonJdbcDao {
+public class JdbcDao {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommonJdbcDao.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(JdbcDao.class);
 
     private DataSource dataSource;
 
-    public CommonJdbcDao() {
+    public JdbcDao() {
     }
 
-    public CommonJdbcDao(DataSource dataSource) {
+    public JdbcDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
@@ -121,6 +123,39 @@ public class CommonJdbcDao {
     }
 
     /**
+     * 查询单个
+     */
+    public Map<String, Object> queryForMap(String sql, Object... params) throws Exception {
+        return queryForMap(true, sql, params);
+    }
+
+    /**
+     * 查询单个
+     */
+    public Map<String, Object> queryForMap(boolean mapUnderscoreToCamelCase, String sql, Object... params) throws Exception {
+        List<Map<String, Object>> list = listForMap(mapUnderscoreToCamelCase, sql, params);
+        if (list.isEmpty()) {
+            return null;
+        } else if (list.size() > 1) {
+            throw new DbException("查询有多个结果：" + sql);
+        }
+        return list.get(0);
+    }
+
+    /**
+     * 查询单个
+     */
+    public <T> T queryForEntity(Class<T> clazz, String sql, Object... params) throws Exception {
+        List<T> list = listForEntity(clazz, sql, params);
+        if (list.isEmpty()) {
+            return null;
+        } else if (list.size() > 1) {
+            throw new DbException("查询有多个结果：" + sql);
+        }
+        return list.get(0);
+    }
+
+    /**
      * 列表查询
      *
      * @return 返回列表数据
@@ -142,14 +177,20 @@ public class CommonJdbcDao {
         Map<String, String> columnFieldMap = fieldColumnMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey, (v1, v2) -> v1));
         try {
             String columnName;
-            T obj;
             ps = prepareStatement(sql, params);
             rs = ps.executeQuery();
             ResultSetMetaData data;
             while (rs.next()) {
-                obj = clazz.newInstance();
                 data = rs.getMetaData();
                 int count = data.getColumnCount();
+                if (count == 1) {
+                    Object object = rs.getObject(1);
+                    if ((object != null && clazz.isAssignableFrom(object.getClass())) || TypeUtils.isSimpleClass(clazz)) {
+                        list.add(TypeUtils.convert(object, clazz));
+                        continue;
+                    }
+                }
+                T obj = clazz.newInstance();
                 for (int i = 1; i <= count; i++) {
                     columnName = data.getColumnLabel(i);
                     String fieldName = null;
