@@ -1,10 +1,12 @@
 package cn.veasion.db.update;
 
 import cn.veasion.db.base.AbstractFilter;
+import cn.veasion.db.base.Expression;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * AbstractUpdate
@@ -27,6 +29,11 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
             return (T) this;
         }
         updates.put(field, value);
+        return (T) this;
+    }
+
+    public T updateExpression(String field, Expression expression) {
+        updates.put(field, Objects.requireNonNull(expression));
         return (T) this;
     }
 

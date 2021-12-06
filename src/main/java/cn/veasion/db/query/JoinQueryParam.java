@@ -1,6 +1,7 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.base.AbstractFilter;
+import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinTypeEnum;
 import cn.veasion.db.utils.FilterUtils;
@@ -38,7 +39,7 @@ public class JoinQueryParam {
         if (onFilters == null) onFilters = new ArrayList<>();
         mainField = FilterUtils.tableAsField(mainEntityQuery.getTableAs(), mainField);
         joinField = FilterUtils.tableAsField(joinEntityQuery.getTableAs(), joinField);
-        return on(Filter.expression(mainField, Filter.Operator.EQ, joinField));
+        return on(Filter.expression(mainField, Filter.Operator.EQ, Expression.filter("${" + joinField + "}")));
     }
 
     public JoinQueryParam subJoinQuery(boolean subJoinQuery) {

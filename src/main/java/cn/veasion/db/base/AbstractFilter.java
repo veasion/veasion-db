@@ -1,6 +1,5 @@
 package cn.veasion.db.base;
 
-import cn.veasion.db.FilterException;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;
@@ -88,6 +87,10 @@ public abstract class AbstractFilter<T> {
         addFilter(Filter.leftBracket());
         addFilters(filters);
         return addFilter(Filter.rightBracket());
+    }
+
+    public T filterExpression(String field, Filter.Operator operator, Expression expression) {
+        return addFilters(Filter.expression(field, operator, expression));
     }
 
     public List<Filter> getFilters() {

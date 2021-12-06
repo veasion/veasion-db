@@ -16,6 +16,15 @@ import java.util.logging.Logger;
  */
 public class TestUtils {
 
+    public static DataSource getDataSource() {
+        try {
+            String url = "jdbc:mysql://10.10.0.44:3306/log?useUnicode=true&characterEncoding=utf-8&autoReconnect=true";
+            return getDataSource(url, "kaifa_admin", "msh#gd69Rp");
+        } catch (SQLException e) {
+            throw new DbException(e);
+        }
+    }
+
     public static DataSource getDataSource(String url, String user, String password) throws SQLException {
         return new DataSource() {
             private Connection connection;

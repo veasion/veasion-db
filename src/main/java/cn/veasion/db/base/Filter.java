@@ -87,11 +87,11 @@ public class Filter {
     }
 
     public static Filter subQuery(String field, Operator operator, SubQueryParam subQueryParam) {
-        return build(field, operator, subQueryParam, field.concat(" ").concat(operator.getOpt()).concat(" "));
+        return build(field, operator, subQueryParam, null).special();
     }
 
-    public static Filter expression(String left, Operator operator, String right) {
-        return build(left.concat(" ").concat(operator.getOpt()).concat(" ").concat(right));
+    public static Filter expression(String field, Operator operator, Expression expression) {
+        return build(field, operator, expression, null).special();
     }
 
     public static Filter and() {
@@ -183,6 +183,7 @@ public class Filter {
     private Operator operator;
     private String sql;
     private Object value;
+    private boolean special;
 
     public Filter fieldAs(String tableAs) {
         this.field = FilterUtils.tableAsField(tableAs, field);
@@ -203,6 +204,15 @@ public class Filter {
 
     public Object getValue() {
         return value;
+    }
+
+    private Filter special() {
+        this.special = true;
+        return this;
+    }
+
+    public boolean isSpecial() {
+        return special;
     }
 
     @Override

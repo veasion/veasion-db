@@ -16,11 +16,10 @@ import java.util.Map;
  * @author luozhuowei
  * @date 2021/12/3
  */
-public class CommonJdbcTest {
+public class JdbcDaoTest {
 
     public static void main(String[] args) throws Exception {
-        String url = "jdbc:mysql://10.10.0.44:3306/log?useUnicode=true&characterEncoding=utf-8&autoReconnect=true";
-        DataSource dataSource = TestUtils.getDataSource(url, "kaifa_admin", "msh#gd69Rp");
+        DataSource dataSource = TestUtils.getDataSource();
         JdbcDao jdbcDao = new JdbcDao(dataSource);
         Object[] ids = jdbcDao.executeInsert("insert into t_user_info(`username`, `user_nike`, `age`, `test_column`, `is_deleted`, `create_time`) values " +
                         "(?, ?, ?, ?, ? , ?),(?, ?, ?, ?, ? , ?)",

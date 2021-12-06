@@ -1,9 +1,12 @@
 package cn.veasion.db.query;
 
+import cn.veasion.db.base.Expression;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * AbstractQuery
@@ -52,9 +55,8 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         return (T) this;
     }
 
-    public T selectExpression(String expression, String alias) {
-        if (selectExpression == null) selectExpression = new ArrayList<>();
-        selectExpression.add(new Expression(expression, alias));
+    public T selectExpression(Expression expression) {
+        selectExpression.add(Objects.requireNonNull(expression));
         return (T) this;
     }
 

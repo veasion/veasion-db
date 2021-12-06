@@ -9,9 +9,6 @@ import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityInsert;
 import cn.veasion.db.update.EntityUpdate;
 import cn.veasion.db.utils.FieldUtils;
-
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Map;
 
@@ -88,20 +85,6 @@ public interface EntityDao<T, ID> {
         return field;
     }
 
-    @SuppressWarnings("unchecked")
-    default Class<T> getEntityClass() {
-        Type[] genTypes = this.getClass().getGenericInterfaces();
-        for (Type genType : genTypes) {
-            if (!(genType instanceof ParameterizedType)) {
-                continue;
-            }
-            ParameterizedType paramType = (ParameterizedType) genType;
-            if (!EntityDao.class.equals(paramType.getRawType())) {
-                continue;
-            }
-            return (Class<T>) paramType.getActualTypeArguments()[0];
-        }
-        return null;
-    }
+    Class<T> getEntityClass();
 
 }
