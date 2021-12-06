@@ -1,10 +1,14 @@
 package cn.veasion.db.jdbc;
 
+import cn.veasion.db.interceptor.EntityDaoInvocation;
+import cn.veasion.db.interceptor.InterceptorUtils;
 import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityInsert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
@@ -21,53 +25,55 @@ import java.util.ServiceLoader;
  */
 public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
 
+    protected Logger logger = LoggerFactory.getLogger(getClass());
+
     @Override
     public ID add(EntityInsert entityInsert) {
-        return null;
+        return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "add", new Object[]{entityInsert}, () -> {
+            return null;
+        }));
     }
 
     @Override
     public ID[] batchAdd(BatchEntityInsert batchEntityInsert) {
-        return null;
+        return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "batchAdd", new Object[]{batchEntityInsert}, () -> {
+            return null;
+        }));
     }
 
     @Override
-    public <E> E queryForEntity(AbstractQuery<?> query, Class<E> clazz) {
-        return null;
+    public <E> E queryForType(AbstractQuery<?> query, Class<E> clazz) {
+        return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryForType", new Object[]{query, clazz}, () -> {
+            return null;
+        }));
     }
 
     @Override
     public Map<String, Object> queryForMap(AbstractQuery<?> query, boolean mapUnderscoreToCamelCase) {
-        return null;
+        return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryForMap", new Object[]{query, mapUnderscoreToCamelCase}, () -> {
+            return null;
+        }));
     }
 
     @Override
     public <E> List<E> queryList(AbstractQuery<?> query, Class<E> clazz) {
-        return null;
+        return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryList", new Object[]{query, clazz}, () -> {
+            return null;
+        }));
     }
 
     @Override
     public int update(AbstractUpdate<?> update) {
-        return 0;
+        return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "update", new Object[]{update}, () -> {
+            return null;
+        }));
     }
 
     @Override
     public int delete(Delete delete) {
-        return 0;
-    }
-
-    private JdbcDao jdbcDao;
-
-    private JdbcDao jdbcDao() {
-        if (jdbcDao != null) {
-            return jdbcDao;
-        }
-        ServiceLoader<JdbcDao> jdbcDaoServiceLoader = ServiceLoader.load(JdbcDao.class);
-        Iterator<JdbcDao> iterator = jdbcDaoServiceLoader.iterator();
-        if (iterator.hasNext()) {
-            return (jdbcDao = iterator.next());
-        }
-        return jdbcDao;
+        return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "delete", new Object[]{delete}, () -> {
+            return null;
+        }));
     }
 
     @Override
@@ -81,6 +87,20 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
             }
         }
         throw new RuntimeException("获取实体类型失败，请重写 getEntityClass() 方法");
+    }
+
+    protected JdbcDao jdbcDao = jdbcDao();
+
+    private JdbcDao jdbcDao() {
+        ServiceLoader<JdbcDao> serviceLoader = ServiceLoader.load(JdbcDao.class);
+        Iterator<JdbcDao> iterator = serviceLoader.iterator();
+        if (iterator.hasNext()) {
+            jdbcDao = iterator.next();
+        }
+        if (iterator.hasNext()) {
+            logger.warn("发现多个jdbcDao实例");
+        }
+        return jdbcDao;
     }
 
 }

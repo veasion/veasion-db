@@ -1,6 +1,6 @@
 package cn.veasion.db.update;
 
-import cn.veasion.db.base.AbstractFilter;
+import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Expression;
 
 import java.util.ArrayList;

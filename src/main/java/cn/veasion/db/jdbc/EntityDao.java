@@ -37,10 +37,10 @@ public interface EntityDao<T, ID> {
     }
 
     default T query(AbstractQuery<?> query) {
-        return queryForEntity(query, getEntityClass());
+        return queryForType(query, getEntityClass());
     }
 
-    <E> E queryForEntity(AbstractQuery<?> query, Class<E> clazz);
+    <E> E queryForType(AbstractQuery<?> query, Class<E> clazz);
 
     default Map<String, Object> queryForMap(AbstractQuery<?> query) {
         return queryForMap(query, true);

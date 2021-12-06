@@ -1,6 +1,6 @@
 package cn.veasion.db.query;
 
-import cn.veasion.db.base.AbstractFilter;
+import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.utils.FilterUtils;
 

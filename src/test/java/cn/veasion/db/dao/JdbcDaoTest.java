@@ -32,10 +32,10 @@ public class JdbcDaoTest {
         System.out.println(list);
         System.out.println();
         sql = "select user_nike from t_user_info where id > ? limit 10";
-        List<UserInfoPO> userList = jdbcDao.listForEntity(UserInfoPO.class, sql, 0);
+        List<UserInfoPO> userList = jdbcDao.listForType(UserInfoPO.class, sql, 0);
         System.out.println(userList);
         System.out.println();
-        List<String> result = jdbcDao.listForEntity(String.class, sql, 0);
+        List<String> result = jdbcDao.listForType(String.class, sql, 0);
         System.out.println(result);
         System.out.println();
         dataSource.getConnection().close();

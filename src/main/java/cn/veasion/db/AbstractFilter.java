@@ -1,5 +1,7 @@
-package cn.veasion.db.base;
+package cn.veasion.db;
 
+import cn.veasion.db.base.Expression;
+import cn.veasion.db.base.Filter;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;

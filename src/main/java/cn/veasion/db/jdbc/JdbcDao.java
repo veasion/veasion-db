@@ -145,8 +145,8 @@ public class JdbcDao {
     /**
      * 查询单个
      */
-    public <T> T queryForEntity(Class<T> clazz, String sql, Object... params) throws Exception {
-        List<T> list = listForEntity(clazz, sql, params);
+    public <T> T queryForType(Class<T> clazz, String sql, Object... params) throws Exception {
+        List<T> list = listForType(clazz, sql, params);
         if (list.isEmpty()) {
             return null;
         } else if (list.size() > 1) {
@@ -160,8 +160,8 @@ public class JdbcDao {
      *
      * @return 返回列表数据
      */
-    public <T> List<T> listForEntity(Class<T> clazz, String sql, Object... params) throws Exception {
-        return listForEntity(clazz, null, sql, params);
+    public <T> List<T> listForType(Class<T> clazz, String sql, Object... params) throws Exception {
+        return listForType(clazz, null, sql, params);
     }
 
     /**
@@ -169,7 +169,7 @@ public class JdbcDao {
      *
      * @return 返回列表数据
      */
-    public <T> List<T> listForEntity(Class<T> clazz, FieldAssignmentHandler handler, String sql, Object... params) throws Exception {
+    public <T> List<T> listForType(Class<T> clazz, FieldAssignmentHandler handler, String sql, Object... params) throws Exception {
         ResultSet rs = null;
         PreparedStatement ps = null;
         List<T> list = new ArrayList<>();
