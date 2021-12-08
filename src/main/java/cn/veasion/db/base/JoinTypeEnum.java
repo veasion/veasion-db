@@ -8,7 +8,7 @@ package cn.veasion.db.base;
  */
 public enum JoinTypeEnum {
 
-    JOIN("join"),
+    JOIN("inner join"),
     LEFT_JOIN("left join"),
     RIGHT_JOIN("right join"),
     FULL_JOIN("full join");

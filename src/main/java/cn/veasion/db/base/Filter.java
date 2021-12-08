@@ -5,6 +5,7 @@ import cn.veasion.db.utils.FilterUtils;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 
 /**
  * Filter
@@ -13,11 +14,6 @@ import java.util.Collection;
  * @date 2021/12/1
  */
 public class Filter {
-
-    public static Filter AND = build(" and ");
-    public static Filter OR = build(" or ");
-    public static Filter LEFT_BRACKET = build(" ( ");
-    public static Filter RIGHT_BRACKET = build(" ) ");
 
     public static Filter eq(String field, Object value) {
         return build(field, Operator.EQ, value);
@@ -83,16 +79,21 @@ public class Filter {
     }
 
     public static Filter between(String field, Object value1, Object value2) {
-        return build(field, Operator.BETWEEN, new Object[]{value1, value2}, field.concat(" ").concat(Operator.BETWEEN.getOpt()).concat(" ? and ?"));
+        return build(field, Operator.BETWEEN, new Object[]{value1, value2}, Operator.BETWEEN.getOpt().concat(" ? and ?"));
     }
 
     public static Filter subQuery(String field, Operator operator, SubQueryParam subQueryParam) {
-        return build(field, operator, subQueryParam, null).special();
+        return build(field, operator, Objects.requireNonNull(subQueryParam), null).special();
     }
 
     public static Filter expression(String field, Operator operator, Expression expression) {
         return build(field, operator, expression, null).special();
     }
+
+    public static Filter AND = build("and");
+    public static Filter OR = build("or");
+    public static Filter LEFT_BRACKET = build("(");
+    public static Filter RIGHT_BRACKET = build(")");
 
     public static Filter and() {
         return AND;
@@ -114,7 +115,7 @@ public class Filter {
         int len = value instanceof Collection ? ((Collection<?>) value).size() : ((Object[]) value).length;
         String[] array = new String[len];
         Arrays.fill(array, "?");
-        return build(field, operator, value, field.concat(" ").concat(operator.getOpt()).concat(" (").concat(String.join(",", array)).concat(")"));
+        return build(field, operator, value, operator.getOpt().concat(" (").concat(String.join(",", array)).concat(")"));
     }
 
     private static Filter build(String sql) {
@@ -124,11 +125,11 @@ public class Filter {
     }
 
     private static Filter build(String field, Operator operator) {
-        return build(field, operator, null, field.concat(" ").concat(operator.getOpt()));
+        return build(field, operator, null, operator.getOpt());
     }
 
     private static Filter build(String field, Operator operator, Object value) {
-        return build(field, operator, value, field.concat(" ").concat(operator.getOpt()).concat(" ?"));
+        return build(field, operator, value, operator.getOpt().concat(" ?"));
     }
 
     private static Filter build(String field, Operator operator, Object value, String sql) {

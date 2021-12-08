@@ -1,12 +1,19 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.base.Expression;
+import cn.veasion.db.jdbc.DaoUtils;
+import cn.veasion.db.utils.FieldUtils;
+import cn.veasion.db.utils.LeftRight;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 /**
  * AbstractQuery
@@ -21,11 +28,14 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     private boolean selectAll;
     private List<String> selects = new ArrayList<>();
     private Map<String, String> aliasMap = new HashMap<>();
-    private List<String> excludeSelects;
+    private Set<String> excludeSelects;
     private List<Expression> selectExpression;
     private List<String> groupBys;
     private List<OrderParam> orders;
     private List<UnionQueryParam> unions;
+    private PageParam pageParam;
+
+    private Class<?> entityClass;
 
     public T distinct() {
         this.distinct = true;
@@ -42,9 +52,11 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     }
 
     public T select(String field, String alias) {
-        field = handleSelectField(field);
+        field = handleField(field);
         selects.add(field);
-        aliasMap.put(field, alias);
+        if (alias != null) {
+            aliasMap.put(field, alias);
+        }
         return (T) this;
     }
 
@@ -56,19 +68,20 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     }
 
     public T selectExpression(Expression expression) {
+        if (selectExpression == null) selectExpression = new ArrayList<>();
         selectExpression.add(Objects.requireNonNull(expression));
         return (T) this;
     }
 
     public T alias(String field, String alias) {
-        aliasMap.put(handleSelectField(field), alias);
+        aliasMap.put(handleField(field), Objects.requireNonNull(alias));
         return (T) this;
     }
 
     public T excludeFields(String... fields) {
-        if (excludeSelects == null) excludeSelects = new ArrayList<>();
+        if (excludeSelects == null) excludeSelects = new HashSet<>();
         for (String field : fields) {
-            excludeSelects.add(handleSelectField(field));
+            excludeSelects.add(handleField(field));
         }
         return (T) this;
     }
@@ -76,7 +89,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     public T groupBy(String... fields) {
         if (groupBys == null) groupBys = new ArrayList<>();
         for (String field : fields) {
-            groupBys.add(handleSelectField(field));
+            groupBys.add(handleField(field));
         }
         return (T) this;
     }
@@ -91,7 +104,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
 
     public T order(OrderParam orderParam) {
         if (orders == null) orders = new ArrayList<>();
-        orderParam.setField(handleSelectField(orderParam.getField()));
+        orderParam.setField(handleField(orderParam.getField()));
         orders.add(orderParam);
         return (T) this;
     }
@@ -108,7 +121,25 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         return (T) this;
     }
 
-    protected abstract String handleSelectField(String field);
+    public T page(PageParam pageParam) {
+        this.pageParam = pageParam;
+        return (T) this;
+    }
+
+    public T page(int page, int size) {
+        ServiceLoader<PageParam> serviceLoader = ServiceLoader.load(PageParam.class);
+        Iterator<PageParam> iterator = serviceLoader.iterator();
+        if (iterator.hasNext()) {
+            pageParam = iterator.next();
+            pageParam.setPage(page);
+            pageParam.setSize(size);
+        } else {
+            pageParam = new PageLimit(page, size);
+        }
+        return (T) this;
+    }
+
+    protected abstract String handleField(String field);
 
     public boolean isDistinct() {
         return distinct;
@@ -130,10 +161,6 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         return selectExpression;
     }
 
-    public List<String> getExcludeSelects() {
-        return excludeSelects;
-    }
-
     public List<String> getGroupBys() {
         return groupBys;
     }
@@ -149,4 +176,48 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     public List<UnionQueryParam> getUnions() {
         return unions;
     }
+
+    public PageParam getPageParam() {
+        return pageParam;
+    }
+
+    public Class<?> getEntityClass() {
+        return entityClass;
+    }
+
+    public void setEntityClass(Class<?> entityClass) {
+        this.entityClass = entityClass;
+    }
+
+    @Override
+    public void check() {
+        super.check();
+        if (selectAll) {
+            Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClass);
+            if (excludeSelects != null && excludeSelects.size() > 0) {
+                fieldColumns.keySet().stream().map(this::handleField).filter(k -> !excludeSelects.contains(k)).forEach(this::select);
+            } else {
+                fieldColumns.keySet().stream().map(this::handleField).forEach(this::select);
+            }
+        } else if (excludeSelects != null) {
+            for (String excludeSelect : excludeSelects) {
+                for (int i = 0; i < selects.size(); i++) {
+                    if (Objects.equals(excludeSelect, selects.get(i))) {
+                        selects.remove(i);
+                        break;
+                    }
+                }
+            }
+        }
+        if (unions != null) {
+            for (UnionQueryParam union : unions) {
+                union.getUnion().check();
+            }
+        }
+    }
+
+    public LeftRight<String, Object[]> sqlValue() {
+        return DaoUtils.select(this);
+    }
+
 }

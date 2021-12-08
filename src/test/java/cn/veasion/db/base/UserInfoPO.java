@@ -11,12 +11,6 @@ import java.util.List;
 @Table(value = "t_user_info", autoIncrement = true)
 public class UserInfoPO extends BasePO {
 
-    private Integer id;
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
     private String username;
     private String userNike;
     private Integer age;
@@ -78,7 +72,7 @@ public class UserInfoPO extends BasePO {
     @Override
     public String toString() {
         return "UserInfoPO{" +
-                "id=" + id +
+                "id=" + getId() +
                 ", username='" + username + '\'' +
                 ", userNike='" + userNike + '\'' +
                 ", age=" + age +

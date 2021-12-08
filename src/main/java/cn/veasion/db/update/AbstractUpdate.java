@@ -2,11 +2,16 @@ package cn.veasion.db.update;
 
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Expression;
+import cn.veasion.db.jdbc.DaoUtils;
+import cn.veasion.db.utils.LeftRight;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * AbstractUpdate
@@ -18,9 +23,12 @@ import java.util.Objects;
 public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
 
     private boolean skipNullField;
-    private Map<String, Object> updates;
+    private Class<?> entityClass;
+    private Set<String> excludeUpdates;
+    private Map<String, Object> updates = new HashMap<>();
 
     public T skipNullField() {
+        this.skipNullField = true;
         return (T) this;
     }
 
@@ -28,12 +36,24 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
         if (skipNullField && value == null) {
             return (T) this;
         }
+        field = handleField(field);
+        if (excludeUpdates != null && excludeUpdates.contains(field)) {
+            return (T) this;
+        }
         updates.put(field, value);
         return (T) this;
     }
 
     public T updateExpression(String field, Expression expression) {
-        updates.put(field, Objects.requireNonNull(expression));
+        updates.put(handleField(field), Objects.requireNonNull(expression));
+        return (T) this;
+    }
+
+    public T excludeUpdates(String... fields) {
+        if (excludeUpdates == null) excludeUpdates = new HashSet<>();
+        for (String field : fields) {
+            excludeUpdates.add(handleField(field));
+        }
         return (T) this;
     }
 
@@ -45,13 +65,17 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
         return updates;
     }
 
+    protected abstract String handleField(String field);
+
     @Override
     public void check() {
         super.check();
-        if (skipNullField) {
+        if (skipNullField || excludeUpdates != null) {
             List<String> removes = new ArrayList<>();
             for (Map.Entry<String, Object> entry : updates.entrySet()) {
-                if (entry.getValue() == null) {
+                if (skipNullField && entry.getValue() == null) {
+                    removes.add(entry.getKey());
+                } else if (excludeUpdates != null && excludeUpdates.contains(entry.getKey())) {
                     removes.add(entry.getKey());
                 }
             }
@@ -59,6 +83,22 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
                 removes.forEach(updates::remove);
             }
         }
+    }
+
+    public Set<String> getExcludeUpdates() {
+        return excludeUpdates;
+    }
+
+    public Class<?> getEntityClass() {
+        return entityClass;
+    }
+
+    public void setEntityClass(Class<?> entityClass) {
+        this.entityClass = entityClass;
+    }
+
+    public LeftRight<String, Object[]> sqlValue() {
+        return DaoUtils.update(this);
     }
 
 }

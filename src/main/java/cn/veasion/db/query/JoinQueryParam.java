@@ -17,7 +17,6 @@ import java.util.List;
  */
 public class JoinQueryParam {
 
-    private boolean subJoinQuery;
     private JoinTypeEnum joinType;
     private EntityQuery mainEntityQuery;
     private EntityQuery joinEntityQuery;
@@ -29,12 +28,6 @@ public class JoinQueryParam {
         this.joinEntityQuery = joinEntityQuery;
     }
 
-    public JoinQueryParam on(Filter filter) {
-        onFilters.add(filter);
-        AbstractFilter.checkFilter(onFilters, false);
-        return this;
-    }
-
     public JoinQueryParam on(String mainField, String joinField) {
         if (onFilters == null) onFilters = new ArrayList<>();
         mainField = FilterUtils.tableAsField(mainEntityQuery.getTableAs(), mainField);
@@ -42,8 +35,9 @@ public class JoinQueryParam {
         return on(Filter.expression(mainField, Filter.Operator.EQ, Expression.filter("${" + joinField + "}")));
     }
 
-    public JoinQueryParam subJoinQuery(boolean subJoinQuery) {
-        this.subJoinQuery = subJoinQuery;
+    public JoinQueryParam on(Filter filter) {
+        onFilters.add(filter);
+        AbstractFilter.checkFilter(onFilters, false);
         return this;
     }
 
@@ -51,8 +45,8 @@ public class JoinQueryParam {
         return joinType;
     }
 
-    public boolean isSubJoinQuery() {
-        return subJoinQuery;
+    public EntityQuery getMainEntityQuery() {
+        return mainEntityQuery;
     }
 
     public EntityQuery getJoinEntityQuery() {

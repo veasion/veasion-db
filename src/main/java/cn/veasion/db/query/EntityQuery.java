@@ -1,5 +1,6 @@
 package cn.veasion.db.query;
 
+import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinTypeEnum;
 import cn.veasion.db.utils.FilterUtils;
@@ -16,18 +17,14 @@ import java.util.List;
 public class EntityQuery extends AbstractQuery<EntityQuery> {
 
     private String tableAs;
-    private Class<?> entityClass;
-    private Class<?> resultClass;
-
     private List<JoinQueryParam> joins;
 
     public EntityQuery(Class<?> entityClass) {
-        this.entityClass = entityClass;
-        this.resultClass = entityClass;
+        this(entityClass, null);
     }
 
     public EntityQuery(Class<?> entityClass, String alias) {
-        this(entityClass);
+        setEntityClass(entityClass);
         this.tableAs = alias == null || "".equals(alias) ? null : alias;
     }
 
@@ -54,13 +51,16 @@ public class EntityQuery extends AbstractQuery<EntityQuery> {
         return joinQueryParam;
     }
 
-    public EntityQuery withResultClass(Class<?> resultClass) {
-        this.resultClass = resultClass;
-        return this;
+    @Override
+    public EntityQuery selectExpression(Expression expression) {
+        if (expression == null) {
+            return this;
+        }
+        return super.selectExpression(expression.tableAs(tableAs));
     }
 
     @Override
-    protected String handleSelectField(String field) {
+    protected String handleField(String field) {
         return FilterUtils.tableAsField(tableAs, field);
     }
 
@@ -69,16 +69,38 @@ public class EntityQuery extends AbstractQuery<EntityQuery> {
         return filter.fieldAs(tableAs);
     }
 
+    @Override
+    public void check() {
+        check(true);
+    }
+
+    private void check(boolean main) {
+        if (main && isEmptySelects(this)) {
+            selectAll();
+        }
+        super.check();
+        if (joins != null) {
+            for (JoinQueryParam join : joins) {
+                join.getJoinEntityQuery().check(false);
+            }
+        }
+    }
+
+    private static boolean isEmptySelects(EntityQuery query) {
+        boolean emptySelect = query.getSelects().isEmpty() && query.getSelectExpression() == null && !query.isSelectAll();
+        if (emptySelect && query.joins != null) {
+            for (JoinQueryParam join : query.joins) {
+                if (!isEmptySelects(join.getJoinEntityQuery())) {
+                    emptySelect = false;
+                    break;
+                }
+            }
+        }
+        return emptySelect;
+    }
+
     public String getTableAs() {
         return tableAs;
-    }
-
-    public Class<?> getEntityClass() {
-        return entityClass;
-    }
-
-    public Class<?> getResultClass() {
-        return resultClass;
     }
 
     public List<JoinQueryParam> getJoins() {

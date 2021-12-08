@@ -1,5 +1,7 @@
 package cn.veasion.db.base;
 
+import cn.veasion.db.utils.FieldUtils;
+
 /**
  * Expression
  *
@@ -33,7 +35,7 @@ public class Expression {
     /**
      * 表达式过滤（带函数或SQL类不安全过滤条件）
      *
-     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成对象字段对应的值或values对应的值，${}替换成字段对应表中的列名 <br><br>
+     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成values对应的值，${}替换成字段对应表中的列名 <br><br>
      *                   示例一：NOW() <br>
      *                   示例二：DATE_FORMAT(#{value1},'%Y-%m-%d') <br>
      *                   示例二：${age} + #{value1} + #{age} <br>
@@ -49,15 +51,24 @@ public class Expression {
     /**
      * 表达式更新（带函数或SQL类不安全更新数据）
      *
-     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成对象字段对应的值，${}替换成字段对应表中的列名 <br><br>
+     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成values对应的值，${}替换成字段对应表中的列名 <br><br>
      *                   示例一：${version} + 1 <br>
      *                   示例二：-${id} <br>
-     *                   示例三：${id} + #{id} <br>
+     *                   示例三：${id} + #{value1} + #{value2} <br>
+     * @param values     占位值，对应 #{value1}, #{value2}, #{value3}, #{value...}
      */
-    public static Expression update(String expression) {
+    public static Expression update(String expression, Object... values) {
         Expression o = new Expression();
         o.expression = expression;
+        o.values = values;
         return o;
+    }
+
+    public Expression tableAs(String tableAs) {
+        if (tableAs != null && expression != null && !expression.contains(".")) {
+            expression = FieldUtils.replaceSqlPlaceholder(expression, tableAs, null, "${", "}");
+        }
+        return this;
     }
 
     public String getAlias() {
@@ -71,4 +82,5 @@ public class Expression {
     public Object[] getValues() {
         return values;
     }
+
 }

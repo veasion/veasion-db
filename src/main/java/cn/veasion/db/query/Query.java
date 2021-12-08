@@ -10,10 +10,15 @@ import cn.veasion.db.base.Filter;
  */
 public class Query extends AbstractQuery<Query> {
 
-    private Class<?> entityClass;
+    public Query() {
+    }
+
+    public Query(String... fields) {
+        selects(fields);
+    }
 
     @Override
-    protected String handleSelectField(String field) {
+    protected String handleField(String field) {
         return field;
     }
 
@@ -22,12 +27,13 @@ public class Query extends AbstractQuery<Query> {
         return filter;
     }
 
-    public Class<?> getEntityClass() {
-        return entityClass;
+    @Override
+    public void check() {
+        boolean emptySelect = getSelects().isEmpty() && getSelectExpression() == null && !isSelectAll();
+        if (emptySelect) {
+            super.selectAll();
+        }
+        super.check();
     }
 
-    public Query setEntityClass(Class<?> entityClass) {
-        this.entityClass = entityClass;
-        return this;
-    }
 }

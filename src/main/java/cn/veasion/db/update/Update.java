@@ -10,20 +10,25 @@ import cn.veasion.db.base.Filter;
  */
 public class Update extends AbstractUpdate<Update> {
 
-    private Class<?> entityClass;
+    public Update() {
+    }
+
+    public Update(String field, Object value) {
+        update(field, value);
+    }
+
+    public Update(String field1, Object value1, String field2, Object value2) {
+        update(field1, value1).update(field2, value2);
+    }
 
     @Override
     protected Filter handleFilter(Filter filter) {
         return filter;
     }
 
-    public Class<?> getEntityClass() {
-        return entityClass;
-    }
-
-    public Update setEntityClass(Class<?> entityClass) {
-        this.entityClass = entityClass;
-        return this;
+    @Override
+    protected String handleField(String field) {
+        return field;
     }
 
 }

@@ -45,6 +45,10 @@ public class JoinUpdateParam {
         return joinType;
     }
 
+    public EntityUpdate getMainEntityUpdate() {
+        return mainEntityUpdate;
+    }
+
     public EntityUpdate getJoinEntityUpdate() {
         return joinEntityUpdate;
     }

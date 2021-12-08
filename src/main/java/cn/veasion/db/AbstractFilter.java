@@ -2,6 +2,7 @@ package cn.veasion.db;
 
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;
@@ -91,6 +92,14 @@ public abstract class AbstractFilter<T> {
         return addFilter(Filter.rightBracket());
     }
 
+    public T filterSubQuery(String field, Filter.Operator operator, SubQueryParam subQueryParam) {
+        return addFilter(Filter.subQuery(field, operator, subQueryParam));
+    }
+
+    public T filterExpression(String field, Expression expression) {
+        return filterExpression(field, Filter.Operator.EQ, expression);
+    }
+
     public T filterExpression(String field, Filter.Operator operator, Expression expression) {
         return addFilters(Filter.expression(field, operator, expression));
     }
@@ -115,12 +124,24 @@ public abstract class AbstractFilter<T> {
         return (T) this;
     }
 
+    public boolean hasFilter(String field) {
+        if (!hasFilters()) return false;
+        field = handleFilter(Filter.eq(field, null)).getField();
+        for (Filter filter : filters) {
+            if (Objects.equals(filter.getField(), field)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public Filter removeFilter(String field) {
+        field = handleFilter(Filter.eq(field, null)).getField();
         if (filters != null && filters.size() > 0) {
-            for (Filter f : filters) {
-                if (Objects.equals(f.getField(), field)) {
-                    filters.remove(f);
-                    return f;
+            for (Filter filter : filters) {
+                if (Objects.equals(filter.getField(), field)) {
+                    filters.remove(filter);
+                    return filter;
                 }
             }
         }
@@ -135,10 +156,7 @@ public abstract class AbstractFilter<T> {
     }
 
     public boolean hasFilters() {
-        return filters != null && !filters.isEmpty() && filters.stream().anyMatch(f ->
-                !Filter.AND.equals(f) && !Filter.OR.equals(f) &&
-                        !Filter.LEFT_BRACKET.equals(f) && !Filter.RIGHT_BRACKET.equals(f)
-        );
+        return filters != null && !filters.isEmpty();
     }
 
     public void check() {

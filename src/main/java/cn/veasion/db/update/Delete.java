@@ -12,6 +12,7 @@ import cn.veasion.db.base.Filter;
 public class Delete extends AbstractFilter<Delete> {
 
     private Class<?> entityClass;
+    private AbstractUpdate<?> convertUpdate;
 
     @Override
     protected Filter handleFilter(Filter filter) {
@@ -26,4 +27,14 @@ public class Delete extends AbstractFilter<Delete> {
         this.entityClass = entityClass;
         return this;
     }
+
+    public AbstractUpdate<?> getConvertUpdate() {
+        return convertUpdate;
+    }
+
+    public Delete convertUpdate(AbstractUpdate<?> convertUpdate) {
+        this.convertUpdate = convertUpdate;
+        return this;
+    }
+
 }

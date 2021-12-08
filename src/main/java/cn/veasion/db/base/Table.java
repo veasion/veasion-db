@@ -29,7 +29,7 @@ public @interface Table {
     /**
      * Id 字段
      */
-    String idField() default "id";
+    String idField() default "";
 
     /**
      * 映射到 PO 实体类

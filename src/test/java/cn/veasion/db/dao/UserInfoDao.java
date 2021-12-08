@@ -9,6 +9,6 @@ import cn.veasion.db.jdbc.JdbcEntityDao;
  * @author luozhuowei
  * @date 2021/12/5
  */
-public class UserInfoDao extends JdbcEntityDao<UserInfoPO, Integer> {
+public class UserInfoDao extends JdbcEntityDao<UserInfoPO, Long> {
 
 }

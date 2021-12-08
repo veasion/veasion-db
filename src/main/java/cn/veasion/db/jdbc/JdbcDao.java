@@ -251,6 +251,8 @@ public class JdbcDao {
         } else {
             LOGGER.info("执行SQL: {}", sql);
         }
+        System.out.println("执行SQL: " + sql);
+        System.out.println("参数：" + java.util.Arrays.toString(params));
         return ps;
     }
 

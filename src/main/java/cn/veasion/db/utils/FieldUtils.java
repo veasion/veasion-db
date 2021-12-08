@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +40,13 @@ public class FieldUtils {
         } else {
             return fieldColumns(entityClazz);
         }
+    }
+
+    /**
+     * 获取字段
+     */
+    public static Field getField(Class<?> clazz, String field) {
+        return fields(clazz).get(field);
     }
 
     /**
@@ -85,7 +93,7 @@ public class FieldUtils {
             }
             return null;
         } catch (Exception e) {
-            throw new DbException("字段获取值异常", e);
+            throw new DbException("字段获取值异常: " + field, e);
         }
     }
 
@@ -123,7 +131,7 @@ public class FieldUtils {
                 return f != null;
             }
         } catch (Exception e) {
-            throw new DbException("字段赋值异常", e);
+            throw new DbException("字段赋值异常: " + field, e);
         }
     }
 
@@ -264,6 +272,62 @@ public class FieldUtils {
         } else {
             return (toLowerCase ? str.substring(0, 1).toLowerCase() : str.substring(0, 1).toUpperCase()) + str.substring(1);
         }
+    }
+
+    public static Map<String, String> parsePlaceholder(String eval, String start, String end) {
+        int index = -1;
+        Map<String, String> result = new HashMap<>();
+        while ((index = eval.indexOf(start, index + 1)) > -1) {
+            int endIdx = eval.indexOf(end, index + start.length());
+            if (endIdx > -1) {
+                String key = eval.substring(index, endIdx + end.length());
+                result.put(key, key.substring(start.length(), key.length() - 1).trim());
+                index = endIdx + end.length() - 1;
+            }
+        }
+        return result;
+    }
+
+    public static String replaceSqlPlaceholder(String eval, String tableAs, Map<String, String> map) {
+        return replaceSqlPlaceholder(eval, tableAs, (as, field) -> map.getOrDefault(field, field));
+    }
+
+    public static String replaceSqlPlaceholder(String eval, String tableAs, BiFunction<String, String, String> asFieldColumnFun) {
+        return replaceSqlPlaceholder(eval, tableAs, asFieldColumnFun, "${", "}");
+    }
+
+    public static String replaceSqlPlaceholder(String eval, String tableAs, BiFunction<String, String, String> asFieldColumnFun, String start, String end) {
+        int startIndex = 0, index, startLen = start.length();
+        StringBuilder sb = new StringBuilder();
+        while ((index = eval.indexOf(start, startIndex)) > -1) {
+            int endIdx = eval.indexOf(end, index + startLen);
+            if (endIdx > -1) {
+                sb.append(eval.substring(startIndex, index));
+                String key = eval.substring(index + startLen, endIdx).trim();
+                int idx = key.indexOf(".");
+                String as = tableAs;
+                if (idx > -1) {
+                    as = key.substring(0, idx);
+                    sb.append(as).append(".");
+                    key = key.substring(idx + 1).trim();
+                } else if (tableAs != null) {
+                    sb.append(tableAs).append(".");
+                }
+                if (asFieldColumnFun != null) {
+                    sb.append(asFieldColumnFun.apply(as, key));
+                } else {
+                    sb.append(key);
+                }
+                startIndex = endIdx + end.length();
+            } else {
+                sb.append(eval.substring(startIndex, index));
+                startIndex = index + 1;
+            }
+        }
+        if (startIndex < eval.length()) {
+            sb.append(eval.substring(startIndex));
+        }
+        return sb.toString();
     }
 
 }

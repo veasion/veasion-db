@@ -11,6 +11,7 @@ import cn.veasion.db.base.Filter;
 public class FilterUtils {
 
     public static Filter checkFilter(Filter filter) {
+        // TODO 安全检查
         return filter;
     }
 
@@ -30,7 +31,7 @@ public class FilterUtils {
             return null;
         }
         if (tableAs != null && !field.contains(".")) {
-            field = tableAs + ".";
+            field = tableAs + "." + field;
         }
         return field;
     }

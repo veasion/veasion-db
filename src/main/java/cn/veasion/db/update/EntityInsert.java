@@ -4,6 +4,7 @@ import cn.veasion.db.utils.FieldUtils;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * EntityInsert
@@ -17,12 +18,7 @@ public class EntityInsert {
     private Map<String, Object> fieldValueMap;
 
     public EntityInsert(Object entity) {
-        this.entity = entity;
-        fieldValueMap = new HashMap<>();
-        Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entity.getClass());
-        for (String field : fieldColumns.keySet()) {
-            fieldValueMap.put(field, FieldUtils.getValue(entity, field));
-        }
+        this.entity = Objects.requireNonNull(entity);
     }
 
     public Object getEntity() {
@@ -32,4 +28,13 @@ public class EntityInsert {
     public Map<String, Object> getFieldValueMap() {
         return fieldValueMap;
     }
+
+    public void check() {
+        fieldValueMap = new HashMap<>();
+        Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entity.getClass());
+        for (String field : fieldColumns.keySet()) {
+            fieldValueMap.put(field, FieldUtils.getValue(entity, field));
+        }
+    }
+
 }

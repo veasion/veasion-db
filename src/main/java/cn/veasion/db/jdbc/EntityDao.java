@@ -1,6 +1,5 @@
 package cn.veasion.db.jdbc;
 
-import cn.veasion.db.base.Table;
 import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.query.Query;
 import cn.veasion.db.update.AbstractUpdate;
@@ -9,6 +8,7 @@ import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityInsert;
 import cn.veasion.db.update.EntityUpdate;
 import cn.veasion.db.utils.FieldUtils;
+
 import java.util.List;
 import java.util.Map;
 
@@ -27,7 +27,7 @@ public interface EntityDao<T, ID> {
     ID add(EntityInsert entityInsert);
 
     default ID[] batchAdd(List<T> entityList) {
-        return batchAdd(new BatchEntityInsert(entityList, getEntityClass()));
+        return batchAdd(new BatchEntityInsert(entityList));
     }
 
     ID[] batchAdd(BatchEntityInsert batchEntityInsert);
@@ -48,6 +48,12 @@ public interface EntityDao<T, ID> {
 
     Map<String, Object> queryForMap(AbstractQuery<?> query, boolean mapUnderscoreToCamelCase);
 
+    default List<Map<String, Object>> listForMap(AbstractQuery<?> query) {
+        return listForMap(query, true);
+    }
+
+    List<Map<String, Object>> listForMap(AbstractQuery<?> query, boolean mapUnderscoreToCamelCase);
+
     default List<T> queryList(AbstractQuery<?> query) {
         return queryList(query, getEntityClass());
     }
@@ -57,14 +63,7 @@ public interface EntityDao<T, ID> {
     default int updateById(T entity) {
         String idField = getIdField();
         Object value = FieldUtils.getValue(entity, idField);
-        return update(new EntityUpdate(entity).eq(idField, value));
-    }
-
-    default int updateById(EntityUpdate update) {
-        String idField = getIdField();
-        Object value = FieldUtils.getValue(update.getEntity(), idField);
-        update.eq(idField, value);
-        return update(update);
+        return update(new EntityUpdate(entity).eq(idField, value).excludeUpdates(idField).skipNullField());
     }
 
     int update(AbstractUpdate<?> update);
@@ -76,13 +75,7 @@ public interface EntityDao<T, ID> {
     int delete(Delete delete);
 
     default String getIdField() {
-        Class<?> entityClass = getEntityClass();
-        Table annotation = entityClass.getAnnotation(Table.class);
-        String field = "id";
-        if (annotation != null) {
-            field = annotation.idField();
-        }
-        return field;
+        return DaoUtils.getIdField(getEntityClass()).getName();
     }
 
     Class<T> getEntityClass();
