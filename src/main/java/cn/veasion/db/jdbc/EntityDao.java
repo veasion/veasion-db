@@ -72,7 +72,7 @@ public interface EntityDao<T, ID> {
     int delete(Delete delete);
 
     default String getIdField() {
-        return DaoUtils.getIdField(getEntityClass()).getName();
+        return SqlDaoUtils.getIdField(getEntityClass()).getName();
     }
 
     Class<T> getEntityClass();

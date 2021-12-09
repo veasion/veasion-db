@@ -16,4 +16,12 @@ public class EU extends EntityUpdate {
         super(entity, alias);
     }
 
+    public EU(Class<?> clazz) {
+        super(clazz);
+    }
+
+    public EU(Class<?> clazz, String alias) {
+        super(clazz, alias);
+    }
+
 }

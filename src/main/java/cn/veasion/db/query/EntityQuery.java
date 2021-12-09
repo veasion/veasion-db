@@ -18,6 +18,7 @@ public class EntityQuery extends AbstractQuery<EntityQuery> {
 
     private String tableAs;
     private List<JoinQueryParam> joins;
+    private List<JoinQueryParam> relations;
 
     public EntityQuery(Class<?> entityClass) {
         this(entityClass, null);
@@ -71,17 +72,23 @@ public class EntityQuery extends AbstractQuery<EntityQuery> {
 
     @Override
     public void check() {
-        check(true);
+        if (joins != null) {
+            relations = new ArrayList<>();
+        }
+        check(this, true);
     }
 
-    private void check(boolean main) {
+    private void check(EntityQuery mainQuery, boolean main) {
         if (main && isEmptySelects(this)) {
             selectAll();
         }
         super.check();
         if (joins != null) {
             for (JoinQueryParam join : joins) {
-                join.getJoinEntityQuery().check(false);
+                if (!main) {
+                    mainQuery.relations.add(join);
+                }
+                join.getJoinEntityQuery().check(mainQuery, false);
             }
         }
     }
@@ -105,6 +112,16 @@ public class EntityQuery extends AbstractQuery<EntityQuery> {
 
     public List<JoinQueryParam> getJoins() {
         return joins;
+    }
+
+    public List<JoinQueryParam> getJoinAll() {
+        if (joins == null || relations == null) {
+            return joins;
+        }
+        List<JoinQueryParam> joinList = new ArrayList<>(joins.size() + relations.size());
+        joinList.addAll(joins);
+        joinList.addAll(relations);
+        return joinList;
     }
 
 }

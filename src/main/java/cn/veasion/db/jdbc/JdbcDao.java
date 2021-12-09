@@ -180,7 +180,7 @@ public class JdbcDao {
                         continue;
                     }
                 }
-                T obj = clazz.newInstance();
+                T obj = TypeUtils.newInstance(clazz);
                 for (int i = 1; i <= count; i++) {
                     columnName = data.getColumnLabel(i);
                     String fieldName = null;

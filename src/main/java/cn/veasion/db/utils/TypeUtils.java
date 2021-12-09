@@ -30,6 +30,20 @@ public class TypeUtils {
         }
     }
 
+    public static boolean isSimpleClass(Class<?> clazz) {
+        return clazz == BigDecimal.class || clazz == Long.class || clazz == Integer.class || clazz == String.class
+                || clazz == Double.class || clazz == Float.class || clazz == Boolean.class || Date.class.isAssignableFrom(clazz)
+                || clazz == Byte.class || clazz == LocalDateTime.class || clazz == LocalDate.class;
+    }
+
+    public static <T> T newInstance(Class<T> clazz) {
+        try {
+            return clazz.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException("初始化对象失败: " + clazz.getName(), e);
+        }
+    }
+
     /**
      * 简单类型转换
      */
@@ -154,12 +168,6 @@ public class TypeUtils {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public static boolean isSimpleClass(Class<?> clazz) {
-        return clazz == BigDecimal.class || clazz == Long.class || clazz == Integer.class || clazz == String.class
-                || clazz == Double.class || clazz == Float.class || clazz == Boolean.class || Date.class.isAssignableFrom(clazz)
-                || clazz == Byte.class || clazz == LocalDateTime.class || clazz == LocalDate.class;
     }
 
 }

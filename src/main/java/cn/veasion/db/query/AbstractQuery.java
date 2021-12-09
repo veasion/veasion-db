@@ -1,7 +1,7 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.base.Expression;
-import cn.veasion.db.jdbc.DaoUtils;
+import cn.veasion.db.jdbc.SqlDaoUtils;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.LeftRight;
 
@@ -217,7 +217,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     }
 
     public LeftRight<String, Object[]> sqlValue() {
-        return DaoUtils.select(this);
+        return SqlDaoUtils.select(this);
     }
 
 }

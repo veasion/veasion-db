@@ -5,6 +5,7 @@ import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinTypeEnum;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.FilterUtils;
+import cn.veasion.db.utils.TypeUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -23,6 +24,7 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
     private Object entity;
     private List<String> updateFields;
     private List<JoinUpdateParam> joins;
+    private List<JoinUpdateParam> relations;
     private boolean excludeUpdateFilterFields;
 
     public EntityUpdate(Object entity) {
@@ -33,6 +35,14 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
         this.entity = entity;
         setEntityClass(entity.getClass());
         this.tableAs = alias == null || "".equals(alias) ? null : alias;
+    }
+
+    public EntityUpdate(Class<?> clazz) {
+        this(clazz, null);
+    }
+
+    public EntityUpdate(Class<?> clazz, String alias) {
+        this(TypeUtils.newInstance(clazz), alias);
     }
 
     public EntityUpdate updateFields(String... fields) {
@@ -93,10 +103,13 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
 
     @Override
     public void check() {
-        check(true);
+        if (joins != null) {
+            relations = new ArrayList<>();
+        }
+        check(this, true);
     }
 
-    private void check(boolean main) {
+    private void check(EntityUpdate mainUpdate, boolean main) {
         if (main && isEmptyUpdate(this)) {
             Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entity.getClass());
             if (updateFields == null) {
@@ -115,7 +128,10 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
         super.check();
         if (joins != null) {
             for (JoinUpdateParam join : joins) {
-                join.getJoinEntityUpdate().check(false);
+                if (!main) {
+                    mainUpdate.relations.add(join);
+                }
+                join.getJoinEntityUpdate().check(mainUpdate, false);
             }
         }
     }
@@ -143,6 +159,16 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
 
     public List<JoinUpdateParam> getJoins() {
         return joins;
+    }
+
+    public List<JoinUpdateParam> getJoinAll() {
+        if (joins == null || relations == null) {
+            return joins;
+        }
+        List<JoinUpdateParam> joinList = new ArrayList<>(joins.size() + relations.size());
+        joinList.addAll(joins);
+        joinList.addAll(relations);
+        return joinList;
     }
 
 }

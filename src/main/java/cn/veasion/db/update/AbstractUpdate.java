@@ -2,7 +2,7 @@ package cn.veasion.db.update;
 
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Expression;
-import cn.veasion.db.jdbc.DaoUtils;
+import cn.veasion.db.jdbc.SqlDaoUtils;
 import cn.veasion.db.utils.LeftRight;
 
 import java.util.ArrayList;
@@ -98,7 +98,7 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
     }
 
     public LeftRight<String, Object[]> sqlValue() {
-        return DaoUtils.update(this);
+        return SqlDaoUtils.update(this);
     }
 
 }

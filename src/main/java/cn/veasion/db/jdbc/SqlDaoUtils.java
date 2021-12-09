@@ -4,16 +4,8 @@ import cn.veasion.db.DbException;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.Table;
-import cn.veasion.db.query.AbstractQuery;
-import cn.veasion.db.query.EntityQuery;
-import cn.veasion.db.query.JoinQueryParam;
-import cn.veasion.db.query.OrderParam;
-import cn.veasion.db.query.SubQueryParam;
-import cn.veasion.db.query.UnionQueryParam;
-import cn.veasion.db.update.AbstractUpdate;
-import cn.veasion.db.update.Delete;
-import cn.veasion.db.update.EntityUpdate;
-import cn.veasion.db.update.JoinUpdateParam;
+import cn.veasion.db.query.*;
+import cn.veasion.db.update.*;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.LeftRight;
 import org.slf4j.Logger;
@@ -31,14 +23,14 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
- * DaoUtils
+ * SqlDaoUtils
  *
  * @author luozhuowei
  * @date 2021/12/6
  */
-public class DaoUtils {
+public class SqlDaoUtils {
 
-    private static Logger logger = LoggerFactory.getLogger(DaoUtils.class);
+    private static Logger logger = LoggerFactory.getLogger(SqlDaoUtils.class);
 
     private static DataSourceProvider dataSourceProvider;
 
@@ -121,72 +113,39 @@ public class DaoUtils {
         return LeftRight.build(sql.toString(), values);
     }
 
-    public static LeftRight<String, Object[]> insertSelect(Class<?> entityClass, AbstractQuery<?> insertSelectQuery) {
-        List<AbstractQuery<?>> list = new ArrayList<>();
-        list.add(insertSelectQuery);
-        if (insertSelectQuery instanceof EntityQuery) {
-            List<JoinQueryParam> joins = ((EntityQuery) insertSelectQuery).getJoins();
-            if (joins != null) {
-                for (JoinQueryParam join : joins) {
-                    list.add(join.getJoinEntityQuery());
-                }
-            }
+    public static LeftRight<String, Object[]> insertSelect(Class<?> entityClass, AbstractQuery<?> query) {
+        List<JoinQueryParam> joins = null;
+        if (query instanceof EntityQuery) {
+            joins = ((EntityQuery) query).getJoinAll();
         }
+
+        List<String> insertFields = new ArrayList<>();
+        // select & join select
+        appendSelects(query, joins, null, null, insertFields, false);
+        // expression & join expression
+        appendSelects(query, joins, null, null, insertFields, true);
+
+        Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClass);
+
         StringBuilder sql = new StringBuilder("insert into ");
         sql.append(getTableName(entityClass)).append(" (");
-        for (AbstractQuery<?> abstractQuery : list) {
-            appendInsertSelectColumns(sql, abstractQuery, true);
-        }
-        for (AbstractQuery<?> abstractQuery : list) {
-            appendInsertSelectColumns(sql, abstractQuery, false);
+        for (String field : insertFields) {
+            sql.append("`").append(fieldColumns.getOrDefault(field, field)).append("`").append(",");
         }
         trimEndSql(sql, ",");
         sql.append(") ");
-        LeftRight<String, Object[]> leftRight = select(insertSelectQuery);
+        LeftRight<String, Object[]> leftRight = select(query);
         sql.append(leftRight.getLeft());
         leftRight.setLeft(sql.toString());
         return leftRight;
     }
 
-    private static void appendInsertSelectColumns(StringBuilder sql, AbstractQuery<?> insertSelectQuery, boolean isExpression) {
-        Class<?> entityClass = insertSelectQuery.getEntityClass();
-        Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClass);
-        if (isExpression) {
-            List<Expression> selectExpression = insertSelectQuery.getSelectExpression();
-            if (selectExpression != null) {
-                for (Expression expression : selectExpression) {
-                    if (expression.getAlias() == null) {
-                        throw new DbException(expression.getExpression() + "必须有别名对应新增字段");
-                    }
-                    String field = expression.getAlias();
-                    sql.append("`").append(fieldColumns.getOrDefault(field, field)).append("`").append(",");
-                }
-            }
-        } else {
-            List<String> selects = insertSelectQuery.getSelects();
-            Map<String, String> aliasMap = insertSelectQuery.getAliasMap();
-            if (selects != null && selects.size() > 0) {
-                for (String select : selects) {
-                    String field;
-                    if (aliasMap.containsKey(select)) {
-                        field = aliasMap.get(select);
-                    } else if (select.contains(".")) {
-                        field = select.substring(select.indexOf(".") + 1);
-                    } else {
-                        field = select;
-                    }
-                    sql.append("`").append(fieldColumns.getOrDefault(field, field)).append("`").append(",");
-                }
-            }
-        }
-    }
-
     public static LeftRight<String, Object[]> select(AbstractQuery<?> query) {
         String tableAs = null;
-        Map<String, Class<?>> entityClassMap = new HashMap<>();
         List<JoinQueryParam> joins = null;
+        Map<String, Class<?>> entityClassMap = new HashMap<>();
         if (query instanceof EntityQuery) {
-            joins = ((EntityQuery) query).getJoins();
+            joins = ((EntityQuery) query).getJoinAll();
             tableAs = ((EntityQuery) query).getTableAs();
             entityClassMap.put(tableAs, query.getEntityClass());
             if (joins != null) {
@@ -199,57 +158,35 @@ public class DaoUtils {
         StringBuilder sql = new StringBuilder();
         List<Object> values = new ArrayList<>();
         sql.append("select ");
-        int length = sql.length();
-        // expression & join expression
-        appendSelects(entityClassMap, query.getSelectExpression(), sql);
-        if (joins != null) {
-            for (JoinQueryParam join : joins) {
-                EntityQuery joinEntityQuery = join.getJoinEntityQuery();
-                if (joinEntityQuery.getSelectExpression() != null) {
-                    sql.append(",");
-                    appendSelects(new HashMap<String, Class<?>>() {{
-                        put(joinEntityQuery.getTableAs(), joinEntityQuery.getEntityClass());
-                    }}, joinEntityQuery.getSelectExpression(), sql);
-                }
-            }
-        }
-        if (length != sql.length()) {
-            sql.append(",");
-        }
         if (query.isDistinct()) {
             sql.append("distinct ");
         }
+
         // select & join select
-        appendSelects(entityClassMap, query.getSelects(), query.getAliasMap(), sql);
-        if (joins != null) {
-            for (JoinQueryParam join : joins) {
-                EntityQuery joinEntityQuery = join.getJoinEntityQuery();
-                if (!joinEntityQuery.getSelects().isEmpty()) {
-                    sql.append(",");
-                    appendSelects(new HashMap<String, Class<?>>() {{
-                        put(joinEntityQuery.getTableAs(), joinEntityQuery.getEntityClass());
-                    }}, joinEntityQuery.getSelects(), joinEntityQuery.getAliasMap(), sql);
-                }
-            }
-        }
+        appendSelects(query, joins, entityClassMap, sql, null, false);
+        // expression & join expression
+        appendSelects(query, joins, entityClassMap, sql, null, true);
         trimEndSql(sql, ",");
+
         sql.append(" from ").append(getTableName(entityClass));
         if (tableAs != null) {
             sql.append(" ").append(tableAs);
         }
-        if (query instanceof EntityQuery) {
+        if (joins != null) {
             // join
-            appendJoins(((EntityQuery) query).getJoins(), sql, values);
+            appendJoins(joins, sql, values);
         }
         sql.append(" where");
         // filter & join filter
         appendFilter(entityClassMap, query.getFilters(), sql, values);
         if (joins != null) {
             for (JoinQueryParam join : joins) {
+                EntityQuery mainEntityQuery = join.getMainEntityQuery();
                 EntityQuery joinEntityQuery = join.getJoinEntityQuery();
                 if (joinEntityQuery.hasFilters()) {
                     sql.append(" and");
                     appendFilter(new HashMap<String, Class<?>>() {{
+                        put(mainEntityQuery.getTableAs(), mainEntityQuery.getEntityClass());
                         put(joinEntityQuery.getTableAs(), joinEntityQuery.getEntityClass());
                     }}, joinEntityQuery.getFilters(), sql, values);
                 }
@@ -278,6 +215,38 @@ public class DaoUtils {
         return LeftRight.build(sql.toString(), values.toArray());
     }
 
+    private static void appendSelects(AbstractQuery<?> query, List<JoinQueryParam> joins, Map<String, Class<?>> entityClassMap, StringBuilder sql, List<String> insertFields, boolean isExpression) {
+        if (isExpression) {
+            appendSelects(entityClassMap, query.getSelectExpression(), sql, insertFields);
+            if (joins != null) {
+                for (JoinQueryParam join : joins) {
+                    EntityQuery mainEntityQuery = join.getMainEntityQuery();
+                    EntityQuery joinEntityQuery = join.getJoinEntityQuery();
+                    if (joinEntityQuery.getSelectExpression() != null) {
+                        appendSelects(new HashMap<String, Class<?>>() {{
+                            put(mainEntityQuery.getTableAs(), mainEntityQuery.getEntityClass());
+                            put(joinEntityQuery.getTableAs(), joinEntityQuery.getEntityClass());
+                        }}, joinEntityQuery.getSelectExpression(), sql, insertFields);
+                    }
+                }
+            }
+        } else {
+            appendSelects(entityClassMap, query.getSelects(), query.getAliasMap(), sql, insertFields);
+            if (joins != null) {
+                for (JoinQueryParam join : joins) {
+                    EntityQuery mainEntityQuery = join.getMainEntityQuery();
+                    EntityQuery joinEntityQuery = join.getJoinEntityQuery();
+                    if (!joinEntityQuery.getSelects().isEmpty()) {
+                        appendSelects(new HashMap<String, Class<?>>() {{
+                            put(mainEntityQuery.getTableAs(), mainEntityQuery.getEntityClass());
+                            put(joinEntityQuery.getTableAs(), joinEntityQuery.getEntityClass());
+                        }}, joinEntityQuery.getSelects(), joinEntityQuery.getAliasMap(), sql, insertFields);
+                    }
+                }
+            }
+        }
+    }
+
     public static LeftRight<String, Object[]> update(AbstractUpdate<?> update) {
         Map<String, Class<?>> entityClassMap = new HashMap<>();
         StringBuilder sql = new StringBuilder();
@@ -286,7 +255,7 @@ public class DaoUtils {
         sql.append(getTableName(update.getEntityClass()));
         List<JoinUpdateParam> joins = null;
         if (update instanceof EntityUpdate) {
-            joins = ((EntityUpdate) update).getJoins();
+            joins = ((EntityUpdate) update).getJoinAll();
             String tableAs = ((EntityUpdate) update).getTableAs();
             if (tableAs != null) {
                 sql.append(" ").append(tableAs);
@@ -322,10 +291,12 @@ public class DaoUtils {
         appendUpdates(entityClassMap, update.getUpdates(), sql, values);
         if (joins != null) {
             for (JoinUpdateParam join : joins) {
+                EntityUpdate mainEntityUpdate = join.getMainEntityUpdate();
                 EntityUpdate joinEntityUpdate = join.getJoinEntityUpdate();
                 if (joinEntityUpdate.getUpdates() != null) {
                     sql.append(",");
                     appendUpdates(new HashMap<String, Class<?>>() {{
+                        put(mainEntityUpdate.getTableAs(), mainEntityUpdate.getEntityClass());
                         put(joinEntityUpdate.getTableAs(), joinEntityUpdate.getEntityClass());
                     }}, joinEntityUpdate.getUpdates(), sql, values);
                 }
@@ -335,10 +306,12 @@ public class DaoUtils {
         appendFilter(entityClassMap, update.getFilters(), sql, values);
         if (joins != null) {
             for (JoinUpdateParam join : joins) {
+                EntityUpdate mainEntityUpdate = join.getMainEntityUpdate();
                 EntityUpdate joinEntityUpdate = join.getJoinEntityUpdate();
                 if (joinEntityUpdate.hasFilters()) {
                     sql.append(" and");
                     appendFilter(new HashMap<String, Class<?>>() {{
+                        put(mainEntityUpdate.getTableAs(), mainEntityUpdate.getEntityClass());
                         put(joinEntityUpdate.getTableAs(), joinEntityUpdate.getEntityClass());
                     }}, joinEntityUpdate.getFilters(), sql, values);
                 }
@@ -351,41 +324,60 @@ public class DaoUtils {
     public static LeftRight<String, Object[]> delete(Delete delete) {
         StringBuilder sql = new StringBuilder();
         List<Object> values = new ArrayList<>();
-        sql.append("delete from ").append(getTableName(delete.getEntityClass())).append(" where ");
+        sql.append("delete from ").append(getTableName(delete.getEntityClass())).append(" where");
         appendFilter(new HashMap<String, Class<?>>() {{
             put(null, delete.getEntityClass());
         }}, delete.getFilters(), sql, values);
         return LeftRight.build(sql.toString(), values.toArray());
     }
 
-    public static void appendSelects(Map<String, Class<?>> entityClassMap, List<Expression> selectExpression, StringBuilder sql) {
+    public static void appendSelects(Map<String, Class<?>> entityClassMap, List<Expression> selectExpression, StringBuilder sql, List<String> insertFields) {
         if (selectExpression == null || selectExpression.isEmpty()) return;
         StringBuilder sb = new StringBuilder();
         for (Expression expression : selectExpression) {
+            if (insertFields != null) {
+                if (expression.getAlias() == null) {
+                    throw new DbException(expression.getExpression() + "必须有别名对应新增字段");
+                }
+                insertFields.add(expression.getAlias());
+                continue;
+            }
             sb.append(" ").append(replaceSqlEval(expression.getExpression(), entityClassMap));
             if (expression.getAlias() != null) {
                 sb.append(" as ").append(expression.getAlias());
             }
             sb.append(",");
         }
-        trimEndSql(sb, ",");
-        String eval = replaceSqlEval(sb.toString(), entityClassMap);
-        // 检查SQL注入？
-        sql.append(eval);
+        if (sql != null) {
+            sql.append(replaceSqlEval(sb.toString(), entityClassMap));
+        }
     }
 
-    public static void appendSelects(Map<String, Class<?>> entityClassMap, List<String> selects, Map<String, String> aliasMap, StringBuilder sql) {
+    public static void appendSelects(Map<String, Class<?>> entityClassMap, List<String> selects, Map<String, String> aliasMap, StringBuilder sql, List<String> insertFields) {
         if (selects == null || selects.isEmpty()) return;
         StringBuilder sb = new StringBuilder();
         for (String select : selects) {
+            if (insertFields != null) {
+                String field;
+                if (aliasMap.containsKey(select)) {
+                    field = aliasMap.get(select);
+                } else if (select.contains(".")) {
+                    field = select.substring(select.indexOf(".") + 1);
+                } else {
+                    field = select;
+                }
+                insertFields.add(field);
+                continue;
+            }
             sb.append(" ").append(handleFieldToColumn(select, entityClassMap));
             if (aliasMap.containsKey(select)) {
                 sb.append(" as ").append(aliasMap.get(select));
             }
             sb.append(",");
         }
-        trimEndSql(sb, ",");
-        sql.append(securityCheck(sb.toString()));
+        if (sql != null) {
+            sql.append(securityCheck(sb.toString()));
+        }
     }
 
     public static void appendJoins(List<JoinQueryParam> joins, StringBuilder sql, List<Object> values) {
@@ -515,14 +507,6 @@ public class DaoUtils {
         sql.append(eval);
     }
 
-    private static void trimEndSql(StringBuilder sql, String end) {
-        int idx = sql.lastIndexOf(end);
-        int len = sql.length() - end.length();
-        if (idx >= len) {
-            sql.setLength(len);
-        }
-    }
-
     private static String replaceSqlEval(String eval, Map<String, Class<?>> entityClassMap) {
         if (!eval.contains("${")) {
             return eval;
@@ -555,6 +539,14 @@ public class DaoUtils {
                 return field;
             }
             return FieldUtils.entityFieldColumns(clazz).getOrDefault(field, field);
+        }
+    }
+
+    private static void trimEndSql(StringBuilder sql, String end) {
+        int idx = sql.lastIndexOf(end);
+        int len = sql.length() - end.length();
+        if (idx >= len) {
+            sql.setLength(len);
         }
     }
 

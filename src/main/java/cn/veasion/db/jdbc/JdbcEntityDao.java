@@ -39,15 +39,15 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     protected Logger logger = LoggerFactory.getLogger(getClass());
 
     private Class<T> entityClass;
-    protected DataSourceProvider dataSourceProvider = DaoUtils.dataSourceProvider();
+    protected DataSourceProvider dataSourceProvider = SqlDaoUtils.dataSourceProvider();
 
     @Override
     public ID add(EntityInsert entityInsert) {
         entityInsert.check();
         Object entity = entityInsert.getEntity();
-        Field idField = DaoUtils.getIdField(entity.getClass());
+        Field idField = SqlDaoUtils.getIdField(entity.getClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "add", new Object[]{entityInsert}, () -> {
-            LeftRight<String, Object[]> leftRight = DaoUtils.insert(entity.getClass(), Collections.singletonList(entityInsert.getFieldValueMap()));
+            LeftRight<String, Object[]> leftRight = SqlDaoUtils.insert(entity.getClass(), Collections.singletonList(entityInsert.getFieldValueMap()));
             try {
                 Object[] objects = JdbcDao.executeInsert(getConnection(JdbcTypeEnum.INSERT), leftRight.getLeft(), leftRight.getRight());
                 if (objects.length > 0) {
@@ -75,11 +75,11 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "batchAdd", new Object[]{batchEntityInsert}, () -> {
             LeftRight<String, Object[]> leftRight;
             if (insertSelectQuery != null) {
-                leftRight = DaoUtils.insertSelect(getEntityClass(), insertSelectQuery);
+                leftRight = SqlDaoUtils.insertSelect(getEntityClass(), insertSelectQuery);
             } else {
-                leftRight = DaoUtils.insert(getEntityClass(), batchEntityInsert.getFieldValueMapList());
+                leftRight = SqlDaoUtils.insert(getEntityClass(), batchEntityInsert.getFieldValueMapList());
             }
-            Field idField = DaoUtils.getIdField(getEntityClass());
+            Field idField = SqlDaoUtils.getIdField(getEntityClass());
             List<?> entityList = batchEntityInsert.getEntityList();
             try {
                 Object[] objects = JdbcDao.executeInsert(getConnection(JdbcTypeEnum.INSERT), leftRight.getLeft(), leftRight.getRight());
@@ -193,7 +193,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                 leftRight = convertUpdate.sqlValue();
             } else {
                 jdbcTypeEnum = JdbcTypeEnum.DELETE;
-                leftRight = DaoUtils.delete(delete);
+                leftRight = SqlDaoUtils.delete(delete);
             }
             try {
                 return JdbcDao.executeUpdate(getConnection(jdbcTypeEnum), leftRight.getLeft(), leftRight.getRight());
