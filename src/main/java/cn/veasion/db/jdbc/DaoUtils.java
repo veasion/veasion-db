@@ -40,24 +40,24 @@ public class DaoUtils {
 
     private static Logger logger = LoggerFactory.getLogger(DaoUtils.class);
 
-    private static JdbcDao jdbcDao;
+    private static DataSourceProvider dataSourceProvider;
 
-    public synchronized static JdbcDao jdbcDao() {
-        if (jdbcDao != null) {
-            return jdbcDao;
+    public synchronized static DataSourceProvider dataSourceProvider() {
+        if (dataSourceProvider != null) {
+            return dataSourceProvider;
         }
-        ServiceLoader<JdbcDaoProvider> serviceLoader = ServiceLoader.load(JdbcDaoProvider.class);
-        Iterator<JdbcDaoProvider> iterator = serviceLoader.iterator();
+        ServiceLoader<DataSourceProvider> serviceLoader = ServiceLoader.load(DataSourceProvider.class);
+        Iterator<DataSourceProvider> iterator = serviceLoader.iterator();
         if (iterator.hasNext()) {
-            jdbcDao = iterator.next().getJdbcDao();
+            dataSourceProvider = iterator.next();
         }
         if (iterator.hasNext()) {
-            logger.warn("发现多个jdbcDaoProvider");
+            logger.warn("发现多个dataSourceProvider");
         }
-        if (jdbcDao == null) {
-            logger.warn("jdbcDao未获取到实例");
+        if (dataSourceProvider == null) {
+            logger.warn("dataSourceProvider未获取到实例");
         }
-        return jdbcDao;
+        return dataSourceProvider;
     }
 
     public static Field getIdField(Class<?> entityClazz) {
@@ -106,12 +106,12 @@ public class DaoUtils {
         for (String field : fields) {
             sql.append("`").append(fieldColumns.get(field)).append("`").append(",");
         }
-        sql.setLength(sql.length() - 1);
-        sql.append(") values ");
+        trimEndSql(sql, ",");
+        sql.append(") values");
 
         int index = 0;
         for (Map<String, Object> map : fieldValueMapList) {
-            sql.append("(").append(sqlPlaceholder(map.size())).append(")").append(",");
+            sql.append(" (").append(sqlPlaceholder(map.size())).append(")").append(",");
             for (String field : fields) {
                 values[index++] = map.get(field);
             }
@@ -119,6 +119,66 @@ public class DaoUtils {
         sql.setLength(sql.length() - 1);
 
         return LeftRight.build(sql.toString(), values);
+    }
+
+    public static LeftRight<String, Object[]> insertSelect(Class<?> entityClass, AbstractQuery<?> insertSelectQuery) {
+        List<AbstractQuery<?>> list = new ArrayList<>();
+        list.add(insertSelectQuery);
+        if (insertSelectQuery instanceof EntityQuery) {
+            List<JoinQueryParam> joins = ((EntityQuery) insertSelectQuery).getJoins();
+            if (joins != null) {
+                for (JoinQueryParam join : joins) {
+                    list.add(join.getJoinEntityQuery());
+                }
+            }
+        }
+        StringBuilder sql = new StringBuilder("insert into ");
+        sql.append(getTableName(entityClass)).append(" (");
+        for (AbstractQuery<?> abstractQuery : list) {
+            appendInsertSelectColumns(sql, abstractQuery, true);
+        }
+        for (AbstractQuery<?> abstractQuery : list) {
+            appendInsertSelectColumns(sql, abstractQuery, false);
+        }
+        trimEndSql(sql, ",");
+        sql.append(") ");
+        LeftRight<String, Object[]> leftRight = select(insertSelectQuery);
+        sql.append(leftRight.getLeft());
+        leftRight.setLeft(sql.toString());
+        return leftRight;
+    }
+
+    private static void appendInsertSelectColumns(StringBuilder sql, AbstractQuery<?> insertSelectQuery, boolean isExpression) {
+        Class<?> entityClass = insertSelectQuery.getEntityClass();
+        Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClass);
+        if (isExpression) {
+            List<Expression> selectExpression = insertSelectQuery.getSelectExpression();
+            if (selectExpression != null) {
+                for (Expression expression : selectExpression) {
+                    if (expression.getAlias() == null) {
+                        throw new DbException(expression.getExpression() + "必须有别名对应新增字段");
+                    }
+                    String field = expression.getAlias();
+                    sql.append("`").append(fieldColumns.getOrDefault(field, field)).append("`").append(",");
+                }
+            }
+        } else {
+            List<String> selects = insertSelectQuery.getSelects();
+            Map<String, String> aliasMap = insertSelectQuery.getAliasMap();
+            if (selects != null && selects.size() > 0) {
+                for (String select : selects) {
+                    String field;
+                    if (aliasMap.containsKey(select)) {
+                        field = aliasMap.get(select);
+                    } else if (select.contains(".")) {
+                        field = select.substring(select.indexOf(".") + 1);
+                    } else {
+                        field = select;
+                    }
+                    sql.append("`").append(fieldColumns.getOrDefault(field, field)).append("`").append(",");
+                }
+            }
+        }
     }
 
     public static LeftRight<String, Object[]> select(AbstractQuery<?> query) {

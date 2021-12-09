@@ -1,6 +1,7 @@
 package cn.veasion.db.update;
 
 import cn.veasion.db.DbException;
+import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.utils.FieldUtils;
 
 import java.util.ArrayList;
@@ -18,10 +19,15 @@ import java.util.Objects;
 public class BatchEntityInsert {
 
     private List<?> entityList;
+    private AbstractQuery<?> insertSelectQuery;
     private List<Map<String, Object>> fieldValueMapList;
 
     public <T> BatchEntityInsert(List<T> entityList) {
         this.entityList = Objects.requireNonNull(entityList);
+    }
+
+    public BatchEntityInsert(AbstractQuery<?> insertSelectQuery) {
+        this.insertSelectQuery = Objects.requireNonNull(insertSelectQuery);
     }
 
     public List<?> getEntityList() {
@@ -32,8 +38,15 @@ public class BatchEntityInsert {
         return fieldValueMapList;
     }
 
+    public AbstractQuery<?> getInsertSelectQuery() {
+        return insertSelectQuery;
+    }
+
     public void check() {
-        if (entityList.isEmpty()) {
+        if (insertSelectQuery != null) {
+            return;
+        }
+        if (entityList == null || entityList.isEmpty()) {
             throw new DbException("批量新增对象不能为空");
         }
         Class<?> clazz = entityList.get(0).getClass();

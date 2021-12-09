@@ -91,7 +91,7 @@ public class FieldUtils {
                     return f.get(object);
                 }
             }
-            return null;
+            throw new IllegalAccessException(field + " 字段不存在：" + object.getClass().getName());
         } catch (Exception e) {
             throw new DbException("字段获取值异常: " + field, e);
         }

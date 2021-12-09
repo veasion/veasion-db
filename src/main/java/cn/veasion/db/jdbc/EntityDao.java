@@ -7,7 +7,6 @@ import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityInsert;
 import cn.veasion.db.update.EntityUpdate;
-import cn.veasion.db.utils.FieldUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -61,9 +60,7 @@ public interface EntityDao<T, ID> {
     <E> List<E> queryList(AbstractQuery<?> query, Class<E> clazz);
 
     default int updateById(T entity) {
-        String idField = getIdField();
-        Object value = FieldUtils.getValue(entity, idField);
-        return update(new EntityUpdate(entity).eq(idField, value).excludeUpdates(idField).skipNullField());
+        return update(new EntityUpdate(entity).eq(getIdField()).excludeUpdateFilterFields().skipNullField());
     }
 
     int update(AbstractUpdate<?> update);
