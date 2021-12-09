@@ -9,12 +9,12 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
 /**
- * TestUtils
+ * DataSourceUtils
  *
  * @author luozhuowei
  * @date 2021/12/3
  */
-public class TestUtils {
+public class DataSourceUtils {
 
     public static DataSource getDataSource() {
         try {

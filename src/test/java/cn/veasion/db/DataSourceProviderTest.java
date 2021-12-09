@@ -1,6 +1,5 @@
-package cn.veasion.db.dao;
+package cn.veasion.db;
 
-import cn.veasion.db.TestUtils;
 import cn.veasion.db.base.JdbcTypeEnum;
 import cn.veasion.db.jdbc.EntityDao;
 import cn.veasion.db.jdbc.DataSourceProvider;
@@ -23,7 +22,7 @@ public class DataSourceProviderTest implements DataSourceProvider {
 
     @Override
     public DataSource getDataSource(EntityDao<?, ?> entityDao, JdbcTypeEnum jdbcTypeEnum) {
-        return TestUtils.getDataSource();
+        return DataSourceUtils.getDataSource();
     }
 
     @Override
