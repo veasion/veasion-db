@@ -16,12 +16,11 @@ public class FilterUtils {
     }
 
     public static boolean hasFilter(Filter filter) {
-        if (filter == null || filter.getField() == null) {
+        if (filter == null) {
             return false;
         }
-        if (filter.getSql().contains("?")) {
-            Object value = filter.getValue();
-            return value != null;
+        if (filter.getSql() != null && filter.getSql().contains("?")) {
+            return filter.getValue() != null;
         }
         return true;
     }

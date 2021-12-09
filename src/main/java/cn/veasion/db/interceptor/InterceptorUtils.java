@@ -41,7 +41,7 @@ public class InterceptorUtils {
 
     public static <R> R intercept(EntityDaoInvocation<R> invocation) {
         if (interceptors.isEmpty()) {
-            return DefaultInterceptor.getInstance().intercept(invocation);
+            return invocation.proceed();
         }
         if (interceptors.size() == 1) {
             return interceptors.get(0).intercept(invocation);

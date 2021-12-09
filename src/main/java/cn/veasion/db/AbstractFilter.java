@@ -19,6 +19,7 @@ import java.util.Objects;
 @SuppressWarnings("unchecked")
 public abstract class AbstractFilter<T> {
 
+    protected boolean checked;
     private List<Filter> filters;
     private boolean skipNullValueFilter;
 
@@ -118,8 +119,10 @@ public abstract class AbstractFilter<T> {
 
     public T addFilter(Filter filter) {
         if (filters == null) filters = new ArrayList<>();
-        if (!isSkipNullValueFilter() || isSkipNullValueFilter() && FilterUtils.hasFilter(filter)) {
+        Objects.requireNonNull(filter, "过滤器不能为空");
+        if (!isSkipNullValueFilter() || (isSkipNullValueFilter() && FilterUtils.hasFilter(filter))) {
             filters.add(handleFilter(filter));
+            checkFilter();
         }
         return (T) this;
     }
@@ -141,6 +144,7 @@ public abstract class AbstractFilter<T> {
             for (Filter filter : filters) {
                 if (Objects.equals(filter.getField(), field)) {
                     filters.remove(filter);
+                    checkFilter();
                     return filter;
                 }
             }
@@ -160,7 +164,14 @@ public abstract class AbstractFilter<T> {
     }
 
     public void check() {
-        checkFilter(filters, skipNullValueFilter);
+        checked = true;
+        checkFilter();
+    }
+
+    private void checkFilter() {
+        if (checked) {
+            checkFilter(filters, skipNullValueFilter);
+        }
     }
 
     public synchronized static void checkFilter(List<Filter> filters, boolean ignoreNullValueFilter) {
@@ -168,7 +179,7 @@ public abstract class AbstractFilter<T> {
         boolean preIsJoin = true;
         for (int i = 0; i < filters.size(); i++) {
             Filter filter = FilterUtils.checkFilter(filters.get(i));
-            if (ignoreNullValueFilter && filter.getValue() == null) {
+            if (ignoreNullValueFilter && !FilterUtils.hasFilter(filter)) {
                 filters.remove(i--);
                 continue;
             }

@@ -23,7 +23,7 @@ public class EntityDaoInvocation<R> {
     }
 
     public static <R> EntityDaoInvocation<R> build(EntityDaoInvocation<R> invocation, Supplier<R> supplier) {
-        return new EntityDaoInvocation<R>(invocation.getTarget(), invocation.getMethodName(), invocation.getArgs(), supplier);
+        return new EntityDaoInvocation<>(invocation.getTarget(), invocation.getMethodName(), invocation.getArgs(), supplier);
     }
 
     public Object getTarget() {

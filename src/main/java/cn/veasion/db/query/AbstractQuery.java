@@ -191,15 +191,15 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
 
     @Override
     public void check() {
-        super.check();
-        if (selectAll) {
+        if (selectAll && !checked) {
             Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClass);
             if (excludeSelects != null && excludeSelects.size() > 0) {
                 fieldColumns.keySet().stream().map(this::handleField).filter(k -> !excludeSelects.contains(k)).forEach(this::select);
             } else {
                 fieldColumns.keySet().stream().map(this::handleField).forEach(this::select);
             }
-        } else if (excludeSelects != null) {
+        }
+        if (excludeSelects != null) {
             for (String excludeSelect : excludeSelects) {
                 for (int i = 0; i < selects.size(); i++) {
                     if (Objects.equals(excludeSelect, selects.get(i))) {
@@ -209,6 +209,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
                 }
             }
         }
+        super.check();
         if (unions != null) {
             for (UnionQueryParam union : unions) {
                 union.getUnion().check();

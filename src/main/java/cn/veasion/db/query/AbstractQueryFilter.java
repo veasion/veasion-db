@@ -6,6 +6,7 @@ import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * AbstractFilter
@@ -28,7 +29,8 @@ public abstract class AbstractQueryFilter<T> extends AbstractFilter<T> {
 
     public T having(Filter filter) {
         if (having == null) having = new ArrayList<>();
-        if (!isSkipNullValueFilter() || isSkipNullValueFilter() && FilterUtils.hasFilter(filter)) {
+        Objects.requireNonNull(filter, "过滤器不能为空");
+        if (!isSkipNullValueFilter() || (isSkipNullValueFilter() && FilterUtils.hasFilter(filter))) {
             having.add(handleFilter(filter));
         }
         return (T) this;

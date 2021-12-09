@@ -110,7 +110,7 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
     }
 
     private void check(EntityUpdate mainUpdate, boolean main) {
-        if (main && isEmptyUpdate(this)) {
+        if (main && !checked && isEmptyUpdate(this)) {
             Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entity.getClass());
             if (updateFields == null) {
                 updateFields = new ArrayList<>(fieldColumns.size());
