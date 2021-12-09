@@ -52,7 +52,7 @@ public class QueryTest {
         // 子查询
         list = userInfoDao.queryList(new Q()
                 .filterSubQuery("id", Filter.Operator.IN,
-                        SubQueryParam.build(new Query("id").gte("id", 6))));
+                        SubQueryParam.build(new Query("id").gte("id", 6).lte("id", 10))));
         System.out.println(list);
     }
 

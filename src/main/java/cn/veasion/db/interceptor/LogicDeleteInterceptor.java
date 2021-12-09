@@ -2,9 +2,11 @@ package cn.veasion.db.interceptor;
 
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Expression;
+import cn.veasion.db.base.Filter;
 import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.JoinQueryParam;
+import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.query.UnionQueryParam;
 import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.Delete;
@@ -97,9 +99,16 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
         delete.convertUpdate(convertUpdate);
     }
 
-    private void handleFilter(AbstractFilter<?> filter) {
-        if (filter != null && !filter.hasFilter(logicDeleteField)) {
-            filter.eq(logicDeleteField, availableValue);
+    private void handleFilter(AbstractFilter<?> abstractFilter) {
+        if (abstractFilter != null && abstractFilter.getFilters() != null) {
+            if (!abstractFilter.hasFilter(logicDeleteField)) {
+                abstractFilter.eq(logicDeleteField, availableValue);
+            }
+            for (Filter filter : abstractFilter.getFilters()) {
+                if (filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {
+                    handleQuery(((SubQueryParam) filter.getValue()).getQuery());
+                }
+            }
         }
     }
 
