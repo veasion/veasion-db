@@ -1,5 +1,9 @@
 package cn.veasion.db.utils;
 
+import cn.veasion.db.jdbc.DataSourceProvider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -11,6 +15,27 @@ import java.util.ServiceLoader;
  * @date 2021/12/10
  */
 public class ServiceLoaderUtils {
+
+    private static Logger logger = LoggerFactory.getLogger(ServiceLoaderUtils.class);
+
+    private static DataSourceProvider dataSourceProvider;
+
+    public synchronized static DataSourceProvider dataSourceProvider() {
+        if (dataSourceProvider != null) {
+            return dataSourceProvider;
+        }
+        List<DataSourceProvider> list = loadList(DataSourceProvider.class);
+        if (list.size() > 0) {
+            dataSourceProvider = list.get(0);
+        }
+        if (list.size() > 1) {
+            logger.warn("发现多个dataSourceProvider");
+        }
+        if (dataSourceProvider == null) {
+            logger.warn("dataSourceProvider未获取到实例");
+        }
+        return dataSourceProvider;
+    }
 
     public static <T> T loadOne(Class<T> clazz) {
         List<T> list = loadList(clazz);

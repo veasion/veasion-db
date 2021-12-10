@@ -31,4 +31,9 @@ public class Update extends AbstractUpdate<Update> {
         return field;
     }
 
+    @Override
+    protected Update getSelf() {
+        return this;
+    }
+
 }

@@ -19,7 +19,7 @@ public class MysqlPage extends PageParam {
 
     @Override
     public void handleSqlValue(StringBuilder sql, List<Object> values) {
-        sql.append(" limit ?, ? ");
+        sql.append(" LIMIT ?, ? ");
         values.add((page - 1) * size);
         values.add(size);
     }

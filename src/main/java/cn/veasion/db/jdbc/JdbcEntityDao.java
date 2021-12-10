@@ -16,7 +16,8 @@ import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityInsert;
-import cn.veasion.db.utils.LeftRight;
+import cn.veasion.db.utils.FieldUtils;
+import cn.veasion.db.utils.ServiceLoaderUtils;
 import cn.veasion.db.utils.TypeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,6 @@ import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -44,19 +44,22 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     protected Logger logger = LoggerFactory.getLogger(getClass());
 
     private Class<T> entityClass;
-    protected DataSourceProvider dataSourceProvider = SqlDaoUtils.dataSourceProvider();
+    protected DataSourceProvider dataSourceProvider = ServiceLoaderUtils.dataSourceProvider();
 
     @Override
     public ID add(EntityInsert entityInsert) {
         entityInsert.check();
+        if (entityInsert.getEntityClass() == null) {
+            entityInsert.setEntityClass(getEntityClass());
+        }
         Object entity = entityInsert.getEntity();
-        Field idField = SqlDaoUtils.getIdField(entity.getClass());
+        Field idField = FieldUtils.getIdField(entity.getClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "add", new Object[]{entityInsert}, () -> {
-            LeftRight<String, Object[]> leftRight = SqlDaoUtils.insert(entity.getClass(), Collections.singletonList(entityInsert.getFieldValueMap()));
+            InsertSQL insertSQL = entityInsert.sqlValue();
             Connection connection = null;
             try {
                 connection = getConnection(JdbcTypeEnum.INSERT);
-                Object[] objects = JdbcDao.executeInsert(connection, leftRight.getLeft(), leftRight.getRight());
+                Object[] objects = JdbcDao.executeInsert(connection, insertSQL.getSQL(), insertSQL.getValues());
                 if (objects.length > 0) {
                     ID id = (ID) TypeUtils.convert(objects[0], idField.getType());
                     if (entity instanceof IBaseId) {
@@ -77,23 +80,21 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     @Override
     public ID[] batchAdd(BatchEntityInsert batchEntityInsert) {
         batchEntityInsert.check();
+        if (batchEntityInsert.getEntityClass() == null) {
+            batchEntityInsert.setEntityClass(getEntityClass());
+        }
         AbstractQuery<?> insertSelectQuery = batchEntityInsert.getInsertSelectQuery();
         if (insertSelectQuery != null) {
             beforeSelect(insertSelectQuery);
         }
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "batchAdd", new Object[]{batchEntityInsert}, () -> {
-            LeftRight<String, Object[]> leftRight;
-            if (insertSelectQuery != null) {
-                leftRight = SqlDaoUtils.insertSelect(getEntityClass(), insertSelectQuery);
-            } else {
-                leftRight = SqlDaoUtils.insert(getEntityClass(), batchEntityInsert.getFieldValueMapList());
-            }
-            Field idField = SqlDaoUtils.getIdField(getEntityClass());
+            InsertSQL insertSQL = batchEntityInsert.sqlValue();
+            Field idField = FieldUtils.getIdField(getEntityClass());
             List<?> entityList = batchEntityInsert.getEntityList();
             Connection connection = null;
             try {
                 connection = getConnection(JdbcTypeEnum.INSERT);
-                Object[] objects = JdbcDao.executeInsert(connection, leftRight.getLeft(), leftRight.getRight());
+                Object[] objects = JdbcDao.executeInsert(connection, insertSQL.getSQL(), insertSQL.getValues());
                 ID[] ids = (ID[]) Array.newInstance(idField.getType(), objects.length);
                 for (int i = 0; i < objects.length; i++) {
                     ID id = (ID) TypeUtils.convert(objects[i], idField.getType());
@@ -116,11 +117,11 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     public <E> E queryForType(AbstractQuery<?> query, Class<E> clazz) {
         beforeSelect(query);
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryForType", new Object[]{query, clazz}, () -> {
-            LeftRight<String, Object[]> leftRight = query.sqlValue();
+            QuerySQL querySQL = query.sqlValue();
             Connection connection = null;
             try {
                 connection = getConnection(JdbcTypeEnum.SELECT);
-                return JdbcDao.queryForType(connection, clazz, leftRight.getLeft(), leftRight.getRight());
+                return JdbcDao.queryForType(connection, clazz, querySQL.getSQL(), querySQL.getValues());
             } catch (Exception e) {
                 logger.error("查询异常", e);
                 throw new DbException(e);
@@ -134,11 +135,11 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     public Map<String, Object> queryForMap(AbstractQuery<?> query, boolean mapUnderscoreToCamelCase) {
         beforeSelect(query);
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryForMap", new Object[]{query, mapUnderscoreToCamelCase}, () -> {
-            LeftRight<String, Object[]> leftRight = query.sqlValue();
+            QuerySQL querySQL = query.sqlValue();
             Connection connection = null;
             try {
                 connection = getConnection(JdbcTypeEnum.SELECT);
-                return JdbcDao.queryForMap(connection, mapUnderscoreToCamelCase, leftRight.getLeft(), leftRight.getRight());
+                return JdbcDao.queryForMap(connection, mapUnderscoreToCamelCase, querySQL.getSQL(), querySQL.getValues());
             } catch (Exception e) {
                 logger.error("查询异常", e);
                 throw new DbException(e);
@@ -152,11 +153,11 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     public List<Map<String, Object>> listForMap(AbstractQuery<?> query, boolean mapUnderscoreToCamelCase) {
         beforeSelect(query);
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "listForMap", new Object[]{query, mapUnderscoreToCamelCase}, () -> {
-            LeftRight<String, Object[]> leftRight = query.sqlValue();
+            QuerySQL querySQL = query.sqlValue();
             Connection connection = null;
             try {
                 connection = getConnection(JdbcTypeEnum.SELECT);
-                return JdbcDao.listForMap(connection, mapUnderscoreToCamelCase, leftRight.getLeft(), leftRight.getRight());
+                return JdbcDao.listForMap(connection, mapUnderscoreToCamelCase, querySQL.getSQL(), querySQL.getValues());
             } catch (Exception e) {
                 logger.error("查询异常", e);
                 throw new DbException(e);
@@ -170,11 +171,11 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     public <E> List<E> queryList(AbstractQuery<?> query, Class<E> clazz) {
         beforeSelect(query);
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryList", new Object[]{query, clazz}, () -> {
-            LeftRight<String, Object[]> leftRight = query.sqlValue();
+            QuerySQL querySQL = query.sqlValue();
             Connection connection = null;
             try {
                 connection = getConnection(JdbcTypeEnum.SELECT);
-                return JdbcDao.listForType(connection, clazz, leftRight.getLeft(), leftRight.getRight());
+                return JdbcDao.listForType(connection, clazz, querySQL.getSQL(), querySQL.getValues());
             } catch (Exception e) {
                 logger.error("查询异常", e);
                 throw new DbException(e);
@@ -196,14 +197,14 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
             query.page(null);
             Connection connection = null;
             try {
-                LeftRight<String, Object[]> countLeftRight = countQuery.sqlValue();
+                QuerySQL countQuerySQL = countQuery.sqlValue();
                 connection = getConnection(JdbcTypeEnum.SELECT);
-                Object value = JdbcDao.queryOnly(connection, countLeftRight.getLeft(), countLeftRight.getRight());
+                Object value = JdbcDao.queryOnly(connection, countQuerySQL.getSQL(), countQuerySQL.getValues());
                 Integer count = TypeUtils.convert(value, Integer.class);
                 query.page(pageParam);
                 if (count > 0) {
-                    LeftRight<String, Object[]> listLeftRight = query.sqlValue();
-                    List<E> list = JdbcDao.listForType(connection, clazz, listLeftRight.getLeft(), listLeftRight.getRight());
+                    QuerySQL listQuerySQL = query.sqlValue();
+                    List<E> list = JdbcDao.listForType(connection, clazz, listQuerySQL.getSQL(), listQuerySQL.getValues());
                     return new Page<>(count, list);
                 } else {
                     return new Page<>(count, new ArrayList<>());
@@ -226,11 +227,11 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         }
         beforeSubQuery(update.getFilters());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "update", new Object[]{update}, () -> {
-            LeftRight<String, Object[]> leftRight = update.sqlValue();
+            UpdateSQL updateSQL = update.sqlValue();
             Connection connection = null;
             try {
                 connection = getConnection(JdbcTypeEnum.UPDATE);
-                return JdbcDao.executeUpdate(connection, leftRight.getLeft(), leftRight.getRight());
+                return JdbcDao.executeUpdate(connection, updateSQL.getSQL(), updateSQL.getValues());
             } catch (Exception e) {
                 logger.error("更新异常", e);
                 throw new DbException(e);
@@ -246,8 +247,8 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         delete.setEntityClass(getEntityClass());
         beforeSubQuery(delete.getFilters());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "delete", new Object[]{delete}, () -> {
-            LeftRight<String, Object[]> leftRight;
             JdbcTypeEnum jdbcTypeEnum;
+            AbstractSQL<?> abstractSQL;
             AbstractUpdate<?> convertUpdate = delete.getConvertUpdate();
             if (convertUpdate != null) {
                 if (!convertUpdate.hasFilters()) {
@@ -257,15 +258,15 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                     convertUpdate.setEntityClass(getEntityClass());
                 }
                 jdbcTypeEnum = JdbcTypeEnum.UPDATE;
-                leftRight = convertUpdate.sqlValue();
+                abstractSQL = convertUpdate.sqlValue();
             } else {
                 jdbcTypeEnum = JdbcTypeEnum.DELETE;
-                leftRight = SqlDaoUtils.delete(delete);
+                abstractSQL = DeleteSQL.build(delete);
             }
             Connection connection = null;
             try {
                 connection = getConnection(jdbcTypeEnum);
-                return JdbcDao.executeUpdate(connection, leftRight.getLeft(), leftRight.getRight());
+                return JdbcDao.executeUpdate(connection, abstractSQL.getSQL(), abstractSQL.getValues());
             } catch (Exception e) {
                 logger.error("删除异常", e);
                 throw new DbException(e);
@@ -294,7 +295,6 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public Class<T> getEntityClass() {
         if (entityClass != null) {
             return entityClass;

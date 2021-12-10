@@ -42,6 +42,20 @@ public class FieldUtils {
         }
     }
 
+    public static Field getIdField(Class<?> entityClazz) {
+        Table annotation = entityClazz.getAnnotation(Table.class);
+        if (annotation != null) {
+            String field = annotation.idField();
+            if (!"".equals(field)) {
+                return FieldUtils.getField(entityClazz, field);
+            }
+            if (annotation.entityClass() != Void.class) {
+                return getIdField(annotation.entityClass());
+            }
+        }
+        return FieldUtils.getField(entityClazz, "id");
+    }
+
     /**
      * 获取字段
      */

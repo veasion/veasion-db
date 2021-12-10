@@ -8,10 +8,12 @@ package cn.veasion.db.base;
  */
 public enum JoinTypeEnum implements JoinType {
 
-    JOIN("inner join"),
-    LEFT_JOIN("left join"),
-    RIGHT_JOIN("right join"),
-    FULL_JOIN("full join");
+    JOIN("JOIN"),
+    INNER_JOIN("INNER JOIN"),
+    OUTER_JOIN("OUTER JOIN"),
+    LEFT_JOIN("LEFT JOIN"),
+    RIGHT_JOIN("RIGHT JOIN"),
+    FULL_JOIN("FULL JOIN");
 
     String join;
 

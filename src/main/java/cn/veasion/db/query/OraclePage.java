@@ -21,9 +21,9 @@ public class OraclePage extends PageParam {
     public void handleSqlValue(StringBuilder sql, List<Object> values) {
         String querySql = sql.toString();
         sql.setLength(0);
-        sql.append("select t.* from (select  t.*, ROWNUM as row from (");
+        sql.append("SELECT t.* FROM (SELECT  t.*, ROWNUM AS row FROM (");
         sql.append(querySql);
-        sql.append(") t where ROWNUM <= ?) t where t.row > ?");
+        sql.append(") t WHERE ROWNUM <= ?) t WHERE t.row > ?");
         values.add(page * size);
         values.add(page * size - size);
     }

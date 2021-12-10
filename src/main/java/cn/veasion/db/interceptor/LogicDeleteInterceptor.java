@@ -14,9 +14,12 @@ import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityUpdate;
 import cn.veasion.db.update.JoinUpdateParam;
 import cn.veasion.db.update.Update;
+import cn.veasion.db.utils.FilterUtils;
 
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * 逻辑删除拦截器
@@ -71,7 +74,11 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
         if (query instanceof EntityQuery) {
             List<JoinQueryParam> joinList = ((EntityQuery) query).getJoinAll();
             if (joinList != null) {
-                joinList.stream().map(JoinQueryParam::getJoinQuery).forEach(this::handleFilter);
+                for (JoinQueryParam joinQueryParam : joinList) {
+                    EntityQuery joinQuery = joinQueryParam.getJoinQuery();
+                    handleOnFilter(joinQueryParam::getOnFilters, joinQueryParam::on, joinQuery.getTableAs());
+                    handleSubQuery(joinQuery.getFilters());
+                }
             }
             List<UnionQueryParam> unions = query.getUnions();
             if (unions != null) {
@@ -84,8 +91,11 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
         handleFilter(update);
         if (update instanceof EntityUpdate) {
             List<JoinUpdateParam> joinList = ((EntityUpdate) update).getJoinAll();
-            if (joinList != null) {
-                joinList.stream().map(JoinUpdateParam::getJoinUpdate).forEach(this::handleFilter);
+            if (joinList == null || joinList.isEmpty()) return;
+            for (JoinUpdateParam joinUpdateParam : joinList) {
+                EntityUpdate joinUpdate = joinUpdateParam.getJoinUpdate();
+                handleOnFilter(joinUpdateParam::getOnFilters, joinUpdateParam::on, joinUpdate.getTableAs());
+                handleSubQuery(joinUpdate.getFilters());
             }
         }
     }
@@ -103,15 +113,34 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
         delete.convertUpdate(convertUpdate);
     }
 
+    private void handleOnFilter(Supplier<List<Filter>> onFilters, Consumer<Filter> on, String tableAs) {
+        List<Filter> filters = onFilters.get();
+        if (filters != null && !filters.isEmpty()) {
+            for (Filter filter : filters) {
+                String field = filter.getField();
+                if (field != null && FilterUtils.tableAsField("-", field).equals(logicDeleteField)) {
+                    return;
+                }
+            }
+        }
+        on.accept(Filter.AND);
+        on.accept(Filter.eq(logicDeleteField, availableValue).fieldAs(tableAs));
+    }
+
     private void handleFilter(AbstractFilter<?> abstractFilter) {
-        if (abstractFilter != null && abstractFilter.getFilters() != null) {
+        if (abstractFilter != null) {
             if (!abstractFilter.hasFilter(logicDeleteField)) {
                 abstractFilter.eq(logicDeleteField, availableValue);
             }
-            for (Filter filter : abstractFilter.getFilters()) {
-                if (filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {
-                    handleQuery(((SubQueryParam) filter.getValue()).getQuery());
-                }
+            handleSubQuery(abstractFilter.getFilters());
+        }
+    }
+
+    private void handleSubQuery(List<Filter> filters) {
+        if (filters == null || filters.isEmpty()) return;
+        for (Filter filter : filters) {
+            if (filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {
+                handleQuery(((SubQueryParam) filter.getValue()).getQuery());
             }
         }
     }

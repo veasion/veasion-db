@@ -172,4 +172,9 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
         return joinList;
     }
 
+    @Override
+    protected EntityUpdate getSelf() {
+        return this;
+    }
+
 }

@@ -79,7 +79,7 @@ public class Filter {
     }
 
     public static Filter between(String field, Object value1, Object value2) {
-        return build(field, Operator.BETWEEN, new Object[]{value1, value2}, Operator.BETWEEN.getOpt().concat(" ? and ?"));
+        return build(field, Operator.BETWEEN, new Object[]{value1, value2}, Operator.BETWEEN.getOpt().concat(" ? AND ?"));
     }
 
     public static Filter subQuery(String field, Operator operator, SubQueryParam subQueryParam) {
@@ -90,8 +90,8 @@ public class Filter {
         return build(field, operator, expression, null).special();
     }
 
-    public static Filter AND = build("and");
-    public static Filter OR = build("or");
+    public static Filter AND = build("AND");
+    public static Filter OR = build("OR");
     public static Filter LEFT_BRACKET = build("(");
     public static Filter RIGHT_BRACKET = build(")");
 
@@ -157,14 +157,14 @@ public class Filter {
         GTE(">="),
         LT("<"),
         LTE("<="),
-        IN("in"),
-        NOT_IN("not in"),
-        LIKE("like"),
-        BETWEEN("between"),
-        EXISTS("exists"),
-        NOT_EXISTS("not exists"),
-        NULL("is null"),
-        NOT_NULL("is not null");
+        IN("IN"),
+        NOT_IN("NOT IN"),
+        LIKE("LIKE"),
+        BETWEEN("BETWEEN"),
+        EXISTS("EXISTS"),
+        NOT_EXISTS("NOT EXISTS"),
+        NULL("IS NULL"),
+        NOT_NULL("IS NOT NULL");
 
         String opt;
 
@@ -187,14 +187,7 @@ public class Filter {
     private boolean special;
 
     public Filter fieldAs(String tableAs) {
-        if ("-".equals(tableAs)) {
-            int idx = field.indexOf(".");
-            if (idx > -1) {
-                field = field.substring(idx + 1);
-            }
-        } else {
-            field = FilterUtils.tableAsField(tableAs, field);
-        }
+        field = FilterUtils.tableAsField(tableAs, field);
         return this;
     }
 

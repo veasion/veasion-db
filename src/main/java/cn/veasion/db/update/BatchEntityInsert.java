@@ -1,6 +1,7 @@
 package cn.veasion.db.update;
 
 import cn.veasion.db.DbException;
+import cn.veasion.db.jdbc.InsertSQL;
 import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.utils.FieldUtils;
 
@@ -19,6 +20,7 @@ import java.util.Objects;
 public class BatchEntityInsert {
 
     private List<?> entityList;
+    private Class<?> entityClass;
     private AbstractQuery<?> insertSelectQuery;
     private List<Map<String, Object>> fieldValueMapList;
 
@@ -42,6 +44,14 @@ public class BatchEntityInsert {
         return insertSelectQuery;
     }
 
+    public Class<?> getEntityClass() {
+        return entityClass;
+    }
+
+    public void setEntityClass(Class<?> entityClass) {
+        this.entityClass = entityClass;
+    }
+
     public void check() {
         if (insertSelectQuery != null) {
             return;
@@ -60,6 +70,10 @@ public class BatchEntityInsert {
             }
             fieldValueMapList.add(fieldValueMap);
         }
+    }
+
+    public InsertSQL sqlValue() {
+        return InsertSQL.build(this);
     }
 
 }

@@ -1,9 +1,8 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.base.Expression;
-import cn.veasion.db.jdbc.SqlDaoUtils;
+import cn.veasion.db.jdbc.QuerySQL;
 import cn.veasion.db.utils.FieldUtils;
-import cn.veasion.db.utils.LeftRight;
 import cn.veasion.db.utils.ServiceLoaderUtils;
 
 import java.util.ArrayList;
@@ -20,7 +19,6 @@ import java.util.Set;
  * @author luozhuowei
  * @date 2021/12/2
  */
-@SuppressWarnings("unchecked")
 public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
 
     private boolean distinct;
@@ -38,12 +36,12 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
 
     public T distinct() {
         this.distinct = true;
-        return (T) this;
+        return getSelf();
     }
 
     public T selectAll() {
         this.selectAll = true;
-        return (T) this;
+        return getSelf();
     }
 
     public T select(String field) {
@@ -56,25 +54,25 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         if (alias != null) {
             aliasMap.put(field, alias);
         }
-        return (T) this;
+        return getSelf();
     }
 
     public T selects(String... fields) {
         for (String field : fields) {
             select(field);
         }
-        return (T) this;
+        return getSelf();
     }
 
     public T selectExpression(Expression expression) {
         if (selectExpression == null) selectExpression = new ArrayList<>();
         selectExpression.add(Objects.requireNonNull(expression));
-        return (T) this;
+        return getSelf();
     }
 
     public T alias(String field, String alias) {
         aliasMap.put(handleField(field), Objects.requireNonNull(alias));
-        return (T) this;
+        return getSelf();
     }
 
     public T excludeFields(String... fields) {
@@ -82,7 +80,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         for (String field : fields) {
             excludeSelects.add(handleField(field));
         }
-        return (T) this;
+        return getSelf();
     }
 
     public T groupBy(String... fields) {
@@ -90,7 +88,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         for (String field : fields) {
             groupBys.add(handleField(field));
         }
-        return (T) this;
+        return getSelf();
     }
 
     public T asc(String field) {
@@ -105,24 +103,24 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         if (orders == null) orders = new ArrayList<>();
         orderParam.setField(handleField(orderParam.getField()));
         orders.add(orderParam);
-        return (T) this;
+        return getSelf();
     }
 
     public T union(AbstractQuery<T> unionQuery) {
         if (unions == null) unions = new ArrayList<>();
         unions.add(new UnionQueryParam(unionQuery, false));
-        return (T) this;
+        return getSelf();
     }
 
     public T unionAll(AbstractQuery<T> unionQuery) {
         if (unions == null) unions = new ArrayList<>();
         unions.add(new UnionQueryParam(unionQuery, true));
-        return (T) this;
+        return getSelf();
     }
 
     public T page(PageParam pageParam) {
         this.pageParam = pageParam;
-        return (T) this;
+        return getSelf();
     }
 
     public T page(int page, int size) {
@@ -134,7 +132,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         } else {
             this.pageParam = new MysqlPage(page, size);
         }
-        return (T) this;
+        return getSelf();
     }
 
     protected abstract String handleField(String field);
@@ -215,8 +213,8 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         }
     }
 
-    public LeftRight<String, Object[]> sqlValue() {
-        return SqlDaoUtils.select(this);
+    public QuerySQL sqlValue() {
+        return QuerySQL.build(this);
     }
 
 }

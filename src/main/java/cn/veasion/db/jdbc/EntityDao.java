@@ -8,6 +8,7 @@ import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityInsert;
 import cn.veasion.db.update.EntityUpdate;
+import cn.veasion.db.utils.FieldUtils;
 
 import java.util.List;
 import java.util.Map;
@@ -79,7 +80,7 @@ public interface EntityDao<T, ID> {
     int delete(Delete delete);
 
     default String getIdField() {
-        return SqlDaoUtils.getIdField(getEntityClass()).getName();
+        return FieldUtils.getIdField(getEntityClass()).getName();
     }
 
     Class<T> getEntityClass();

@@ -2,8 +2,7 @@ package cn.veasion.db.update;
 
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Expression;
-import cn.veasion.db.jdbc.SqlDaoUtils;
-import cn.veasion.db.utils.LeftRight;
+import cn.veasion.db.jdbc.UpdateSQL;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -19,7 +18,6 @@ import java.util.Set;
  * @author luozhuowei
  * @date 2021/12/3
  */
-@SuppressWarnings("unchecked")
 public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
 
     private boolean skipNullField;
@@ -29,24 +27,24 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
 
     public T skipNullField() {
         this.skipNullField = true;
-        return (T) this;
+        return getSelf();
     }
 
     public T update(String field, Object value) {
         if (skipNullField && value == null) {
-            return (T) this;
+            return getSelf();
         }
         field = handleField(field);
         if (excludeUpdates != null && excludeUpdates.contains(field)) {
-            return (T) this;
+            return getSelf();
         }
         updates.put(field, value);
-        return (T) this;
+        return getSelf();
     }
 
     public T updateExpression(String field, Expression expression) {
         updates.put(handleField(field), Objects.requireNonNull(expression));
-        return (T) this;
+        return getSelf();
     }
 
     public T excludeUpdates(String... fields) {
@@ -54,7 +52,7 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
         for (String field : fields) {
             excludeUpdates.add(handleField(field));
         }
-        return (T) this;
+        return getSelf();
     }
 
     public boolean isSkipNullField() {
@@ -97,8 +95,8 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
         this.entityClass = entityClass;
     }
 
-    public LeftRight<String, Object[]> sqlValue() {
-        return SqlDaoUtils.update(this);
+    public UpdateSQL sqlValue() {
+        return UpdateSQL.build(this);
     }
 
 }

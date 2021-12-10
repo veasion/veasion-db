@@ -29,13 +29,13 @@ public class JoinUpdateParam {
     }
 
     public JoinUpdateParam on(Filter filter) {
+        if (onFilters == null) onFilters = new ArrayList<>();
         onFilters.add(filter);
         AbstractFilter.checkFilter(onFilters, false);
         return this;
     }
 
     public JoinUpdateParam on(String mainField, String joinField) {
-        if (onFilters == null) onFilters = new ArrayList<>();
         mainField = FilterUtils.tableAsField(mainUpdate.getTableAs(), mainField);
         joinField = FilterUtils.tableAsField(joinUpdate.getTableAs(), joinField);
         return on(Filter.expression(mainField, Filter.Operator.EQ, Expression.filter("${" + joinField + "}")));

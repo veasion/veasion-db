@@ -14,7 +14,6 @@ import java.util.Objects;
  * @author luozhuowei
  * @date 2021/12/2
  */
-@SuppressWarnings("unchecked")
 public abstract class AbstractQueryFilter<T> extends AbstractFilter<T> {
 
     private List<Filter> having;
@@ -33,7 +32,7 @@ public abstract class AbstractQueryFilter<T> extends AbstractFilter<T> {
         if (!isSkipNullValueFilter() || (isSkipNullValueFilter() && FilterUtils.hasFilter(filter))) {
             having.add(handleFilter(filter));
         }
-        return (T) this;
+        return getSelf();
     }
 
     public List<Filter> getHaving() {

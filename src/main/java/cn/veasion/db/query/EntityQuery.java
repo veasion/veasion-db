@@ -125,4 +125,9 @@ public class EntityQuery extends AbstractQuery<EntityQuery> {
         return joinList;
     }
 
+    @Override
+    protected EntityQuery getSelf() {
+        return this;
+    }
+
 }

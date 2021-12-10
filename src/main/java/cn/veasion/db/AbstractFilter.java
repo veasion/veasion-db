@@ -16,7 +16,6 @@ import java.util.Objects;
  * @author luozhuowei
  * @date 2021/12/2
  */
-@SuppressWarnings("unchecked")
 public abstract class AbstractFilter<T> {
 
     protected boolean checked;
@@ -124,7 +123,7 @@ public abstract class AbstractFilter<T> {
             filters.add(handleFilter(filter));
             checkFilter();
         }
-        return (T) this;
+        return getSelf();
     }
 
     public boolean hasFilter(String field) {
@@ -156,7 +155,7 @@ public abstract class AbstractFilter<T> {
         for (Filter filter : filters) {
             addFilter(filter);
         }
-        return (T) this;
+        return getSelf();
     }
 
     public boolean hasFilters() {
@@ -204,5 +203,7 @@ public abstract class AbstractFilter<T> {
     }
 
     protected abstract Filter handleFilter(Filter filter);
+
+    protected abstract T getSelf();
 
 }

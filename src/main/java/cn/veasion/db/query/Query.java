@@ -36,4 +36,9 @@ public class Query extends AbstractQuery<Query> {
         super.check();
     }
 
+    @Override
+    protected Query getSelf() {
+        return this;
+    }
+
 }

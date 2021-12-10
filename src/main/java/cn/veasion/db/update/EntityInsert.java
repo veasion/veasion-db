@@ -1,5 +1,6 @@
 package cn.veasion.db.update;
 
+import cn.veasion.db.jdbc.InsertSQL;
 import cn.veasion.db.utils.FieldUtils;
 
 import java.util.HashMap;
@@ -15,6 +16,7 @@ import java.util.Objects;
 public class EntityInsert {
 
     private Object entity;
+    private Class<?> entityClass;
     private Map<String, Object> fieldValueMap;
 
     public EntityInsert(Object entity) {
@@ -29,12 +31,24 @@ public class EntityInsert {
         return fieldValueMap;
     }
 
+    public Class<?> getEntityClass() {
+        return entityClass;
+    }
+
+    public void setEntityClass(Class<?> entityClass) {
+        this.entityClass = entityClass;
+    }
+
     public void check() {
         fieldValueMap = new HashMap<>();
         Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entity.getClass());
         for (String field : fieldColumns.keySet()) {
             fieldValueMap.put(field, FieldUtils.getValue(entity, field));
         }
+    }
+
+    public InsertSQL sqlValue() {
+        return InsertSQL.build(this);
     }
 
 }

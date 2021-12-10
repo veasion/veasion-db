@@ -83,4 +83,9 @@ public class SubQuery extends AbstractQuery<SubQuery> {
         }
     }
 
+    @Override
+    protected SubQuery getSelf() {
+        return this;
+    }
+
 }

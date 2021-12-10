@@ -29,7 +29,12 @@ public class FilterUtils {
         if (field == null) {
             return null;
         }
-        if (tableAs != null && !field.contains(".")) {
+        if ("-".equals(tableAs)) {
+            int idx = field.indexOf(".");
+            if (idx > -1) {
+                field = field.substring(idx + 1);
+            }
+        } else if (tableAs != null && !field.contains(".")) {
             field = tableAs + "." + field;
         }
         return field;

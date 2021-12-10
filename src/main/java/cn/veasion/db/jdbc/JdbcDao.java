@@ -34,7 +34,7 @@ public class JdbcDao {
      * @return 返回影响条数
      */
     public static int executeUpdate(Connection connection, String sql, Object... params) throws SQLException {
-        int count = 0;
+        int count;
         PreparedStatement ps = null;
         try {
             ps = prepareStatement(connection, sql, params);

@@ -37,4 +37,9 @@ public class Delete extends AbstractFilter<Delete> {
         return this;
     }
 
+    @Override
+    protected Delete getSelf() {
+        return this;
+    }
+
 }
