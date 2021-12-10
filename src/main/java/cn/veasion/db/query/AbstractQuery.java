@@ -4,15 +4,14 @@ import cn.veasion.db.base.Expression;
 import cn.veasion.db.jdbc.SqlDaoUtils;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.LeftRight;
+import cn.veasion.db.utils.ServiceLoaderUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.Set;
 
 /**
@@ -25,9 +24,9 @@ import java.util.Set;
 public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
 
     private boolean distinct;
-    private boolean selectAll;
-    private List<String> selects = new ArrayList<>();
-    private Map<String, String> aliasMap = new HashMap<>();
+    protected boolean selectAll;
+    protected List<String> selects = new ArrayList<>();
+    protected Map<String, String> aliasMap = new HashMap<>();
     private Set<String> excludeSelects;
     private List<Expression> selectExpression;
     private List<String> groupBys;
@@ -127,14 +126,12 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     }
 
     public T page(int page, int size) {
-        ServiceLoader<PageParam> serviceLoader = ServiceLoader.load(PageParam.class);
-        Iterator<PageParam> iterator = serviceLoader.iterator();
-        if (iterator.hasNext()) {
-            pageParam = iterator.next();
-            pageParam.setPage(page);
-            pageParam.setSize(size);
+        PageParam pageParam = ServiceLoaderUtils.loadOne(PageParam.class);
+        if (pageParam != null) {
+            this.pageParam.setPage(page);
+            this.pageParam.setSize(size);
         } else {
-            pageParam = new PageLimit(page, size);
+            this.pageParam = new MysqlPage(page, size);
         }
         return (T) this;
     }

@@ -88,7 +88,7 @@ public class EntityQuery extends AbstractQuery<EntityQuery> {
                 if (!main) {
                     mainQuery.relations.add(join);
                 }
-                join.getJoinEntityQuery().check(mainQuery, false);
+                join.getJoinQuery().check(mainQuery, false);
             }
         }
     }
@@ -97,7 +97,7 @@ public class EntityQuery extends AbstractQuery<EntityQuery> {
         boolean emptySelect = query.getSelects().isEmpty() && query.getSelectExpression() == null && !query.isSelectAll();
         if (emptySelect && query.joins != null) {
             for (JoinQueryParam join : query.joins) {
-                if (!isEmptySelects(join.getJoinEntityQuery())) {
+                if (!isEmptySelects(join.getJoinQuery())) {
                     emptySelect = false;
                     break;
                 }

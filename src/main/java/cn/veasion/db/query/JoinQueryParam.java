@@ -18,20 +18,20 @@ import java.util.List;
 public class JoinQueryParam {
 
     private JoinTypeEnum joinType;
-    private EntityQuery mainEntityQuery;
-    private EntityQuery joinEntityQuery;
+    private EntityQuery mainQuery;
+    private EntityQuery joinQuery;
     private List<Filter> onFilters;
 
-    public JoinQueryParam(EntityQuery mainEntityQuery, JoinTypeEnum joinType, EntityQuery joinEntityQuery) {
+    public JoinQueryParam(EntityQuery mainQuery, JoinTypeEnum joinType, EntityQuery joinQuery) {
         this.joinType = joinType;
-        this.mainEntityQuery = mainEntityQuery;
-        this.joinEntityQuery = joinEntityQuery;
+        this.mainQuery = mainQuery;
+        this.joinQuery = joinQuery;
     }
 
     public JoinQueryParam on(String mainField, String joinField) {
         if (onFilters == null) onFilters = new ArrayList<>();
-        mainField = FilterUtils.tableAsField(mainEntityQuery.getTableAs(), mainField);
-        joinField = FilterUtils.tableAsField(joinEntityQuery.getTableAs(), joinField);
+        mainField = FilterUtils.tableAsField(mainQuery.getTableAs(), mainField);
+        joinField = FilterUtils.tableAsField(joinQuery.getTableAs(), joinField);
         return on(Filter.expression(mainField, Filter.Operator.EQ, Expression.filter("${" + joinField + "}")));
     }
 
@@ -45,12 +45,12 @@ public class JoinQueryParam {
         return joinType;
     }
 
-    public EntityQuery getMainEntityQuery() {
-        return mainEntityQuery;
+    public EntityQuery getMainQuery() {
+        return mainQuery;
     }
 
-    public EntityQuery getJoinEntityQuery() {
-        return joinEntityQuery;
+    public EntityQuery getJoinQuery() {
+        return joinQuery;
     }
 
     public List<Filter> getOnFilters() {

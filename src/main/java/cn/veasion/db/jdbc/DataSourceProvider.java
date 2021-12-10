@@ -31,4 +31,11 @@ public interface DataSourceProvider {
      */
     Connection getConnection(DataSource dataSource) throws SQLException;
 
+    /**
+     * 是否自动关闭连接
+     */
+    default boolean autoClose() {
+        return false;
+    }
+
 }

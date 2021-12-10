@@ -1,5 +1,6 @@
 package cn.veasion.db.jdbc;
 
+import cn.veasion.db.base.Page;
 import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.query.Query;
 import cn.veasion.db.update.AbstractUpdate;
@@ -58,6 +59,12 @@ public interface EntityDao<T, ID> {
     }
 
     <E> List<E> queryList(AbstractQuery<?> query, Class<E> clazz);
+
+    default Page<T> queryPage(AbstractQuery<?> query) {
+        return queryPage(query, getEntityClass());
+    }
+
+    <E> Page<E> queryPage(AbstractQuery<?> query, Class<E> clazz);
 
     default int updateById(T entity) {
         return update(new EntityUpdate(entity).eq(getIdField()).excludeUpdateFilterFields().skipNullField());

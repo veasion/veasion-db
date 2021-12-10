@@ -131,7 +131,7 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
                 if (!main) {
                     mainUpdate.relations.add(join);
                 }
-                join.getJoinEntityUpdate().check(mainUpdate, false);
+                join.getJoinUpdate().check(mainUpdate, false);
             }
         }
     }
@@ -140,7 +140,7 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
         boolean emptyUpdate = update.getUpdates().isEmpty() && (update.updateFields == null || update.updateFields.isEmpty());
         if (emptyUpdate && update.joins != null) {
             for (JoinUpdateParam join : update.joins) {
-                if (!isEmptyUpdate(join.getJoinEntityUpdate())) {
+                if (!isEmptyUpdate(join.getJoinUpdate())) {
                     emptyUpdate = false;
                     break;
                 }

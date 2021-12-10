@@ -8,8 +8,6 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.Temporal;
 import java.util.Date;
-import java.util.Iterator;
-import java.util.ServiceLoader;
 
 /**
  * TypeUtils
@@ -23,11 +21,7 @@ public class TypeUtils {
     static TypeConvert typeConvert;
 
     static {
-        ServiceLoader<TypeConvert> serviceLoader = ServiceLoader.load(TypeConvert.class);
-        Iterator<TypeConvert> iterator = serviceLoader.iterator();
-        if (iterator.hasNext()) {
-            typeConvert = iterator.next();
-        }
+        typeConvert = ServiceLoaderUtils.loadOne(TypeConvert.class);
     }
 
     public static boolean isSimpleClass(Class<?> clazz) {

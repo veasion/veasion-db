@@ -1,11 +1,12 @@
 package cn.veasion.db.interceptor;
 
+import cn.veasion.db.utils.ServiceLoaderUtils;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.ServiceLoader;
 import java.util.function.Supplier;
 
 /**
@@ -19,10 +20,7 @@ public class InterceptorUtils {
     static final List<EntityDaoInterceptor> interceptors = new ArrayList<>();
 
     static {
-        ServiceLoader<EntityDaoInterceptor> serviceLoader = ServiceLoader.load(EntityDaoInterceptor.class);
-        for (EntityDaoInterceptor entityDaoInterceptor : serviceLoader) {
-            interceptors.add(entityDaoInterceptor);
-        }
+        interceptors.addAll(ServiceLoaderUtils.loadList(EntityDaoInterceptor.class));
         sortInterceptor();
     }
 

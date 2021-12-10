@@ -6,6 +6,7 @@ import cn.veasion.db.base.Filter;
 import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.JoinQueryParam;
+import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.query.UnionQueryParam;
 import cn.veasion.db.update.AbstractUpdate;
@@ -63,11 +64,14 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
     }
 
     private void handleQuery(AbstractQuery<?> query) {
+        if (query instanceof SubQuery) {
+            handleQuery(((SubQuery) query).getSubQuery());
+        }
         handleFilter(query);
         if (query instanceof EntityQuery) {
             List<JoinQueryParam> joinList = ((EntityQuery) query).getJoinAll();
             if (joinList != null) {
-                joinList.stream().map(JoinQueryParam::getJoinEntityQuery).forEach(this::handleFilter);
+                joinList.stream().map(JoinQueryParam::getJoinQuery).forEach(this::handleFilter);
             }
             List<UnionQueryParam> unions = query.getUnions();
             if (unions != null) {
@@ -81,7 +85,7 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
         if (update instanceof EntityUpdate) {
             List<JoinUpdateParam> joinList = ((EntityUpdate) update).getJoinAll();
             if (joinList != null) {
-                joinList.stream().map(JoinUpdateParam::getJoinEntityUpdate).forEach(this::handleFilter);
+                joinList.stream().map(JoinUpdateParam::getJoinUpdate).forEach(this::handleFilter);
             }
         }
     }

@@ -18,14 +18,14 @@ import java.util.List;
 public class JoinUpdateParam {
 
     private JoinTypeEnum joinType;
-    private EntityUpdate mainEntityUpdate;
-    private EntityUpdate joinEntityUpdate;
+    private EntityUpdate mainUpdate;
+    private EntityUpdate joinUpdate;
     private List<Filter> onFilters;
 
-    public JoinUpdateParam(EntityUpdate mainEntityUpdate, JoinTypeEnum joinType, EntityUpdate joinEntityUpdate) {
+    public JoinUpdateParam(EntityUpdate mainUpdate, JoinTypeEnum joinType, EntityUpdate joinUpdate) {
         this.joinType = joinType;
-        this.mainEntityUpdate = mainEntityUpdate;
-        this.joinEntityUpdate = joinEntityUpdate;
+        this.mainUpdate = mainUpdate;
+        this.joinUpdate = joinUpdate;
     }
 
     public JoinUpdateParam on(Filter filter) {
@@ -36,8 +36,8 @@ public class JoinUpdateParam {
 
     public JoinUpdateParam on(String mainField, String joinField) {
         if (onFilters == null) onFilters = new ArrayList<>();
-        mainField = FilterUtils.tableAsField(mainEntityUpdate.getTableAs(), mainField);
-        joinField = FilterUtils.tableAsField(joinEntityUpdate.getTableAs(), joinField);
+        mainField = FilterUtils.tableAsField(mainUpdate.getTableAs(), mainField);
+        joinField = FilterUtils.tableAsField(joinUpdate.getTableAs(), joinField);
         return on(Filter.expression(mainField, Filter.Operator.EQ, Expression.filter("${" + joinField + "}")));
     }
 
@@ -45,12 +45,12 @@ public class JoinUpdateParam {
         return joinType;
     }
 
-    public EntityUpdate getMainEntityUpdate() {
-        return mainEntityUpdate;
+    public EntityUpdate getMainUpdate() {
+        return mainUpdate;
     }
 
-    public EntityUpdate getJoinEntityUpdate() {
-        return joinEntityUpdate;
+    public EntityUpdate getJoinUpdate() {
+        return joinUpdate;
     }
 
     public List<Filter> getOnFilters() {

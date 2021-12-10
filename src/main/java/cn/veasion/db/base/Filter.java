@@ -187,7 +187,14 @@ public class Filter {
     private boolean special;
 
     public Filter fieldAs(String tableAs) {
-        this.field = FilterUtils.tableAsField(tableAs, field);
+        if ("-".equals(tableAs)) {
+            int idx = field.indexOf(".");
+            if (idx > -1) {
+                field = field.substring(idx + 1);
+            }
+        } else {
+            field = FilterUtils.tableAsField(tableAs, field);
+        }
         return this;
     }
 

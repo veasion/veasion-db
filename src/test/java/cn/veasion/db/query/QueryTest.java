@@ -2,6 +2,7 @@ package cn.veasion.db.query;
 
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.base.Page;
 import cn.veasion.db.base.UserInfoPO;
 import cn.veasion.db.dao.UserInfoDao;
 
@@ -54,6 +55,14 @@ public class QueryTest {
                 .filterSubQuery("id", Filter.Operator.IN,
                         SubQueryParam.build(new Query("id").gte("id", 6).lte("id", 10))));
         System.out.println(list);
+
+        // 分页查询（默认mysql分页）
+        Page<UserInfoPO> page = userInfoDao.queryPage(new Q().gt("id", 0).page(1, 10));
+        System.out.println(page);
+
+        // oracle 分页查询
+        // page = userInfoDao.queryPage(new Q().gt("id", 0).page(new OraclePage(1, 10)));
+        // System.out.println(page);
     }
 
 }
