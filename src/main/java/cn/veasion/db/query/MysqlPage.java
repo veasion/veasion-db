@@ -10,6 +10,9 @@ import java.util.List;
  */
 public class MysqlPage extends PageParam {
 
+    public MysqlPage() {
+    }
+
     public MysqlPage(int page, int size) {
         super(page, size);
     }

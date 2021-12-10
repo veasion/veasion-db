@@ -10,8 +10,11 @@ import java.util.List;
  */
 public abstract class PageParam {
 
-    protected int page;
-    protected int size;
+    protected int page = 1;
+    protected int size = 10;
+
+    public PageParam() {
+    }
 
     public PageParam(int page, int size) {
         this.page = page;

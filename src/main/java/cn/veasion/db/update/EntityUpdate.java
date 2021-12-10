@@ -2,6 +2,7 @@ package cn.veasion.db.update;
 
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.base.JoinType;
 import cn.veasion.db.base.JoinTypeEnum;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.FilterUtils;
@@ -76,7 +77,7 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
         return join(entityUpdate, JoinTypeEnum.FULL_JOIN);
     }
 
-    private JoinUpdateParam join(EntityUpdate entityUpdate, JoinTypeEnum joinType) {
+    private JoinUpdateParam join(EntityUpdate entityUpdate, JoinType joinType) {
         if (joins == null) joins = new ArrayList<>();
         JoinUpdateParam joinQueryParam = new JoinUpdateParam(this, joinType, entityUpdate);
         joins.add(joinQueryParam);

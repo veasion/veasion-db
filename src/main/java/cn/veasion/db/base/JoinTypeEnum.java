@@ -6,7 +6,7 @@ package cn.veasion.db.base;
  * @author luozhuowei
  * @date 2021/12/3
  */
-public enum JoinTypeEnum {
+public enum JoinTypeEnum implements JoinType {
 
     JOIN("inner join"),
     LEFT_JOIN("left join"),

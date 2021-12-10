@@ -34,11 +34,12 @@ public class JdbcDao {
      * @return 返回影响条数
      */
     public static int executeUpdate(Connection connection, String sql, Object... params) throws SQLException {
-        int count;
+        int count = 0;
         PreparedStatement ps = null;
         try {
             ps = prepareStatement(connection, sql, params);
             count = ps.executeUpdate();
+            LOGGER.info("<==    Updates: {}", count);
         } finally {
             closeAll(ps, null);
         }
@@ -63,6 +64,7 @@ public class JdbcDao {
                     keys.add(result.getObject(1));
                 }
             }
+            LOGGER.info("<==    Updates: {}", count);
         } finally {
             closeAll(ps, result);
         }
@@ -106,6 +108,7 @@ public class JdbcDao {
                 }
                 list.add(map);
             }
+            LOGGER.info("<==      Total: {}", list.size());
         } finally {
             closeAll(ps, rs);
         }
@@ -199,6 +202,7 @@ public class JdbcDao {
                 }
                 list.add(obj);
             }
+            LOGGER.info("<==      Total: {}", list.size());
         } finally {
             closeAll(ps, rs);
         }
@@ -217,9 +221,14 @@ public class JdbcDao {
         try {
             ps = prepareStatement(connection, sql, params);
             rs = ps.executeQuery();
-            if (rs != null && rs.next()) {
+            if (rs.next()) {
                 value = rs.getObject(1);
             }
+            int total = 1;
+            while (rs.next()) {
+                total++;
+            }
+            LOGGER.info("<==      Total: {}", total);
         } finally {
             closeAll(ps, rs);
         }
@@ -236,13 +245,28 @@ public class JdbcDao {
             for (int i = 0; i < params.length; i++) {
                 ps.setObject(i + 1, params[i]);
             }
-            LOGGER.info("执行SQL: {}, 参数: {}", sql, params);
-        } else {
-            LOGGER.info("执行SQL: {}", sql);
         }
-        System.out.println("执行SQL: " + sql);
-        System.out.println("参数：" + java.util.Arrays.toString(params));
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("==>  Preparing: {}", sql);
+            LOGGER.info("==> Parameters: {}", paramToString(params));
+        }
         return ps;
+    }
+
+    private static String paramToString(Object[] params) {
+        if (params == null || params.length == 0) return "";
+        StringBuilder sb = new StringBuilder();
+        for (Object param : params) {
+            sb.append(param);
+            if (param != null) {
+                sb.append("(").append(param.getClass().getSimpleName()).append(")");
+            }
+            sb.append(", ");
+        }
+        if (sb.length() > 0) {
+            sb.setLength(sb.length() - 2);
+        }
+        return sb.toString();
     }
 
     private static void closeAll(Statement ps, ResultSet rs) {

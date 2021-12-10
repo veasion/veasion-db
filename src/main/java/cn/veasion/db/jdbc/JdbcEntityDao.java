@@ -192,7 +192,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         SubQuery countQuery = new SubQuery(query).selectExpression(Expression.select("count(1)", null));
         beforeSelect(countQuery);
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryPage", new Object[]{query, clazz}, () -> {
-            PageParam pageParam = query.getPageParam();
+            final PageParam pageParam = query.getPageParam();
             query.page(null);
             Connection connection = null;
             try {
@@ -212,6 +212,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                 logger.error("分页查询异常", e);
                 throw new DbException(e);
             } finally {
+                query.page(pageParam);
                 checkConnection(connection);
             }
         }));

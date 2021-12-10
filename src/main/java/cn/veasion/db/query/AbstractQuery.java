@@ -128,6 +128,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     public T page(int page, int size) {
         PageParam pageParam = ServiceLoaderUtils.loadOne(PageParam.class);
         if (pageParam != null) {
+            this.pageParam = pageParam;
             this.pageParam.setPage(page);
             this.pageParam.setSize(size);
         } else {

@@ -10,6 +10,9 @@ import java.util.List;
  */
 public class OraclePage extends PageParam {
 
+    public OraclePage() {
+    }
+
     public OraclePage(int page, int size) {
         super(page, size);
     }

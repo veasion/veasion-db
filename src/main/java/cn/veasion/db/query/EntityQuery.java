@@ -2,6 +2,7 @@ package cn.veasion.db.query;
 
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.base.JoinType;
 import cn.veasion.db.base.JoinTypeEnum;
 import cn.veasion.db.utils.FilterUtils;
 
@@ -45,7 +46,7 @@ public class EntityQuery extends AbstractQuery<EntityQuery> {
         return join(entityQuery, JoinTypeEnum.FULL_JOIN);
     }
 
-    private JoinQueryParam join(EntityQuery entityQuery, JoinTypeEnum joinType) {
+    private JoinQueryParam join(EntityQuery entityQuery, JoinType joinType) {
         if (joins == null) joins = new ArrayList<>();
         JoinQueryParam joinQueryParam = new JoinQueryParam(this, joinType, entityQuery);
         joins.add(joinQueryParam);

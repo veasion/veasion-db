@@ -3,7 +3,7 @@ package cn.veasion.db.query;
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
-import cn.veasion.db.base.JoinTypeEnum;
+import cn.veasion.db.base.JoinType;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;
@@ -17,12 +17,12 @@ import java.util.List;
  */
 public class JoinQueryParam {
 
-    private JoinTypeEnum joinType;
+    private JoinType joinType;
     private EntityQuery mainQuery;
     private EntityQuery joinQuery;
     private List<Filter> onFilters;
 
-    public JoinQueryParam(EntityQuery mainQuery, JoinTypeEnum joinType, EntityQuery joinQuery) {
+    public JoinQueryParam(EntityQuery mainQuery, JoinType joinType, EntityQuery joinQuery) {
         this.joinType = joinType;
         this.mainQuery = mainQuery;
         this.joinQuery = joinQuery;
@@ -41,7 +41,7 @@ public class JoinQueryParam {
         return this;
     }
 
-    public JoinTypeEnum getJoinType() {
+    public JoinType getJoinType() {
         return joinType;
     }
 
