@@ -40,9 +40,9 @@ public abstract class AbstractQueryFilter<T> extends AbstractFilter<T> {
     }
 
     @Override
-    public void check() {
-        super.check();
-        checkFilter(having, false);
+    public void check(Class<?> mainEntityClass) {
+        super.check(mainEntityClass);
+        checkFilter(mainEntityClass, having, false);
     }
 
 }

@@ -122,9 +122,13 @@ public abstract class AbstractSQL<T> {
         if (!eval.contains("${")) {
             return eval;
         }
-        return FieldUtils.replaceSqlPlaceholder(eval, null, (as, field) -> {
-            Class<?> clazz = entityClassMap.get(as);
-            if (clazz == null && as == null && entityClassMap.size() == 1) {
+        return FieldUtils.replaceSqlPlaceholder(eval, null, (tableAs, field) -> {
+            String toColumn = toColumn(tableAs, field);
+            if (toColumn != null) {
+                return toColumn;
+            }
+            Class<?> clazz = entityClassMap.get(tableAs);
+            if (clazz == null && tableAs == null && entityClassMap.size() == 1) {
                 clazz = entityClassMap.values().iterator().next();
             }
             if (clazz == null) {
@@ -137,20 +141,32 @@ public abstract class AbstractSQL<T> {
     protected String handleFieldToColumn(final String field, Map<String, Class<?>> entityClassMap) {
         int idx = field.indexOf(".");
         if (idx > 0) {
-            String as = field.substring(0, idx);
+            String tableAs = field.substring(0, idx);
             String _field = field.substring(idx + 1).trim();
-            Class<?> clazz = entityClassMap.get(as);
+            String toColumn = toColumn(tableAs, _field);
+            if (toColumn != null) {
+                return tableAs + "." + toColumn;
+            }
+            Class<?> clazz = entityClassMap.get(tableAs);
             if (clazz == null) {
                 return field;
             }
-            return as + "." + FieldUtils.entityFieldColumns(clazz).getOrDefault(_field, _field);
+            return tableAs + "." + FieldUtils.entityFieldColumns(clazz).getOrDefault(_field, _field);
         } else {
+            String toColumn = toColumn(null, field);
+            if (toColumn != null) {
+                return toColumn;
+            }
             Class<?> clazz = entityClassMap.size() == 1 ? entityClassMap.values().iterator().next() : entityClassMap.get(null);
             if (clazz == null) {
                 return field;
             }
             return FieldUtils.entityFieldColumns(clazz).getOrDefault(field, field);
         }
+    }
+
+    protected String toColumn(String tableAs, String field) {
+        return null;
     }
 
     public static String sqlPlaceholder(int len) {

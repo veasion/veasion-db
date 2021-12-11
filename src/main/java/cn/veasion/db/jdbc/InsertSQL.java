@@ -6,9 +6,9 @@ import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.EntityInsert;
 import cn.veasion.db.utils.FieldUtils;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -82,13 +82,13 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
     private void insertSelect(Class<?> entityClass, AbstractQuery<?> query) {
         Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClass);
 
-        List<String> insertFields = new ArrayList<>();
-        QuerySQL querySQL = QuerySQL.build(query, insertFields);
+        Map<String, String> selectFieldColumnMap = new LinkedHashMap<>();
+        QuerySQL querySQL = QuerySQL.build(query, selectFieldColumnMap);
 
         sql.append("INSERT INTO ");
         sql.append(getTableName(entityClass)).append(" (");
-        for (String field : insertFields) {
-            sql.append("`").append(fieldColumns.getOrDefault(field, field)).append("`").append(",");
+        for (String field : selectFieldColumnMap.keySet()) {
+            sql.append("`").append(fieldColumns.getOrDefault(field, selectFieldColumnMap.getOrDefault(field, field))).append("`").append(",");
         }
         trimEndSql(",");
         sql.append(") ");

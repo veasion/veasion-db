@@ -1,6 +1,7 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.AbstractFilter;
+import cn.veasion.db.DbException;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinType;
@@ -8,6 +9,7 @@ import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * JoinQueryParam
@@ -18,11 +20,11 @@ import java.util.List;
 public class JoinQueryParam {
 
     private JoinType joinType;
-    private EntityQuery mainQuery;
-    private EntityQuery joinQuery;
+    private AbstractJoinQuery<?> mainQuery;
+    private AbstractJoinQuery<?> joinQuery;
     private List<Filter> onFilters;
 
-    public JoinQueryParam(EntityQuery mainQuery, JoinType joinType, EntityQuery joinQuery) {
+    public JoinQueryParam(AbstractJoinQuery<?> mainQuery, JoinType joinType, AbstractJoinQuery<?> joinQuery) {
         this.joinType = joinType;
         this.mainQuery = mainQuery;
         this.joinQuery = joinQuery;
@@ -35,9 +37,13 @@ public class JoinQueryParam {
     }
 
     public JoinQueryParam on(Filter filter) {
+        Objects.requireNonNull(filter, "过滤不能为空");
         if (onFilters == null) onFilters = new ArrayList<>();
+        if (filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {
+            throw new DbException("on条件不支持子查询");
+        }
         onFilters.add(filter);
-        AbstractFilter.checkFilter(onFilters, false);
+        AbstractFilter.checkFilter(null, onFilters, false);
         return this;
     }
 
@@ -45,11 +51,11 @@ public class JoinQueryParam {
         return joinType;
     }
 
-    public EntityQuery getMainQuery() {
+    public AbstractJoinQuery<?> getMainQuery() {
         return mainQuery;
     }
 
-    public EntityQuery getJoinQuery() {
+    public AbstractJoinQuery<?> getJoinQuery() {
         return joinQuery;
     }
 

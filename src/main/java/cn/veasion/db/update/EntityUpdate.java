@@ -103,14 +103,14 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
     }
 
     @Override
-    public void check() {
+    public void check(Class<?> mainEntityClass) {
         if (joins != null) {
             relations = new ArrayList<>();
         }
-        check(this, true);
+        check(mainEntityClass, this, true);
     }
 
-    private void check(EntityUpdate mainUpdate, boolean main) {
+    private void check(Class<?> mainEntityClass, EntityUpdate mainUpdate, boolean main) {
         if (main && !checked && isEmptyUpdate(this)) {
             Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entity.getClass());
             if (updateFields == null) {
@@ -126,13 +126,13 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
                 update(updateField, FieldUtils.getValue(entity, updateField));
             }
         }
-        super.check();
+        super.check(mainEntityClass);
         if (joins != null) {
             for (JoinUpdateParam join : joins) {
                 if (!main) {
                     mainUpdate.relations.add(join);
                 }
-                join.getJoinUpdate().check(mainUpdate, false);
+                join.getJoinUpdate().check(mainEntityClass, mainUpdate, false);
             }
         }
     }

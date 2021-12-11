@@ -3,8 +3,8 @@ package cn.veasion.db.interceptor;
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.query.AbstractJoinQuery;
 import cn.veasion.db.query.AbstractQuery;
-import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.JoinQueryParam;
 import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.query.SubQueryParam;
@@ -29,6 +29,8 @@ import java.util.function.Supplier;
  */
 public class LogicDeleteInterceptor implements EntityDaoInterceptor {
 
+    private static ThreadLocal<Boolean> skipLogicDeleteFilter = new ThreadLocal<>();
+
     private String logicDeleteField;
     private Object availableValue;
     private Object deletedValue;
@@ -47,10 +49,19 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
         this.deletedValue = Objects.requireNonNull(deletedValue);
     }
 
+    /**
+     * 跳过逻辑删除过滤
+     *
+     * @param skip 是否跳过
+     */
+    public static void skip(boolean skip) {
+        skipLogicDeleteFilter.set(skip);
+    }
+
     @Override
     public <R> R intercept(EntityDaoInvocation<R> invocation) {
         Object[] args = invocation.getArgs();
-        if (args != null) {
+        if (args != null && !Boolean.TRUE.equals(skipLogicDeleteFilter.get())) {
             for (Object arg : args) {
                 if (arg instanceof AbstractQuery) {
                     handleQuery((AbstractQuery<?>) arg);
@@ -63,6 +74,7 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
                 }
             }
         }
+        skipLogicDeleteFilter.remove();
         return invocation.proceed();
     }
 
@@ -71,19 +83,23 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
             handleQuery(((SubQuery) query).getSubQuery());
         }
         handleFilter(query);
-        if (query instanceof EntityQuery) {
-            List<JoinQueryParam> joinList = ((EntityQuery) query).getJoinAll();
+        if (query instanceof AbstractJoinQuery) {
+            List<JoinQueryParam> joinList = ((AbstractJoinQuery<?>) query).getJoinAll();
             if (joinList != null) {
                 for (JoinQueryParam joinQueryParam : joinList) {
-                    EntityQuery joinQuery = joinQueryParam.getJoinQuery();
-                    handleOnFilter(joinQueryParam::getOnFilters, joinQueryParam::on, joinQuery.getTableAs());
-                    handleSubQuery(joinQuery.getFilters());
+                    AbstractJoinQuery<?> joinQuery = joinQueryParam.getJoinQuery();
+                    if (joinQuery instanceof SubQuery) {
+                        handleQuery(((SubQuery) joinQuery).getSubQuery());
+                    } else {
+                        handleOnFilter(joinQueryParam::getOnFilters, joinQueryParam::on, joinQuery.getTableAs());
+                        handleSubQuery(joinQuery.getFilters());
+                    }
                 }
             }
-            List<UnionQueryParam> unions = query.getUnions();
-            if (unions != null) {
-                unions.stream().map(UnionQueryParam::getUnion).forEach(this::handleQuery);
-            }
+        }
+        List<UnionQueryParam> unions = query.getUnions();
+        if (unions != null) {
+            unions.stream().map(UnionQueryParam::getUnion).forEach(this::handleQuery);
         }
     }
 

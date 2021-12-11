@@ -18,8 +18,16 @@ public class SubQueryTest {
         UserInfoDao userInfoDao = new UserInfoDao();
 
         // 子查询
-        List<UserInfoPO> list = userInfoDao.queryList(new SubQuery(new Q().gt("id", 6))
+        List<UserInfoPO> list = userInfoDao.queryList(new SubQuery(new Q().gt("id", 6), "t")
                 .selectAll().select("userNike", "nike").like("userNike", "伟神"));
+        System.out.println(list);
+
+        // 子查询关联子查询
+        SubQuery sub1 = new SubQuery(new Q("id", "userNike", "test").gt("id", 0), "t1");
+        SubQuery sub2 = new SubQuery(new Q("id", "username", "test").lt("id", 10), "t2");
+        sub1.join(sub2).on("userNike", "username");
+        sub1.like("t1.test", "test");
+        list = userInfoDao.queryList(sub1);
         System.out.println(list);
 
         // 模拟 oracle 分页
@@ -27,10 +35,11 @@ public class SubQueryTest {
         EQ query = new EQ(UserInfoPO.class);
         list = userInfoDao.queryList(
                 new SubQuery(
-                        new SubQuery(query)
+                        new SubQuery(query, "t")
                                 .selectAll()
                                 .realSelect("ROWNUM", "row")
-                                .realFilter(Filter.lte("ROWNUM", page * size))
+                                .realFilter(Filter.lte("ROWNUM", page * size)),
+                        "t"
                 ).gt("row", page * size - size));
         System.out.println(list);
 

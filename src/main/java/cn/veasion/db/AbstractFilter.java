@@ -19,6 +19,7 @@ import java.util.Objects;
 public abstract class AbstractFilter<T> {
 
     protected boolean checked;
+    private Class<?> entityClass;
     private List<Filter> filters;
     private boolean skipNullValueFilter;
 
@@ -162,22 +163,28 @@ public abstract class AbstractFilter<T> {
         return filters != null && !filters.isEmpty();
     }
 
-    public void check() {
+    public void check(Class<?> mainEntityClass) {
+        if (entityClass == null) {
+            setEntityClass(mainEntityClass);
+        }
         checked = true;
-        checkFilter();
+        checkFilter(mainEntityClass, filters, skipNullValueFilter);
     }
 
     private void checkFilter() {
         if (checked) {
-            checkFilter(filters, skipNullValueFilter);
+            checkFilter(entityClass, filters, skipNullValueFilter);
         }
     }
 
-    public synchronized static void checkFilter(List<Filter> filters, boolean ignoreNullValueFilter) {
+    public synchronized static void checkFilter(Class<?> mainEntityClass, List<Filter> filters, boolean ignoreNullValueFilter) {
         if (filters == null || filters.isEmpty()) return;
         boolean preIsJoin = true;
         for (int i = 0; i < filters.size(); i++) {
             Filter filter = FilterUtils.checkFilter(filters.get(i));
+            if (filter != null && filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {
+                ((SubQueryParam) filter.getValue()).getQuery().check(mainEntityClass);
+            }
             if (ignoreNullValueFilter && !FilterUtils.hasFilter(filter)) {
                 filters.remove(i--);
                 continue;
@@ -200,6 +207,14 @@ public abstract class AbstractFilter<T> {
                 preIsJoin = true;
             }
         }
+    }
+
+    public Class<?> getEntityClass() {
+        return entityClass;
+    }
+
+    public void setEntityClass(Class<?> entityClass) {
+        this.entityClass = entityClass;
     }
 
     protected abstract Filter handleFilter(Filter filter);

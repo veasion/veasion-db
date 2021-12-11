@@ -94,6 +94,10 @@ public class FieldUtils {
      * 获取字段值
      */
     public static Object getValue(Object object, String field) {
+        return getValue(object, field, true);
+    }
+
+    public static Object getValue(Object object, String field, boolean force) {
         try {
             Map<String, Method> methodMap = getterMethod(object.getClass());
             if (methodMap.containsKey(field)) {
@@ -105,7 +109,10 @@ public class FieldUtils {
                     return f.get(object);
                 }
             }
-            throw new IllegalAccessException(field + " 字段不存在：" + object.getClass().getName());
+            if (force) {
+                throw new IllegalAccessException(field + " 字段不存在：" + object.getClass().getName());
+            }
+            return null;
         } catch (Exception e) {
             throw new DbException("字段获取值异常: " + field, e);
         }

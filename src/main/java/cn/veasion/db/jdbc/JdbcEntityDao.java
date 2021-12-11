@@ -2,7 +2,6 @@ package cn.veasion.db.jdbc;
 
 import cn.veasion.db.DbException;
 import cn.veasion.db.base.Expression;
-import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.IBaseId;
 import cn.veasion.db.base.JdbcTypeEnum;
 import cn.veasion.db.base.Page;
@@ -11,7 +10,6 @@ import cn.veasion.db.interceptor.InterceptorUtils;
 import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.query.PageParam;
 import cn.veasion.db.query.SubQuery;
-import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.Delete;
@@ -38,7 +36,6 @@ import java.util.Map;
  * @author luozhuowei
  * @date 2021/12/5
  */
-@SuppressWarnings("unchecked")
 public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
 
     protected Logger logger = LoggerFactory.getLogger(getClass());
@@ -47,11 +44,9 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     protected DataSourceProvider dataSourceProvider = ServiceLoaderUtils.dataSourceProvider();
 
     @Override
+    @SuppressWarnings("unchecked")
     public ID add(EntityInsert entityInsert) {
-        entityInsert.check();
-        if (entityInsert.getEntityClass() == null) {
-            entityInsert.setEntityClass(getEntityClass());
-        }
+        entityInsert.check(getEntityClass());
         Object entity = entityInsert.getEntity();
         Field idField = FieldUtils.getIdField(entity.getClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "add", new Object[]{entityInsert}, () -> {
@@ -78,14 +73,12 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public ID[] batchAdd(BatchEntityInsert batchEntityInsert) {
-        batchEntityInsert.check();
-        if (batchEntityInsert.getEntityClass() == null) {
-            batchEntityInsert.setEntityClass(getEntityClass());
-        }
+        batchEntityInsert.check(getEntityClass());
         AbstractQuery<?> insertSelectQuery = batchEntityInsert.getInsertSelectQuery();
         if (insertSelectQuery != null) {
-            beforeSelect(insertSelectQuery);
+            insertSelectQuery.check(getEntityClass());
         }
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "batchAdd", new Object[]{batchEntityInsert}, () -> {
             InsertSQL insertSQL = batchEntityInsert.sqlValue();
@@ -115,7 +108,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
 
     @Override
     public <E> E queryForType(AbstractQuery<?> query, Class<E> clazz) {
-        beforeSelect(query);
+        query.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryForType", new Object[]{query, clazz}, () -> {
             QuerySQL querySQL = query.sqlValue();
             Connection connection = null;
@@ -133,7 +126,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
 
     @Override
     public Map<String, Object> queryForMap(AbstractQuery<?> query, boolean mapUnderscoreToCamelCase) {
-        beforeSelect(query);
+        query.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryForMap", new Object[]{query, mapUnderscoreToCamelCase}, () -> {
             QuerySQL querySQL = query.sqlValue();
             Connection connection = null;
@@ -151,7 +144,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
 
     @Override
     public List<Map<String, Object>> listForMap(AbstractQuery<?> query, boolean mapUnderscoreToCamelCase) {
-        beforeSelect(query);
+        query.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "listForMap", new Object[]{query, mapUnderscoreToCamelCase}, () -> {
             QuerySQL querySQL = query.sqlValue();
             Connection connection = null;
@@ -169,7 +162,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
 
     @Override
     public <E> List<E> queryList(AbstractQuery<?> query, Class<E> clazz) {
-        beforeSelect(query);
+        query.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryList", new Object[]{query, clazz}, () -> {
             QuerySQL querySQL = query.sqlValue();
             Connection connection = null;
@@ -190,8 +183,8 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         if (query.getPageParam() == null) {
             throw new DbException("分页参数不能为空");
         }
-        SubQuery countQuery = new SubQuery(query).selectExpression(Expression.select("count(1)", null));
-        beforeSelect(countQuery);
+        SubQuery countQuery = new SubQuery(query, "t").selectExpression(Expression.select("count(1)", null));
+        countQuery.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryPage", new Object[]{query, clazz}, () -> {
             final PageParam pageParam = query.getPageParam();
             query.page(null);
@@ -221,11 +214,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
 
     @Override
     public int update(AbstractUpdate<?> update) {
-        update.check();
-        if (update.getEntityClass() == null) {
-            update.setEntityClass(getEntityClass());
-        }
-        beforeSubQuery(update.getFilters());
+        update.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "update", new Object[]{update}, () -> {
             UpdateSQL updateSQL = update.sqlValue();
             Connection connection = null;
@@ -243,9 +232,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
 
     @Override
     public int delete(Delete delete) {
-        delete.check();
-        delete.setEntityClass(getEntityClass());
-        beforeSubQuery(delete.getFilters());
+        delete.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "delete", new Object[]{delete}, () -> {
             JdbcTypeEnum jdbcTypeEnum;
             AbstractSQL<?> abstractSQL;
@@ -276,25 +263,8 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         }));
     }
 
-    private void beforeSelect(AbstractQuery<?> query) {
-        if (query.getEntityClass() == null) {
-            query.setEntityClass(getEntityClass());
-        }
-        query.check();
-        beforeSubQuery(query.getFilters());
-    }
-
-    private void beforeSubQuery(List<Filter> filters) {
-        if (filters != null && !filters.isEmpty()) {
-            for (Filter filter : filters) {
-                if (filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {
-                    beforeSelect(((SubQueryParam) filter.getValue()).getQuery());
-                }
-            }
-        }
-    }
-
     @Override
+    @SuppressWarnings("unchecked")
     public Class<T> getEntityClass() {
         if (entityClass != null) {
             return entityClass;

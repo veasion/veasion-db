@@ -32,8 +32,6 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     private List<UnionQueryParam> unions;
     private PageParam pageParam;
 
-    private Class<?> entityClass;
-
     public T distinct() {
         this.distinct = true;
         return getSelf();
@@ -177,18 +175,10 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         return pageParam;
     }
 
-    public Class<?> getEntityClass() {
-        return entityClass;
-    }
-
-    public void setEntityClass(Class<?> entityClass) {
-        this.entityClass = entityClass;
-    }
-
     @Override
-    public void check() {
+    public void check(Class<?> mainEntityClass) {
         if (selectAll && !checked) {
-            Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClass);
+            Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(getEntityClass() != null ? getEntityClass() : mainEntityClass);
             if (excludeSelects != null && excludeSelects.size() > 0) {
                 fieldColumns.keySet().stream().map(this::handleField).filter(k -> !excludeSelects.contains(k)).forEach(this::select);
             } else {
@@ -205,10 +195,10 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
                 }
             }
         }
-        super.check();
+        super.check(mainEntityClass);
         if (unions != null) {
             for (UnionQueryParam union : unions) {
-                union.getUnion().check();
+                union.getUnion().check(mainEntityClass);
             }
         }
     }

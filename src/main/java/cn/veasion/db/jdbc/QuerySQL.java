@@ -2,12 +2,13 @@ package cn.veasion.db.jdbc;
 
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.query.AbstractJoinQuery;
 import cn.veasion.db.query.AbstractQuery;
-import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.JoinQueryParam;
 import cn.veasion.db.query.OrderParam;
 import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.query.UnionQueryParam;
+import cn.veasion.db.utils.FilterUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,10 +24,14 @@ import java.util.Map;
 public class QuerySQL extends AbstractSQL<QuerySQL> {
 
     private AbstractQuery<?> query;
-    private List<String> insertFields;
 
     private String tableAs;
     private List<JoinQueryParam> joins;
+    private Map<String, String> selectFieldColumnMap;
+
+    private SubQuery subQuery;
+    private QuerySQL subQuerySQL;
+    private Map<String, QuerySQL> joinSubQuerySQLMap;
 
     public QuerySQL(AbstractQuery<?> query) {
         this.query = query;
@@ -36,9 +41,9 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         return new QuerySQL(query).build();
     }
 
-    public static QuerySQL build(AbstractQuery<?> query, List<String> insertFields) {
+    public static QuerySQL build(AbstractQuery<?> query, Map<String, String> selectFieldColumnMap) {
         QuerySQL querySQL = new QuerySQL(query);
-        querySQL.insertFields = insertFields;
+        querySQL.selectFieldColumnMap = selectFieldColumnMap;
         return querySQL.build();
     }
 
@@ -49,26 +54,15 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         return this;
     }
 
-    private Map<String, Class<?>> entityClassMap() {
-        Map<String, Class<?>> entityClassMap = new HashMap<>();
-        if (query instanceof EntityQuery) {
-            joins = ((EntityQuery) query).getJoinAll();
-            tableAs = ((EntityQuery) query).getTableAs();
-            if (joins != null) {
-                joins.forEach(q -> entityClassMap.put(q.getJoinQuery().getTableAs(), q.getJoinQuery().getEntityClass()));
-            }
-        } else if (query instanceof SubQuery) {
-            tableAs = ((SubQuery) query).getTableAs();
-        }
-        entityClassMap.put(tableAs, query.getEntityClass());
-        return entityClassMap;
-    }
-
     private void buildQuery() {
+        if (query instanceof SubQuery) {
+            subQuery = (SubQuery) query;
+            subQuerySQL = build(subQuery.getSubQuery(), new HashMap<>());
+        }
         Map<String, Class<?>> entityClassMap = entityClassMap();
-        sql.append("SELECT ");
+        sql.append("SELECT");
         if (query.isDistinct()) {
-            sql.append("DISTINCT ");
+            sql.append(" DISTINCT");
         }
         // select & join select
         appendSelects(entityClassMap, false);
@@ -77,10 +71,9 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         trimEndSql(",");
         // from table
         sql.append(" FROM ");
-        if (query instanceof SubQuery) {
-            QuerySQL querySQL = build(((SubQuery) query).getSubQuery());
-            sql.append("(").append(querySQL.getSQL()).append(")");
-            values.addAll(Arrays.asList(querySQL.getValues()));
+        if (subQuerySQL != null) {
+            sql.append("(").append(subQuerySQL.getSQL()).append(")");
+            values.addAll(Arrays.asList(subQuerySQL.getValues()));
         } else {
             sql.append(getTableName(query.getEntityClass()));
         }
@@ -114,20 +107,28 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         }
     }
 
-    private void appendFilters(Map<String, Class<?>> entityClassMap) {
-        appendFilter(entityClassMap, query.getFilters());
-        if (joins == null || joins.isEmpty()) return;
-        for (JoinQueryParam join : joins) {
-            EntityQuery mainQuery = join.getMainQuery();
-            EntityQuery joinQuery = join.getJoinQuery();
-            if (joinQuery.hasFilters()) {
-                sql.append(" AND");
-                appendFilter(new HashMap<String, Class<?>>() {{
-                    put(mainQuery.getTableAs(), mainQuery.getEntityClass());
-                    put(joinQuery.getTableAs(), joinQuery.getEntityClass());
-                }}, joinQuery.getFilters());
+    private Map<String, Class<?>> entityClassMap() {
+        Map<String, Class<?>> entityClassMap = new HashMap<>();
+        if (query instanceof AbstractJoinQuery) {
+            joins = ((AbstractJoinQuery<?>) query).getJoinAll();
+            tableAs = ((AbstractJoinQuery<?>) query).getTableAs();
+            if (joins != null) {
+                for (JoinQueryParam join : joins) {
+                    AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
+                    String tableAs = joinQuery.getTableAs();
+                    if (joinQuery instanceof SubQuery) {
+                        QuerySQL joinSubQuerySQL = build(((SubQuery) joinQuery).getSubQuery(), new HashMap<>());
+                        if (joinSubQuerySQLMap == null) {
+                            joinSubQuerySQLMap = new HashMap<>();
+                        }
+                        joinSubQuerySQLMap.put(tableAs, joinSubQuerySQL);
+                    }
+                    entityClassMap.put(tableAs, joinQuery.getEntityClass());
+                }
             }
         }
+        entityClassMap.put(tableAs, query.getEntityClass());
+        return entityClassMap;
     }
 
     private void appendSelects(Map<String, Class<?>> entityClassMap, boolean isExpression) {
@@ -135,8 +136,8 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             appendSelects(entityClassMap, query.getSelectExpression());
             if (joins == null || joins.isEmpty()) return;
             for (JoinQueryParam join : joins) {
-                EntityQuery mainQuery = join.getMainQuery();
-                EntityQuery joinQuery = join.getJoinQuery();
+                AbstractJoinQuery<?> mainQuery = join.getMainQuery();
+                AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
                 if (joinQuery.getSelectExpression() != null) {
                     appendSelects(new HashMap<String, Class<?>>() {{
                         put(mainQuery.getTableAs(), mainQuery.getEntityClass());
@@ -148,8 +149,8 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             appendSelects(entityClassMap, query.getSelects(), query.getAliasMap());
             if (joins == null || joins.isEmpty()) return;
             for (JoinQueryParam join : joins) {
-                EntityQuery mainQuery = join.getMainQuery();
-                EntityQuery joinQuery = join.getJoinQuery();
+                AbstractJoinQuery<?> mainQuery = join.getMainQuery();
+                AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
                 if (!joinQuery.getSelects().isEmpty()) {
                     appendSelects(new HashMap<String, Class<?>>() {{
                         put(mainQuery.getTableAs(), mainQuery.getEntityClass());
@@ -164,12 +165,13 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         if (selectExpression == null || selectExpression.isEmpty()) return;
         StringBuilder sb = new StringBuilder();
         for (Expression expression : selectExpression) {
-            if (insertFields != null && expression.getAlias() != null) {
-                insertFields.add(expression.getAlias());
+            String alias = expression.getAlias();
+            if (selectFieldColumnMap != null && alias != null) {
+                selectFieldColumnMap.put(alias, alias);
             }
             sb.append(" ").append(replaceSqlEval(expression.getExpression(), entityClassMap));
-            if (expression.getAlias() != null) {
-                sb.append(" AS ").append(expression.getAlias());
+            if (alias != null) {
+                sb.append(" AS ").append(alias);
             }
             sb.append(",");
         }
@@ -180,24 +182,16 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         if (selects == null || selects.isEmpty()) return;
         StringBuilder sb = new StringBuilder();
         for (String select : selects) {
-            if (insertFields != null) {
-                if (aliasMap.containsKey(select)) {
-                    insertFields.add(aliasMap.get(select));
-                } else {
-                    String field;
-                    if (aliasMap.containsKey(select)) {
-                        field = aliasMap.get(select);
-                    } else if (select.contains(".")) {
-                        field = select.substring(select.indexOf(".") + 1);
-                    } else {
-                        field = select;
-                    }
-                    insertFields.add(field);
-                }
+            String alias = aliasMap.get(select);
+            String column = handleFieldToColumn(select, entityClassMap);
+            if (selectFieldColumnMap != null && alias != null) {
+                selectFieldColumnMap.put(alias, alias);
+            } else if (selectFieldColumnMap != null) {
+                selectFieldColumnMap.put(FilterUtils.tableAsField("-", select), FilterUtils.tableAsField("-", column));
             }
-            sb.append(" ").append(handleFieldToColumn(select, entityClassMap));
-            if (aliasMap.containsKey(select)) {
-                sb.append(" AS ").append(aliasMap.get(select));
+            sb.append(" ").append(column);
+            if (alias != null) {
+                sb.append(" AS ").append(alias);
             }
             sb.append(",");
         }
@@ -207,10 +201,16 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
     private void appendJoins() {
         if (joins == null || joins.isEmpty()) return;
         for (JoinQueryParam join : joins) {
-            EntityQuery mainQuery = join.getMainQuery();
-            EntityQuery joinQuery = join.getJoinQuery();
+            AbstractJoinQuery<?> mainQuery = join.getMainQuery();
+            AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
             sql.append(" ").append(join.getJoinType().getJoin());
-            sql.append(" ").append(getTableName(joinQuery.getEntityClass()));
+            if (joinQuery instanceof SubQuery) {
+                QuerySQL joinSubQuerySQL = joinSubQuerySQLMap.get(joinQuery.getTableAs());
+                sql.append(" (").append(joinSubQuerySQL.getSQL()).append(")");
+                values.addAll(Arrays.asList(joinSubQuerySQL.getValues()));
+            } else {
+                sql.append(" ").append(getTableName(joinQuery.getEntityClass()));
+            }
             if (joinQuery.getTableAs() != null) {
                 sql.append(" ").append(joinQuery.getTableAs());
             }
@@ -221,6 +221,22 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
                     put(mainQuery.getTableAs(), mainQuery.getEntityClass());
                     put(joinQuery.getTableAs(), joinQuery.getEntityClass());
                 }}, filters);
+            }
+        }
+    }
+
+    private void appendFilters(Map<String, Class<?>> entityClassMap) {
+        appendFilter(entityClassMap, query.getFilters());
+        if (joins == null || joins.isEmpty()) return;
+        for (JoinQueryParam join : joins) {
+            AbstractJoinQuery<?> mainQuery = join.getMainQuery();
+            AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
+            if (joinQuery.hasFilters()) {
+                sql.append(" AND");
+                appendFilter(new HashMap<String, Class<?>>() {{
+                    put(mainQuery.getTableAs(), mainQuery.getEntityClass());
+                    put(joinQuery.getTableAs(), joinQuery.getEntityClass());
+                }}, joinQuery.getFilters());
             }
         }
     }
@@ -247,6 +263,25 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             sql.append(",");
         }
         trimEndSql(",");
+    }
+
+    @Override
+    protected String toColumn(String tableAs, String field) {
+        if (subQuery != null && subQuerySQL != null) {
+            String column = subQuerySQL.selectFieldColumnMap.get(field);
+            if (column != null) {
+                return column;
+            }
+        } else if (joinSubQuerySQLMap != null && tableAs != null) {
+            QuerySQL joinSubQuerySQL = joinSubQuerySQLMap.get(tableAs);
+            if (joinSubQuerySQL != null) {
+                String column = joinSubQuerySQL.selectFieldColumnMap.get(field);
+                if (column != null) {
+                    return column;
+                }
+            }
+        }
+        return super.toColumn(tableAs, field);
     }
 
 }

@@ -52,21 +52,23 @@ public class BatchEntityInsert {
         this.entityClass = entityClass;
     }
 
-    public void check() {
+    public void check(Class<?> mainEntityClass) {
+        if (entityClass == null) {
+            setEntityClass(mainEntityClass);
+        }
         if (insertSelectQuery != null) {
             return;
         }
         if (entityList == null || entityList.isEmpty()) {
             throw new DbException("批量新增对象不能为空");
         }
-        Class<?> clazz = entityList.get(0).getClass();
         fieldValueMapList = new ArrayList<>(entityList.size());
-        Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(clazz);
+        Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClass);
         Map<String, Object> fieldValueMap;
         for (Object entity : entityList) {
             fieldValueMap = new HashMap<>();
             for (String field : fieldColumns.keySet()) {
-                fieldValueMap.put(field, FieldUtils.getValue(entity, field));
+                fieldValueMap.put(field, FieldUtils.getValue(entity, field, false));
             }
             fieldValueMapList.add(fieldValueMap);
         }

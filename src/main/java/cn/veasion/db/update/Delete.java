@@ -11,21 +11,11 @@ import cn.veasion.db.base.Filter;
  */
 public class Delete extends AbstractFilter<Delete> {
 
-    private Class<?> entityClass;
     private AbstractUpdate<?> convertUpdate;
 
     @Override
     protected Filter handleFilter(Filter filter) {
         return filter;
-    }
-
-    public Class<?> getEntityClass() {
-        return entityClass;
-    }
-
-    public Delete setEntityClass(Class<?> entityClass) {
-        this.entityClass = entityClass;
-        return this;
     }
 
     public AbstractUpdate<?> getConvertUpdate() {

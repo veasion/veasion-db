@@ -7,7 +7,9 @@ import cn.veasion.db.dao.UserInfoDao;
 import cn.veasion.db.query.EQ;
 import cn.veasion.db.query.Q;
 import cn.veasion.db.query.Query;
+import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.query.SubQueryParam;
+import cn.veasion.db.update.U;
 
 import java.util.List;
 
@@ -39,6 +41,16 @@ public class InterceptorTest {
                 .filterSubQuery("id", Filter.Operator.IN,
                         SubQueryParam.build(new Query("id").gte("id", 6).lte("id", 10))));
         System.out.println(list);
+
+        // join 子查询
+        EQ t1 = new EQ(UserInfoPO.class, "t1");
+        t1.join(new SubQuery(new Q(), "t2").select("userNike", "t2UserNike").gt("id", 0)).on("userNike", "userNike");
+        t1.selectAll().like("userNike", "伟神");
+        list = userInfoDao.queryList(t1);
+        System.out.println(list);
+
+        // 更新
+        userInfoDao.update(new U("username", "veasion").eq("id", 1));
 
         // 逻辑删除
         userInfoDao.deleteById(1L);

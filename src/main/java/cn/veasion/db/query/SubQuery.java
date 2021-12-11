@@ -2,7 +2,6 @@ package cn.veasion.db.query;
 
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
-import cn.veasion.db.utils.FilterUtils;
 
 /**
  * SubQuery
@@ -10,38 +9,17 @@ import cn.veasion.db.utils.FilterUtils;
  * @author luozhuowei
  * @date 2021/12/10
  */
-public class SubQuery extends AbstractQuery<SubQuery> {
+public class SubQuery extends AbstractJoinQuery<SubQuery> {
 
-    private String tableAs;
     private AbstractQuery<?> subQuery;
 
-    public SubQuery(AbstractQuery<?> subQuery) {
-        this(subQuery, null);
-    }
-
     public SubQuery(AbstractQuery<?> subQuery, String alias) {
-        this.subQuery = subQuery;
         this.tableAs = alias == null || "".equals(alias) ? "t" : alias;
-    }
-
-    public String getTableAs() {
-        return tableAs;
+        this.subQuery = subQuery;
     }
 
     public AbstractQuery<?> getSubQuery() {
         return subQuery;
-    }
-
-    @Override
-    public SubQuery selectExpression(Expression expression) {
-        return selectExpression(expression, true);
-    }
-
-    public SubQuery selectExpression(Expression expression, boolean hasTableAs) {
-        if (expression == null) {
-            return this;
-        }
-        return super.selectExpression(hasTableAs ? expression.tableAs(tableAs) : expression);
     }
 
     public SubQuery realSelect(String field, String alias) {
@@ -58,29 +36,33 @@ public class SubQuery extends AbstractQuery<SubQuery> {
         return this;
     }
 
-    @Override
-    protected String handleField(String field) {
-        return FilterUtils.tableAsField(tableAs, field);
-    }
-
-    @Override
-    protected Filter handleFilter(Filter filter) {
-        return filter.fieldAs(tableAs);
-    }
-
-    @Override
-    public void check() {
-        boolean _selectAll = selectAll;
-        if (subQuery.getEntityClass() == null) {
-            subQuery.setEntityClass(getEntityClass());
+    public SubQuery selectExpression(Expression expression, boolean hasTableAs) {
+        if (expression == null) {
+            return this;
         }
-        subQuery.check();
+        return super.selectExpression(hasTableAs ? expression.tableAs(getTableAs()) : expression);
+    }
+
+    @Override
+    public void check(Class<?> mainEntityClass) {
+        boolean _selectAll = selectAll;
+        subQuery.check(mainEntityClass);
         selectAll = false;
-        super.check();
-        boolean emptySelect = getSelects().isEmpty() && getSelectExpression() == null;
-        if (emptySelect || _selectAll) {
+        super.check(mainEntityClass);
+        if (_selectAll || (getSelects().isEmpty() && getSelectExpression() == null)) {
             selects.add(0, handleField("*"));
         }
+    }
+
+    @Override
+    protected void check(Class<?> mainEntityClass, AbstractJoinQuery<?> mainQuery, boolean isMain) {
+        subQuery.check(mainEntityClass);
+        super.check(mainEntityClass, mainQuery, isMain);
+    }
+
+    @Override
+    protected boolean isEmptySelects() {
+        return false;
     }
 
     @Override

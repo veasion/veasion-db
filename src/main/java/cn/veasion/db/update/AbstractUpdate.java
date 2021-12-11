@@ -21,7 +21,6 @@ import java.util.Set;
 public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
 
     private boolean skipNullField;
-    private Class<?> entityClass;
     private Set<String> excludeUpdates;
     private Map<String, Object> updates = new HashMap<>();
 
@@ -66,8 +65,8 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
     protected abstract String handleField(String field);
 
     @Override
-    public void check() {
-        super.check();
+    public void check(Class<?> mainEntityClass) {
+        super.check(mainEntityClass);
         if (skipNullField || excludeUpdates != null) {
             List<String> removes = new ArrayList<>();
             for (Map.Entry<String, Object> entry : updates.entrySet()) {
@@ -85,14 +84,6 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
 
     public Set<String> getExcludeUpdates() {
         return excludeUpdates;
-    }
-
-    public Class<?> getEntityClass() {
-        return entityClass;
-    }
-
-    public void setEntityClass(Class<?> entityClass) {
-        this.entityClass = entityClass;
     }
 
     public UpdateSQL sqlValue() {

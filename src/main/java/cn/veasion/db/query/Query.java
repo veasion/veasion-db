@@ -28,12 +28,12 @@ public class Query extends AbstractQuery<Query> {
     }
 
     @Override
-    public void check() {
+    public void check(Class<?> mainEntityClass) {
         boolean emptySelect = getSelects().isEmpty() && getSelectExpression() == null && !isSelectAll();
         if (emptySelect) {
             super.selectAll();
         }
-        super.check();
+        super.check(mainEntityClass);
     }
 
     @Override

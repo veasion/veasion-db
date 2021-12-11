@@ -39,11 +39,14 @@ public class EntityInsert {
         this.entityClass = entityClass;
     }
 
-    public void check() {
+    public void check(Class<?> mainEntityClass) {
+        if (entityClass == null) {
+            setEntityClass(mainEntityClass);
+        }
         fieldValueMap = new HashMap<>();
-        Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entity.getClass());
+        Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClass);
         for (String field : fieldColumns.keySet()) {
-            fieldValueMap.put(field, FieldUtils.getValue(entity, field));
+            fieldValueMap.put(field, FieldUtils.getValue(entity, field, false));
         }
     }
 

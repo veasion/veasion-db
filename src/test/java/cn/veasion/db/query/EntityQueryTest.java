@@ -21,6 +21,13 @@ public class EntityQueryTest {
         List<UserInfoPO> list = userInfoDao.queryList(new EntityQuery(UserInfoPO.class).likeRight("userNike", "伟神"));
         System.out.println(list);
 
+        // join 子查询
+        EQ t1 = new EQ(UserInfoPO.class, "t1");
+        t1.join(new SubQuery(new Q(), "t2").select("userNike", "t2UserNike").gt("id", 0)).on("userNike", "userNike");
+        t1.selectAll().like("userNike", "伟神");
+        list = userInfoDao.queryList(t1);
+        System.out.println(list);
+
         // join 查询（u1关联u2, u2关联u3, u3关联u4, u1关联u5）
         EQ u1 = new EQ(UserInfoPO.class, "u1");
         EQ u2 = new EQ(UserInfoPO.class, "u2");
