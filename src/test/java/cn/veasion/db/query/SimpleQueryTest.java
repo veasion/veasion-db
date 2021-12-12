@@ -20,6 +20,7 @@ public class SimpleQueryTest extends BaseTest {
         println(studentDao.queryList(new Q()));
 
         // 根据id查询学生
+        // select * from t_student where id = 1
         println(studentDao.getById(1L));
 
         // 查询学号为s001的学生名称
