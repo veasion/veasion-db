@@ -22,11 +22,6 @@ public @interface Table {
     String value() default "";
 
     /**
-     * Id 是否自增：需要实现 IBaseId
-     */
-    boolean autoIncrement() default false;
-
-    /**
      * Id 字段
      */
     String idField() default "";

@@ -71,7 +71,7 @@ public abstract class AbstractJoinQuery<T> extends AbstractQuery<T> {
     }
 
     protected void check(Class<?> mainEntityClass, AbstractJoinQuery<?> mainQuery, boolean isMain) {
-        if (isMain && isAllEmptySelects(mainQuery)) {
+        if (isMain && mainQuery.isAllEmptySelects()) {
             selectAll();
         }
         super.check(mainEntityClass);
@@ -85,11 +85,11 @@ public abstract class AbstractJoinQuery<T> extends AbstractQuery<T> {
         }
     }
 
-    protected boolean isAllEmptySelects(AbstractJoinQuery<?> query) {
-        boolean emptySelects = query.isEmptySelects();
+    protected boolean isAllEmptySelects() {
+        boolean emptySelects = isEmptySelects();
         if (emptySelects && joins != null) {
             for (JoinQueryParam join : joins) {
-                if (!isAllEmptySelects(join.getJoinQuery())) {
+                if (!join.getJoinQuery().isAllEmptySelects()) {
                     emptySelects = false;
                     break;
                 }

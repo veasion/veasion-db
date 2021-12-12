@@ -1,5 +1,6 @@
 package cn.veasion.db.base;
 
+import cn.veasion.db.FilterException;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FilterUtils;
 
@@ -113,6 +114,9 @@ public class Filter {
 
     private static Filter inOrNotIn(String field, Operator operator, Object value) {
         int len = value instanceof Collection ? ((Collection<?>) value).size() : ((Object[]) value).length;
+        if (len == 0) {
+            throw new FilterException(field + " " + operator.opt + " 空集合");
+        }
         String[] array = new String[len];
         Arrays.fill(array, "?");
         return build(field, operator, value, operator.getOpt().concat(" (").concat(String.join(",", array)).concat(")"));

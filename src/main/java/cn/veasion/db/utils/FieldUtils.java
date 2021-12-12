@@ -7,7 +7,9 @@ import cn.veasion.db.base.Table;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
@@ -232,16 +234,20 @@ public class FieldUtils {
             return result;
         }
         result = new HashMap<>();
+        List<Class<?>> classList = new ArrayList<>();
         Class<?> currentClazz = clazz;
         while (currentClazz != null) {
-            Field[] fields = currentClazz.getDeclaredFields();
+            classList.add(0, currentClazz);
+            currentClazz = currentClazz.getSuperclass();
+        }
+        for (Class<?> c : classList) {
+            Field[] fields = c.getDeclaredFields();
             for (Field field : fields) {
                 if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
                     continue;
                 }
                 result.put(field.getName(), field);
             }
-            currentClazz = currentClazz.getSuperclass();
         }
         FIELD_CACHE.put(clazz, result);
         return result;

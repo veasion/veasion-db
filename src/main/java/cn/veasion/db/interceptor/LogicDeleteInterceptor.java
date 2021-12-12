@@ -16,8 +16,11 @@ import cn.veasion.db.update.JoinUpdateParam;
 import cn.veasion.db.update.Update;
 import cn.veasion.db.utils.FilterUtils;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -30,6 +33,7 @@ import java.util.function.Supplier;
 public class LogicDeleteInterceptor implements EntityDaoInterceptor {
 
     private static ThreadLocal<Boolean> skipLogicDeleteFilter = new ThreadLocal<>();
+    private static ThreadLocal<Set<Class<?>>> skipClassLogicDeleteFilter = new ThreadLocal<>();
 
     private String logicDeleteField;
     private Object availableValue;
@@ -58,24 +62,46 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
         skipLogicDeleteFilter.set(skip);
     }
 
+    /**
+     * 指定类跳过逻辑删除过滤
+     *
+     * @param classes 指定类跳过逻辑删除过滤
+     */
+    public static void skip(Class<?>... classes) {
+        skipClassLogicDeleteFilter.set(new HashSet<>(Arrays.asList(classes)));
+    }
+
+    public static void clearSkip() {
+        skipLogicDeleteFilter.remove();
+        skipClassLogicDeleteFilter.remove();
+    }
+
     @Override
     public <R> R intercept(EntityDaoInvocation<R> invocation) {
-        Object[] args = invocation.getArgs();
-        if (args != null && !Boolean.TRUE.equals(skipLogicDeleteFilter.get())) {
-            for (Object arg : args) {
-                if (arg instanceof AbstractQuery) {
-                    handleQuery((AbstractQuery<?>) arg);
-                } else if (arg instanceof AbstractUpdate) {
-                    handleUpdate((AbstractUpdate<?>) arg);
-                } else if (arg instanceof Delete) {
-                    handleDelete((Delete) arg);
-                } else if (arg instanceof AbstractFilter) {
-                    handleFilter((AbstractFilter<?>) arg);
+        try {
+            Object[] args = invocation.getArgs();
+            if (args != null && !Boolean.TRUE.equals(skipLogicDeleteFilter.get())) {
+                for (Object arg : args) {
+                    if (arg instanceof AbstractQuery) {
+                        handleQuery((AbstractQuery<?>) arg);
+                    } else if (arg instanceof AbstractUpdate) {
+                        handleUpdate((AbstractUpdate<?>) arg);
+                    } else if (arg instanceof Delete) {
+                        handleDelete((Delete) arg);
+                    } else if (arg instanceof AbstractFilter) {
+                        handleFilter((AbstractFilter<?>) arg);
+                    }
                 }
             }
+        } finally {
+            clearSkip();
         }
-        skipLogicDeleteFilter.remove();
         return invocation.proceed();
+    }
+
+    private boolean containSkipClass(AbstractFilter<?> filter) {
+        return skipClassLogicDeleteFilter.get() != null &&
+                skipClassLogicDeleteFilter.get().contains(filter.getEntityClass());
     }
 
     private void handleQuery(AbstractQuery<?> query) {
@@ -91,7 +117,9 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
                     if (joinQuery instanceof SubQuery) {
                         handleQuery(((SubQuery) joinQuery).getSubQuery());
                     } else {
-                        handleOnFilter(joinQueryParam::getOnFilters, joinQueryParam::on, joinQuery.getTableAs());
+                        if (!containSkipClass(joinQuery)) {
+                            handleOnFilter(joinQueryParam::getOnFilters, joinQueryParam::on, joinQuery.getTableAs());
+                        }
                         handleSubQuery(joinQuery.getFilters());
                     }
                 }
@@ -110,13 +138,18 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
             if (joinList == null || joinList.isEmpty()) return;
             for (JoinUpdateParam joinUpdateParam : joinList) {
                 EntityUpdate joinUpdate = joinUpdateParam.getJoinUpdate();
-                handleOnFilter(joinUpdateParam::getOnFilters, joinUpdateParam::on, joinUpdate.getTableAs());
+                if (!containSkipClass(joinUpdate)) {
+                    handleOnFilter(joinUpdateParam::getOnFilters, joinUpdateParam::on, joinUpdate.getTableAs());
+                }
                 handleSubQuery(joinUpdate.getFilters());
             }
         }
     }
 
     private void handleDelete(Delete delete) {
+        if (containSkipClass(delete)) {
+            return;
+        }
         AbstractUpdate<?> convertUpdate = delete.getConvertUpdate();
         if (convertUpdate == null) {
             convertUpdate = new Update();
@@ -144,6 +177,9 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
     }
 
     private void handleFilter(AbstractFilter<?> abstractFilter) {
+        if (containSkipClass(abstractFilter)) {
+            return;
+        }
         if (abstractFilter != null) {
             if (!abstractFilter.hasFilter(logicDeleteField)) {
                 abstractFilter.eq(logicDeleteField, availableValue);

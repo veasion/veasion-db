@@ -1,28 +1,47 @@
-package cn.veasion.db.base;
+package cn.veasion.db.model.po;
+
+import cn.veasion.db.base.Table;
 
 import java.util.Date;
 
 /**
- * BasePO
+ * ScorePO
  *
  * @author luozhuowei
- * @date 2021/12/3
+ * @date 2021/12/12
  */
-public class BasePO implements IBaseId<Long> {
+@Table("t_score")
+public class ScorePO {
 
-    private Long id;
+    private String sno;
+    private Long courseId;
+    private Integer score;
     private Long isDeleted;
     private Date createTime;
     private Date updateTime;
 
-    @Override
-    public Long getId() {
-        return id;
+    public String getSno() {
+        return sno;
     }
 
-    @Override
-    public void setId(Long id) {
-        this.id = id;
+    public void setSno(String sno) {
+        this.sno = sno;
+    }
+
+    public Long getCourseId() {
+        return courseId;
+    }
+
+    public void setCourseId(Long courseId) {
+        this.courseId = courseId;
+    }
+
+    public Integer getScore() {
+        return score;
+    }
+
+    public void setScore(Integer score) {
+        this.score = score;
     }
 
     public Long getIsDeleted() {
@@ -48,4 +67,5 @@ public class BasePO implements IBaseId<Long> {
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
     }
+
 }

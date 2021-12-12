@@ -93,6 +93,14 @@ public abstract class AbstractFilter<T> {
         return addFilter(Filter.rightBracket());
     }
 
+    public T exists(SubQueryParam subQueryParam) {
+        return addFilter(Filter.subQuery(null, Filter.Operator.EXISTS, subQueryParam));
+    }
+
+    public T notExists(SubQueryParam subQueryParam) {
+        return addFilter(Filter.subQuery(null, Filter.Operator.NOT_EXISTS, subQueryParam));
+    }
+
     public T filterSubQuery(String field, Filter.Operator operator, SubQueryParam subQueryParam) {
         return addFilter(Filter.subQuery(field, operator, subQueryParam));
     }

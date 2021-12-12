@@ -37,12 +37,4 @@ public class Page<T> {
         this.list = list;
     }
 
-    @Override
-    public String toString() {
-        return "Page{" +
-                "count=" + count +
-                ", list=" + list +
-                '}';
-    }
-
 }

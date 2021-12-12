@@ -1,48 +1,63 @@
 package cn.veasion.db.query;
 
+import cn.veasion.db.BaseTest;
+import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
-import cn.veasion.db.base.UserInfoPO;
-import cn.veasion.db.dao.UserInfoDao;
-
-import java.util.List;
+import cn.veasion.db.model.po.ClassesPO;
+import cn.veasion.db.model.po.CoursePO;
+import cn.veasion.db.model.po.StudentPO;
 
 /**
  * SubQueryTest
  *
  * @author luozhuowei
- * @date 2021/12/10
+ * @date 2021/12/12
  */
-public class SubQueryTest {
+public class SubQueryTest extends BaseTest {
 
     public static void main(String[] args) {
-        UserInfoDao userInfoDao = new UserInfoDao();
+        // 简单子查询
+        // select count(id) from (select * from t_student) t
+        println(studentDao.queryForType(new SubQuery(new Q(), "t").selectExpression(Expression.select("count(id)", "count")), Integer.class));
 
-        // 子查询
-        List<UserInfoPO> list = userInfoDao.queryList(new SubQuery(new Q().gt("id", 6), "t")
-                .selectAll().select("userNike", "nike").like("userNike", "伟神"));
-        System.out.println(list);
+        // 通过子查询关联查询小于平均年龄的男同学
+        // select s.* from t_student s join (select avg(age) as age from t_student) t on s.age < t.age where s.sex = 2
+        EQ student = new EQ(StudentPO.class, "s");
+        student.join(
+                new SubQuery(new Q().selectExpression(Expression.select("avg(age)", "age")), "t")
+        ).on(Filter.expression("s.age", Filter.Operator.LT, Expression.filter("t.age")));
+        student.selectAll().eq("sex", 2);
+        println(studentDao.queryList(student));
 
-        // 子查询关联子查询
-        SubQuery sub1 = new SubQuery(new Q("id", "userNike", "test").gt("id", 0), "t1");
-        SubQuery sub2 = new SubQuery(new Q("id", "username", "test").lt("id", 10), "t2");
-        sub1.join(sub2).on("userNike", "username");
-        sub1.like("t1.test", "test");
-        list = userInfoDao.queryList(sub1);
-        System.out.println(list);
+        // 通过子查询查询 “初一一班” 班主任及所有任课老师
+        // select * from t_teacher where
+        // tno in (select master_tno from t_classes where class_name = '初一一班')
+        // or
+        // tno in (select course.tno from t_classes c inner join t_course course on c.id = course.class_id where c.class_name = '初一一班')
+        EntityQuery subQuery1 = new EQ(ClassesPO.class).select("masterTno").eq("className", "初一一班");
+        EntityQuery subQuery2 = new EQ(ClassesPO.class, "c").eq("className", "初一一班");
+        subQuery2.join(new EQ(CoursePO.class, "course").select("tno")).on("id", "classId");
+        println(teacherDao.queryList(new Q()
+                .filterSubQuery("tno", Filter.Operator.IN, SubQueryParam.build(subQuery1))
+                .addFilters(Filter.or())
+                .filterSubQuery("tno", Filter.Operator.IN, SubQueryParam.build(subQuery2))
+        ));
 
+        /*
         // 模拟 oracle 分页
+        // 等价于 studentDao.queryList(new Q().page(new OraclePage(1, 10)))
+        // select t.* from (select t.*, ROWNUM as row from (select * from t_student) t where ROWNUM <= 10) t where t.row > 0
         int page = 1, size = 10;
-        EQ query = new EQ(UserInfoPO.class);
-        list = userInfoDao.queryList(
+        println(studentDao.queryList(
                 new SubQuery(
-                        new SubQuery(query, "t")
+                        new SubQuery(new Q(), "t")
                                 .selectAll()
                                 .realSelect("ROWNUM", "row")
                                 .realFilter(Filter.lte("ROWNUM", page * size)),
                         "t"
-                ).gt("row", page * size - size));
-        System.out.println(list);
-
+                ).gt("row", page * size - size)
+        ));
+        */
     }
 
 }

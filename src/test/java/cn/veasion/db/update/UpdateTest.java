@@ -1,59 +1,69 @@
 package cn.veasion.db.update;
 
+import cn.veasion.db.BaseTest;
 import cn.veasion.db.base.Expression;
-import cn.veasion.db.base.UserInfoPO;
-import cn.veasion.db.dao.UserInfoDao;
-
-import java.util.Date;
+import cn.veasion.db.model.po.ClassesPO;
+import cn.veasion.db.model.po.CoursePO;
+import cn.veasion.db.model.po.StudentPO;
+import cn.veasion.db.model.po.TeacherPO;
 
 /**
  * UpdateTest
  *
  * @author luozhuowei
- * @date 2021/12/8
+ * @date 2021/12/12
  */
-public class UpdateTest {
+public class UpdateTest extends BaseTest {
 
     public static void main(String[] args) {
-        UserInfoDao userInfoDao = new UserInfoDao();
 
-        // 更新全部
-        System.out.println(userInfoDao.update(new Update("age", 20)));
+        // 普通更新
+        // update t_student set age = 20 where id = 2
+        println(studentDao.update(new U("age", 20).eq("id", 2)));
+        // update t_student set age = 20, sex = 1 where id = 2
+        println(studentDao.update(new U().update("age", 20).update("sex", 1).eq("id", 2)));
 
-        // 更新有值字段
-        UserInfoPO userInfoPO = new UserInfoPO();
-        userInfoPO.setId(5L);
-        userInfoPO.setUserNike("测试~");
-        userInfoPO.setIsDeleted(0L);
-        userInfoPO.setUpdateTime(new Date());
-        System.out.println(userInfoDao.updateById(userInfoPO));
+        // 特殊更新，如乐观锁 version = version + 1
+        //  update t_student set age = 20, version = version + 1 where id = 2
+        println(studentDao.update(new U()
+                .update("age", 18)
+                .updateExpression("version", Expression.update("version = version + 1"))
+                .eq("id", 2)
+        ));
 
-        // 指定字段更新
-        userInfoDao.update(new EntityUpdate(userInfoPO).updateFields("userNike", "id", "isDeleted").eq("id").excludeUpdateFilterFields());
+        // 根据ID更新对象不为null的字段
+        // update t_student set ... where id = ?
+        StudentPO studentPO = new StudentPO();
+        studentPO.setId(2L);
+        studentPO.setAge(20);
+        studentPO.setDesc("哈哈");
+        println(studentDao.updateById(studentPO));
 
-        // 关联更新
-        EU eu = new EU(userInfoPO, "u");
-        eu.updateFields("userNike", "isDeleted");
-        eu.join(new EU(userInfoPO, "u2").update("age", 18).eq("id")).on("id", "id");
-        eu.gt("id", 0);
-        System.out.println(userInfoDao.update(eu));
+        // 对象乐观锁更新
+        // update t_student set version = version = version + 1, age = 20 where id = 2 and version = 1
+        studentPO.setVersion(1);
+        EntityUpdate entityUpdate = new EntityUpdate(studentPO);
+        entityUpdate.updateExpression("version", Expression.update("version = version + 1"));
+        entityUpdate.eq("id").eq("version").excludeUpdateFilterFields();
+        println(studentDao.update(entityUpdate));
 
-        // 复杂关联更新（u1关联u2, u2关联u3, u3关联u4, u1关联u5）
-        EU u1 = new EU(userInfoPO, "u1");
-        EU u2 = new EU(UserInfoPO.class, "u2");
-        EU u3 = new EU(UserInfoPO.class, "u3");
-        EU u4 = new EU(UserInfoPO.class, "u4");
+        // 关联更新（教师修改编码）
+        // update t_teacher t
+        // left join t_classes c on t.tno = c.master_tno
+        // left join t_course course ON t.tno = course.tno
+        // set t.tno = ?, c.master_tno = ?, course.tno = ?
+        // where t.tno = ?
+        EU teacher = new EU(TeacherPO.class, "t");
+        EU classes = new EU(ClassesPO.class, "c");
+        EU course = new EU(CoursePO.class, "course");
+        teacher.leftJoin(classes).on("tno", "masterTno");
+        teacher.leftJoin(course).on("tno", "tno");
+        teacher.update("tno", "new_t003");
+        classes.update("masterTno", "new_t003");
+        course.update("tno", "new_t003");
+        teacher.eq("tno", "t003");
+        println(teacherDao.update(teacher));
 
-        u1.join(u2.update("age", 20).eq("id", 2)).on("id", "id");
-        u2.join(u3.gt("id", 3)).on("id", "id");
-        u3.join(u4.gt("id", 4).update("age", 40)).on("id", "id");
-
-        u1.join(new EU(UserInfoPO.class, "u5").update("age", 50).gt("id", 5)).on("id", "id");
-
-        u1.updateFields("userNike", "isDeleted").update("u2.isDeleted", 1).update("u4.userNike", "user4Nike").gt("id", 1);
-        u3.update("username", "user3name").update("u2.userNike", "user2Nike");
-        u4.updateExpression("age", Expression.update("ifnull(${age}, #{value1})", 20));
-        System.out.println(userInfoDao.update(u1));
     }
 
 }

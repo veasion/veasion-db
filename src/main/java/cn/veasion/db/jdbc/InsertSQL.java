@@ -66,7 +66,7 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
         sql.append("INSERT INTO ");
         sql.append(getTableName(entityClazz)).append(" (");
         for (String field : fields) {
-            sql.append("`").append(fieldColumns.get(field)).append("`").append(",");
+            appendInsertColumn(fieldColumns.get(field));
         }
         trimEndSql(",");
         sql.append(") VALUES");
@@ -88,12 +88,20 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
         sql.append("INSERT INTO ");
         sql.append(getTableName(entityClass)).append(" (");
         for (String field : selectFieldColumnMap.keySet()) {
-            sql.append("`").append(fieldColumns.getOrDefault(field, selectFieldColumnMap.getOrDefault(field, field))).append("`").append(",");
+            appendInsertColumn(fieldColumns.getOrDefault(field, selectFieldColumnMap.getOrDefault(field, field)));
         }
         trimEndSql(",");
         sql.append(") ");
         sql.append(querySQL.getSQL());
         values.addAll(Arrays.asList(querySQL.getValues()));
+    }
+
+    private void appendInsertColumn(String column) {
+        if (column.startsWith("`") && column.endsWith("`")) {
+            sql.append(column).append(",");
+        } else {
+            sql.append("`").append(column).append("`").append(",");
+        }
     }
 
 }

@@ -1,5 +1,9 @@
 package cn.veasion.db;
 
+import cn.veasion.db.base.JdbcTypeEnum;
+import cn.veasion.db.jdbc.EntityDao;
+import cn.veasion.db.jdbc.DataSourceProvider;
+
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
@@ -9,23 +13,33 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
 /**
- * DataSourceUtils
+ * DefaultDataSourceProvider
  *
  * @author luozhuowei
- * @date 2021/12/3
+ * @date 2021/12/5
  */
-public class DataSourceUtils {
+public class DefaultDataSourceProvider implements DataSourceProvider {
 
-    public static DataSource getDataSource() {
+    @Override
+    public DataSource getDataSource(EntityDao<?, ?> entityDao, JdbcTypeEnum jdbcTypeEnum) {
         try {
-            String url = "jdbc:mysql://10.10.0.44:3306/log?useUnicode=true&characterEncoding=utf-8&autoReconnect=true";
-            return getDataSource(url, "kaifa_admin", "msh#gd69Rp");
+            return getDataSource(BaseTest.jdbcUrl, BaseTest.user, BaseTest.password);
         } catch (SQLException e) {
             throw new DbException(e);
         }
     }
 
-    public static DataSource getDataSource(String url, String user, String password) throws SQLException {
+    @Override
+    public Connection getConnection(DataSource dataSource) throws SQLException {
+        return dataSource.getConnection();
+    }
+
+    @Override
+    public boolean autoClose() {
+        return true;
+    }
+
+    private static DataSource getDataSource(String url, String user, String password) throws SQLException {
         return new DataSource() {
             private Connection connection;
 
@@ -81,5 +95,4 @@ public class DataSourceUtils {
             }
         };
     }
-
 }

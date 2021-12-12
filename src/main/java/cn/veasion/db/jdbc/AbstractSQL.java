@@ -1,6 +1,7 @@
 package cn.veasion.db.jdbc;
 
 import cn.veasion.db.DbException;
+import cn.veasion.db.FilterException;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.Table;
@@ -59,8 +60,11 @@ public abstract class AbstractSQL<T> {
             if (filter.isSpecial()) {
                 if (filter.getValue() instanceof SubQueryParam) {
                     // 子查询
-                    sql.append(handleFieldToColumn(filter.getField(), entityClassMap));
-                    sql.append(" ").append(filter.getOperator().getOpt()).append(" (");
+                    // exists、not exists 字段为空
+                    if (!(filter.getField() == null && (Filter.Operator.EXISTS.equals(filter.getOperator()) || Filter.Operator.NOT_EXISTS.equals(filter.getOperator())))) {
+                        sql.append(handleFieldToColumn(filter.getField(), entityClassMap)).append(" ");
+                    }
+                    sql.append(filter.getOperator().getOpt()).append(" (");
                     SubQueryParam subQueryParam = (SubQueryParam) filter.getValue();
                     QuerySQL querySQL = QuerySQL.build(subQueryParam.getQuery());
                     sql.append(querySQL.sql);
@@ -73,22 +77,30 @@ public abstract class AbstractSQL<T> {
                     Expression expression = (Expression) filter.getValue();
                     appendExpressionValue(entityClassMap, expression);
                 } else {
-                    throw new DbException("不支持过滤器：" + filter);
+                    throw new FilterException("不支持过滤器：" + filter);
                 }
             } else if (filter.getField() == null || !filter.getSql().contains("?")) {
+                if (filter.getField() != null) {
+                    sql.append(handleFieldToColumn(filter.getField(), entityClassMap)).append(" ");
+                }
                 sql.append(filter.getSql());
             } else {
                 sql.append(handleFieldToColumn(filter.getField(), entityClassMap));
                 sql.append(" ");
                 sql.append(filter.getSql());
                 Object value = filter.getValue();
-                if (filter.getSql().indexOf("?") != filter.getSql().lastIndexOf("?")) {
-                    if (value instanceof Collection) {
+                boolean multiple = filter.getSql().indexOf("?") != filter.getSql().lastIndexOf("?");
+                if (value instanceof Collection) {
+                    if (multiple || ((Collection<?>) value).size() == 1) {
                         values.addAll((Collection<?>) value);
-                    } else if (value instanceof Object[]) {
+                    } else {
+                        throw new FilterException("异常SQL类型：" + filter.getSql());
+                    }
+                } else if (value instanceof Object[]) {
+                    if (multiple || ((Object[]) value).length == 1) {
                         values.addAll(Arrays.asList((Object[]) value));
                     } else {
-                        throw new DbException("异常SQL类型：" + filter.getSql());
+                        throw new FilterException("异常SQL类型：" + filter.getSql());
                     }
                 } else {
                     values.add(value);

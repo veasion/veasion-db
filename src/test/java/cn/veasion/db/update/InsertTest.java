@@ -1,10 +1,11 @@
 package cn.veasion.db.update;
 
+import cn.veasion.db.BaseTest;
 import cn.veasion.db.base.Expression;
-import cn.veasion.db.base.UserInfoPO;
-import cn.veasion.db.dao.UserInfoDao;
+import cn.veasion.db.model.po.StudentPO;
 import cn.veasion.db.query.EQ;
 import cn.veasion.db.query.Q;
+import cn.veasion.db.query.SubQueryParam;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -13,49 +14,63 @@ import java.util.Date;
  * InsertTest
  *
  * @author luozhuowei
- * @date 2021/12/9
+ * @date 2021/12/12
  */
-public class InsertTest {
+public class InsertTest extends BaseTest {
 
     public static void main(String[] args) {
-        UserInfoDao userInfoDao = new UserInfoDao();
 
-        // 单个新增
-        UserInfoPO userInfo = getUserInfo();
-        Long id = userInfoDao.add(userInfo);
-        System.out.println(id);
-        System.out.println(userInfo.getId());
+        // 新增一个学生
+        // insert into t_student(...) values (...)
+        println(studentDao.add(getStudent()));
 
-        // 多个新增
-        Long[] ids = userInfoDao.batchAdd(Arrays.asList(getUserInfo(), getUserInfo(), getUserInfo()));
-        System.out.println(Arrays.toString(ids));
+        // 批量新增学生
+        // insert into t_student(...) values (...), (...), (...)
+        println(studentDao.batchAdd(Arrays.asList(getStudent(), getStudent(), getStudent())));
 
-        // 批量新增 insert select
-        ids = userInfoDao.batchAdd(new BatchEntityInsert(new Q("username", "userNike", "age").lte("id", 6)));
-        System.out.println(Arrays.toString(ids));
+        // insert select 新增学生
+        // insert into t_student(...) select ... from student order by id desc limit 1
+        Long[] ids = studentDao.batchAdd(new BatchEntityInsert(
+                new EQ(StudentPO.class)
+                        .selects("age", "sex", "version", "isDeleted", "createTime")
+                        .selectExpression(Expression.select("concat('copy_', name)", "name"))
+                        .selectExpression(Expression.select("concat('copy_', sno)", "sno"))
+                        .desc("id").page(1, 1)
+        ));
+        println(ids);
+        println(studentDao.queryList(new Q().in("id", ids)));
 
-        // 复杂批量新增 insert select
-        EQ eq = new EQ(UserInfoPO.class, "u1");
-        eq.join(new EQ(UserInfoPO.class, "u2").lte("id", 6)).on("id", "id");
-        eq.gt("id", 1);
-        eq.selectExpression(Expression.select("ifnull(${u2.age}, ${u1.id})", "age"));
-        eq.selects("username", "isDeleted");
-        eq.select("u2.username", "userNike");
-        ids = userInfoDao.batchAdd(new BatchEntityInsert(eq));
-        System.out.println(Arrays.toString(ids));
+        // 防学号重复新增学生
+        // insert into t_student(...) select concat('copy_', sno), ... from t_student
+        // where sno = 's001' and not exists (select 1 from t_student where sno = 'copy_s001')
+        println(studentDao.batchAdd(new BatchEntityInsert(
+                new EQ(StudentPO.class)
+                        .selects("age", "sex", "version", "isDeleted", "createTime")
+                        .selectExpression(Expression.select("concat('copy_', name)", "name"))
+                        .selectExpression(Expression.select("concat('copy_', sno)", "sno"))
+                        .eq("sno", "s001")
+                        .notExists(SubQueryParam.build(new Q("1").eq("sno", "copy_s001")))
+        )));
     }
 
-    private static UserInfoPO getUserInfo() {
-        UserInfoPO userInfoPO = new UserInfoPO();
-        userInfoPO.setUsername("veasion-" + System.currentTimeMillis());
-        userInfoPO.setUserNike("伟神-" + System.currentTimeMillis());
-        userInfoPO.setAge(18);
-        userInfoPO.setTest("test");
-        userInfoPO.setVersion(0);
-        userInfoPO.setCreateTime(new Date());
-        userInfoPO.setUpdateTime(new Date());
-        userInfoPO.setIsDeleted(0L);
-        return userInfoPO;
+    private static StudentPO getStudent() {
+        try {
+            Thread.sleep(5);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        long s = System.currentTimeMillis();
+        StudentPO studentPO = new StudentPO();
+        studentPO.setName("学生_" + s);
+        studentPO.setSno("s" + s);
+        studentPO.setAge(18);
+        studentPO.setSex(1);
+        studentPO.setClassId(1L);
+        studentPO.setIsDeleted(0L);
+        studentPO.setVersion(0);
+        studentPO.setCreateTime(new Date());
+        studentPO.setUpdateTime(new Date());
+        return studentPO;
     }
 
 }

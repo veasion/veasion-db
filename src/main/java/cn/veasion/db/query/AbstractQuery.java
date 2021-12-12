@@ -1,8 +1,11 @@
 package cn.veasion.db.query;
 
+import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Expression;
+import cn.veasion.db.base.Filter;
 import cn.veasion.db.jdbc.QuerySQL;
 import cn.veasion.db.utils.FieldUtils;
+import cn.veasion.db.utils.FilterUtils;
 import cn.veasion.db.utils.ServiceLoaderUtils;
 
 import java.util.ArrayList;
@@ -19,7 +22,7 @@ import java.util.Set;
  * @author luozhuowei
  * @date 2021/12/2
  */
-public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
+public abstract class AbstractQuery<T> extends AbstractFilter<T> {
 
     private boolean distinct;
     protected boolean selectAll;
@@ -29,6 +32,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
     private List<Expression> selectExpression;
     private List<String> groupBys;
     private List<OrderParam> orders;
+    private List<Filter> having;
     private List<UnionQueryParam> unions;
     private PageParam pageParam;
 
@@ -104,6 +108,19 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         return getSelf();
     }
 
+    public T having(Filter filter) {
+        if (having == null) having = new ArrayList<>();
+        Objects.requireNonNull(filter, "过滤器不能为空");
+        if (!isSkipNullValueFilter() || (isSkipNullValueFilter() && FilterUtils.hasFilter(filter))) {
+            if (selectExpression != null && selectExpression.stream().map(Expression::getAlias).anyMatch(s -> s != null && s.equals(filter.getField()))) {
+                having.add(filter);
+            } else {
+                having.add(handleFilter(filter));
+            }
+        }
+        return getSelf();
+    }
+
     public T union(AbstractQuery<T> unionQuery) {
         if (unions == null) unions = new ArrayList<>();
         unions.add(new UnionQueryParam(unionQuery, false));
@@ -167,6 +184,10 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
         return orders;
     }
 
+    public List<Filter> getHaving() {
+        return having;
+    }
+
     public List<UnionQueryParam> getUnions() {
         return unions;
     }
@@ -196,6 +217,7 @@ public abstract class AbstractQuery<T> extends AbstractQueryFilter<T> {
             }
         }
         super.check(mainEntityClass);
+        checkFilter(mainEntityClass, having, false);
         if (unions != null) {
             for (UnionQueryParam union : unions) {
                 union.getUnion().check(mainEntityClass);

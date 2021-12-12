@@ -89,7 +89,11 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         // group by
         appendGroups(entityClassMap);
         // having
-        appendFilter(entityClassMap, query.getHaving());
+        if (query.getHaving() != null) {
+            sql.append(" HAVING");
+            appendFilter(entityClassMap, query.getHaving());
+            trimEndSql("HAVING");
+        }
         // union all
         List<UnionQueryParam> unions = query.getUnions();
         if (unions != null) {
