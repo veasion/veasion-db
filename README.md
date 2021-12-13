@@ -6,6 +6,24 @@ version-db 是一个轻量级持久层db框架，除slf4j-api外不依赖任何�
 框架支持sql能实现的任意查询或更新，如关联查询、子查询、关联更新、insert select、不同数据库分页扩展等。
 
 框架支持自定义拦截器，内置逻辑删除拦截器，可通过SPI或调用InterceptorUtils.addInterceptor方法加入扩展。
+## maven 依赖
+第一步：添加jitpack仓库
+```xml
+<repositories>
+    <repository>
+        <id>jitpack.io</id>
+        <url>https://jitpack.io</url>
+    </repository>
+</repositories>
+```
+第二步：依赖veasion-db
+```xml
+<dependency>
+    <groupId>com.github.veasion</groupId>
+    <artifactId>veasion-db</artifactId>
+    <version>v1.0.0</version>
+</dependency>
+```
 ## 使用方式介绍
 这里以 student 表举例
 ```java
