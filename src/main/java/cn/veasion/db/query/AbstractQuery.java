@@ -66,6 +66,10 @@ public abstract class AbstractQuery<T> extends AbstractFilter<T> {
         return getSelf();
     }
 
+    public T selectExpression(String expression, String alias) {
+        return selectExpression(Expression.select(expression, alias));
+    }
+
     public T selectExpression(Expression expression) {
         if (selectExpression == null) selectExpression = new ArrayList<>();
         selectExpression.add(Objects.requireNonNull(expression));

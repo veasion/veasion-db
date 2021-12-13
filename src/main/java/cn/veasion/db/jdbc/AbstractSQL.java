@@ -4,6 +4,7 @@ import cn.veasion.db.DbException;
 import cn.veasion.db.FilterException;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.base.Operator;
 import cn.veasion.db.base.Table;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FieldUtils;
@@ -61,7 +62,7 @@ public abstract class AbstractSQL<T> {
                 if (filter.getValue() instanceof SubQueryParam) {
                     // 子查询
                     // exists、not exists 字段为空
-                    if (!(filter.getField() == null && (Filter.Operator.EXISTS.equals(filter.getOperator()) || Filter.Operator.NOT_EXISTS.equals(filter.getOperator())))) {
+                    if (!(filter.getField() == null && (Operator.EXISTS.equals(filter.getOperator()) || Operator.NOT_EXISTS.equals(filter.getOperator())))) {
                         sql.append(handleFieldToColumn(filter.getField(), entityClassMap)).append(" ");
                     }
                     sql.append(filter.getOperator().getOpt()).append(" (");

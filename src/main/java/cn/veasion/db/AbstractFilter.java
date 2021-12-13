@@ -2,6 +2,7 @@ package cn.veasion.db;
 
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.base.Operator;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FilterUtils;
 
@@ -94,22 +95,22 @@ public abstract class AbstractFilter<T> {
     }
 
     public T exists(SubQueryParam subQueryParam) {
-        return addFilter(Filter.subQuery(null, Filter.Operator.EXISTS, subQueryParam));
+        return addFilter(Filter.subQuery(null, Operator.EXISTS, subQueryParam));
     }
 
     public T notExists(SubQueryParam subQueryParam) {
-        return addFilter(Filter.subQuery(null, Filter.Operator.NOT_EXISTS, subQueryParam));
+        return addFilter(Filter.subQuery(null, Operator.NOT_EXISTS, subQueryParam));
     }
 
-    public T filterSubQuery(String field, Filter.Operator operator, SubQueryParam subQueryParam) {
+    public T filterSubQuery(String field, Operator operator, SubQueryParam subQueryParam) {
         return addFilter(Filter.subQuery(field, operator, subQueryParam));
     }
 
-    public T filterExpression(String field, Expression expression) {
-        return filterExpression(field, Filter.Operator.EQ, expression);
+    public T filterExpression(String field, Operator operator, String expression, Object... values) {
+        return filterExpression(field, Operator.EQ, Expression.filter(expression, values));
     }
 
-    public T filterExpression(String field, Filter.Operator operator, Expression expression) {
+    public T filterExpression(String field, Operator operator, Expression expression) {
         return addFilters(Filter.expression(field, operator, expression));
     }
 

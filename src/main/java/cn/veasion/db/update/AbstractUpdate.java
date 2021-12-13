@@ -41,6 +41,10 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
         return getSelf();
     }
 
+    public T updateExpression(String field, String expression, Object... values) {
+        return updateExpression(field, Expression.update(expression, values));
+    }
+
     public T updateExpression(String field, Expression expression) {
         updates.put(handleField(field), Objects.requireNonNull(expression));
         return getSelf();

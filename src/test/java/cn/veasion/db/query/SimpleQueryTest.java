@@ -1,8 +1,8 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.BaseTest;
-import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.base.Operator;
 import cn.veasion.db.interceptor.LogicDeleteInterceptor;
 import cn.veasion.db.model.po.Dual;
 
@@ -54,15 +54,15 @@ public class SimpleQueryTest extends BaseTest {
         // 查询学生人数和平均年龄
         // select count(1) as count, avg(age) as avgAge from t_student
         println(studentDao.queryForMap(new Q()
-                .selectExpression(Expression.select("count(1)", "count"))
-                .selectExpression(Expression.select("avg(${age})", "avgAge"))
+                .selectExpression("count(1)", "count")
+                .selectExpression("avg(${age})", "avgAge")
         ));
 
         // 统计学生性别人数小于5的性别及人数
         // select sex, count(id) as count from t_student group by sex having count < 5
         println(studentDao.queryForMap(new Q()
                 .select("sex")
-                .selectExpression(Expression.select("count(id)", "count"))
+                .selectExpression("count(id)", "count")
                 .groupBy("sex")
                 .having(Filter.lt("count", 5))
         ));
@@ -71,8 +71,8 @@ public class SimpleQueryTest extends BaseTest {
         // select * from t_student where sex = 2 and age < (select avg(age) from t_student)
         println(studentDao.queryList(new Q()
                 .eq("sex", 2)
-                .filterSubQuery("age", Filter.Operator.LT, SubQueryParam.build(
-                        new Q().selectExpression(Expression.select("avg(age)", null))
+                .filterSubQuery("age", Operator.LT, SubQueryParam.build(
+                        new Q().selectExpression("avg(age)", null)
                 ))
         ));
 

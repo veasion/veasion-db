@@ -1,7 +1,6 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.BaseTest;
-import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.model.po.ClassesPO;
 import cn.veasion.db.model.po.CoursePO;
@@ -32,7 +31,7 @@ public class JoinQueryTest extends BaseTest {
         // select c.*, avg(s.score) as avgScore from t_course c join t_score s on c.id = s.course_id having avgScore >= 60
         EQ c = new EQ(CoursePO.class, "c");
         c.join(new EQ(ScorePO.class, "s")).on("id", "courseId");
-        c.selectAll().selectExpression(Expression.select("avg(s.score)", "avgScore"));
+        c.selectAll().selectExpression("avg(s.score)", "avgScore");
         c.having(Filter.gte("avgScore", 60));
         println(courseDao.queryList(c, CourseScoreVO.class));
 
@@ -79,7 +78,7 @@ public class JoinQueryTest extends BaseTest {
 
         _student.selects("sno", "name", "c.className", "course.courseName", "score.score");
         _student.select("t.name", "courseTeacher");
-        _student.selectExpression(Expression.select("if(score.score>=60, '及格', '不及格')", "scoreLabel"));
+        _student.selectExpression("if(score.score>=60, '及格', '不及格')", "scoreLabel");
 
         println(studentDao.queryList(_student, StudentCourseScoreVO.class));
     }

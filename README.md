@@ -65,15 +65,15 @@ public class SimpleQueryTest extends BaseTest {
         // 查询学生人数和平均年龄
         // select count(1) as count, avg(age) as avgAge from t_student
         println(studentDao.queryForMap(new Q()
-                .selectExpression(Expression.select("count(1)", "count"))
-                .selectExpression(Expression.select("avg(${age})", "avgAge"))
+                .selectExpression("count(1)", "count")
+                .selectExpression("avg(${age})", "avgAge")
         ));
 
         // 统计学生性别人数小于5的性别及人数
         // select sex, count(id) as count from t_student group by sex having count < 5
         println(studentDao.queryForMap(new Q()
                 .select("sex")
-                .selectExpression(Expression.select("count(id)", "count"))
+                .selectExpression("count(id)", "count")
                 .groupBy("sex")
                 .having(Filter.lt("count", 5))
         ));
@@ -82,8 +82,8 @@ public class SimpleQueryTest extends BaseTest {
         // select * from t_student where sex = 2 and age < (select avg(age) from t_student)
         println(studentDao.queryList(new Q()
                 .eq("sex", 2)
-                .filterSubQuery("age", Filter.Operator.LT, SubQueryParam.build(
-                        new Q().selectExpression(Expression.select("avg(age)", null))
+                .filterSubQuery("age", Operator.LT, SubQueryParam.build(
+                        new Q().selectExpression("avg(age)", null)
                 ))
         ));
 
@@ -121,7 +121,7 @@ public class JoinQueryTest extends BaseTest {
         // select c.*, avg(s.score) as avgScore from t_course c join t_score s on c.id = s.course_id having avgScore >= 60
         EQ c = new EQ(CoursePO.class, "c");
         c.join(new EQ(ScorePO.class, "s")).on("id", "courseId");
-        c.selectAll().selectExpression(Expression.select("avg(s.score)", "avgScore"));
+        c.selectAll().selectExpression("avg(s.score)", "avgScore");
         c.having(Filter.gte("avgScore", 60));
         println(courseDao.queryList(c, CourseScoreVO.class));
 
@@ -168,7 +168,7 @@ public class JoinQueryTest extends BaseTest {
 
         _student.selects("sno", "name", "c.className", "course.courseName", "score.score");
         _student.select("t.name", "courseTeacher");
-        _student.selectExpression(Expression.select("if(score.score>=60, '及格', '不及格')", "scoreLabel"));
+        _student.selectExpression("if(score.score>=60, '及格', '不及格')", "scoreLabel");
 
         println(studentDao.queryList(_student, StudentCourseScoreVO.class));
     }
@@ -182,14 +182,14 @@ public class SubQueryTest extends BaseTest {
     public static void main(String[] args) {
         // 简单子查询
         // select count(id) from (select * from t_student) t
-        println(studentDao.queryForType(new SubQuery(new Q(), "t").selectExpression(Expression.select("count(id)", "count")), Integer.class));
+        println(studentDao.queryForType(new SubQuery(new Q(), "t").selectExpression("count(id)", "count"), Integer.class));
 
         // 通过子查询关联查询小于平均年龄的男同学
         // select s.* from t_student s join (select avg(age) as age from t_student) t on s.age < t.age where s.sex = 2
         EQ student = new EQ(StudentPO.class, "s");
         student.join(
-                new SubQuery(new Q().selectExpression(Expression.select("avg(age)", "age")), "t")
-        ).on(Filter.expression("s.age", Filter.Operator.LT, Expression.filter("t.age")));
+                new SubQuery(new Q().selectExpression("avg(age)", "age"), "t")
+        ).on(Filter.expression("s.age", Operator.LT, Expression.filter("t.age")));
         student.selectAll().eq("sex", 2);
         println(studentDao.queryList(student));
 
@@ -202,9 +202,9 @@ public class SubQueryTest extends BaseTest {
         EntityQuery subQuery2 = new EQ(ClassesPO.class, "c").eq("className", "初一一班");
         subQuery2.join(new EQ(CoursePO.class, "course").select("tno")).on("id", "classId");
         println(teacherDao.queryList(new Q()
-                .filterSubQuery("tno", Filter.Operator.IN, SubQueryParam.build(subQuery1))
+                .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery1))
                 .addFilters(Filter.or())
-                .filterSubQuery("tno", Filter.Operator.IN, SubQueryParam.build(subQuery2))
+                .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery2))
         ));
 
         /*
@@ -246,8 +246,8 @@ public class InsertTest extends BaseTest {
         Long[] ids = studentDao.batchAdd(new BatchEntityInsert(
                 new EQ(StudentPO.class)
                         .selects("age", "sex", "version", "isDeleted", "createTime")
-                        .selectExpression(Expression.select("concat('copy_', name)", "name"))
-                        .selectExpression(Expression.select("concat('copy_', sno)", "sno"))
+                        .selectExpression("concat('copy_', name)", "name")
+                        .selectExpression("concat('copy_', sno)", "sno")
                         .desc("id").page(1, 1)
         ));
         println(ids);
@@ -259,8 +259,8 @@ public class InsertTest extends BaseTest {
         println(studentDao.batchAdd(new BatchEntityInsert(
                 new EQ(StudentPO.class)
                         .selects("age", "sex", "version", "isDeleted", "createTime")
-                        .selectExpression(Expression.select("concat('copy_', name)", "name"))
-                        .selectExpression(Expression.select("concat('copy_', sno)", "sno"))
+                        .selectExpression("concat('copy_', name)", "name")
+                        .selectExpression("concat('copy_', sno)", "sno")
                         .eq("sno", "s001")
                         .notExists(SubQueryParam.build(new Q("1").eq("sno", "copy_s001")))
         )));

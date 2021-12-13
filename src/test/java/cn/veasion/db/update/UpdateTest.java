@@ -1,7 +1,6 @@
 package cn.veasion.db.update;
 
 import cn.veasion.db.BaseTest;
-import cn.veasion.db.base.Expression;
 import cn.veasion.db.model.po.ClassesPO;
 import cn.veasion.db.model.po.CoursePO;
 import cn.veasion.db.model.po.StudentPO;
@@ -24,11 +23,11 @@ public class UpdateTest extends BaseTest {
         println(studentDao.update(new U().update("age", 20).update("sex", 1).eq("id", 2)));
 
         // 特殊更新，如乐观锁 version = version + 1
-        //  update t_student set age = 20, version = version + 1 where id = 2
+        //  update t_student set age = 20, version = version + 1 where id = 2 and version = 0
         println(studentDao.update(new U()
                 .update("age", 18)
-                .updateExpression("version", Expression.update("version = version + 1"))
-                .eq("id", 2)
+                .updateExpression("version", "version + 1")
+                .eq("id", 2).eq("version", 0)
         ));
 
         // 根据ID更新对象不为null的字段
@@ -43,7 +42,7 @@ public class UpdateTest extends BaseTest {
         // update t_student set version = version = version + 1, age = 20 where id = 2 and version = 1
         studentPO.setVersion(1);
         EntityUpdate entityUpdate = new EntityUpdate(studentPO);
-        entityUpdate.updateExpression("version", Expression.update("version = version + 1"));
+        entityUpdate.updateExpression("version", "version + 1");
         entityUpdate.eq("id").eq("version").excludeUpdateFilterFields();
         println(studentDao.update(entityUpdate));
 

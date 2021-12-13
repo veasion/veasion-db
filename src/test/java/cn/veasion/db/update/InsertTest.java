@@ -1,7 +1,6 @@
 package cn.veasion.db.update;
 
 import cn.veasion.db.BaseTest;
-import cn.veasion.db.base.Expression;
 import cn.veasion.db.model.po.StudentPO;
 import cn.veasion.db.query.EQ;
 import cn.veasion.db.query.Q;
@@ -33,8 +32,8 @@ public class InsertTest extends BaseTest {
         Long[] ids = studentDao.batchAdd(new BatchEntityInsert(
                 new EQ(StudentPO.class)
                         .selects("age", "sex", "version", "isDeleted", "createTime")
-                        .selectExpression(Expression.select("concat('copy_', name)", "name"))
-                        .selectExpression(Expression.select("concat('copy_', sno)", "sno"))
+                        .selectExpression("concat('copy_', name)", "name")
+                        .selectExpression("concat('copy_', sno)", "sno")
                         .desc("id").page(1, 1)
         ));
         println(ids);
@@ -46,8 +45,8 @@ public class InsertTest extends BaseTest {
         println(studentDao.batchAdd(new BatchEntityInsert(
                 new EQ(StudentPO.class)
                         .selects("age", "sex", "version", "isDeleted", "createTime")
-                        .selectExpression(Expression.select("concat('copy_', name)", "name"))
-                        .selectExpression(Expression.select("concat('copy_', sno)", "sno"))
+                        .selectExpression("concat('copy_', name)", "name")
+                        .selectExpression("concat('copy_', sno)", "sno")
                         .eq("sno", "s001")
                         .notExists(SubQueryParam.build(new Q("1").eq("sno", "copy_s001")))
         )));

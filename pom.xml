@@ -7,7 +7,28 @@
 
     <artifactId>veasion-db</artifactId>
 	<groupId>cn.veasion</groupId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0-SNAPSHOT</version>
+
+    <name>veasion-db</name>
+    <description>The framework makes it easier to use a relational database with object-oriented applications.</description>
+    <url>https://github.com/veasion/veasion-db</url>
+
+    <inceptionYear>2021</inceptionYear>
+
+    <contributors>
+        <contributor>
+            <name>Veasion</name>
+            <email>veasion@qq.com</email>
+        </contributor>
+    </contributors>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>Veasion db GitHub Maven Packages</name>
+            <url>https://maven.pkg.github.com/veasion/veasion-db</url>
+        </repository>
+    </distributionManagement>
 
     <properties>
         <java-version>1.8</java-version>
