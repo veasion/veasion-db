@@ -108,6 +108,7 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
         if (query instanceof SubQuery) {
             handleQuery(((SubQuery) query).getSubQuery());
         }
+        handleSelectSubQuery(query.getSelectSubQueryList());
         handleFilter(query);
         if (query instanceof AbstractJoinQuery) {
             List<JoinQueryParam> joinList = ((AbstractJoinQuery<?>) query).getJoinAll();
@@ -118,9 +119,10 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
                         handleQuery(((SubQuery) joinQuery).getSubQuery());
                     } else {
                         if (!containSkipClass(joinQuery)) {
+                            handleSelectSubQuery(joinQuery.getSelectSubQueryList());
                             handleOnFilter(joinQueryParam::getOnFilters, joinQueryParam::on, joinQuery.getTableAs());
                         }
-                        handleSubQuery(joinQuery.getFilters());
+                        handleFilterSubQuery(joinQuery.getFilters());
                     }
                 }
             }
@@ -141,7 +143,7 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
                 if (!containSkipClass(joinUpdate)) {
                     handleOnFilter(joinUpdateParam::getOnFilters, joinUpdateParam::on, joinUpdate.getTableAs());
                 }
-                handleSubQuery(joinUpdate.getFilters());
+                handleFilterSubQuery(joinUpdate.getFilters());
             }
         }
     }
@@ -184,11 +186,18 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
             if (!abstractFilter.hasFilter(logicDeleteField)) {
                 abstractFilter.eq(logicDeleteField, availableValue);
             }
-            handleSubQuery(abstractFilter.getFilters());
+            handleFilterSubQuery(abstractFilter.getFilters());
         }
     }
 
-    private void handleSubQuery(List<Filter> filters) {
+    private void handleSelectSubQuery(List<SubQueryParam> list) {
+        if (list == null || list.isEmpty()) return;
+        for (SubQueryParam sub : list) {
+            handleQuery(sub.getQuery());
+        }
+    }
+
+    private void handleFilterSubQuery(List<Filter> filters) {
         if (filters == null || filters.isEmpty()) return;
         for (Filter filter : filters) {
             if (filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {

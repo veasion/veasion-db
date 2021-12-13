@@ -7,11 +7,13 @@ import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.query.JoinQueryParam;
 import cn.veasion.db.query.OrderParam;
 import cn.veasion.db.query.SubQuery;
+import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.query.UnionQueryParam;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -68,6 +70,8 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         appendSelects(entityClassMap, false);
         // expression & join expression
         appendSelects(entityClassMap, true);
+        // subQuery & join subQuery
+        appendSelects(query.getSelectSubQueryList(), true);
         trimEndSql(",");
         // from table
         sql.append(" FROM ");
@@ -160,6 +164,28 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
                         put(mainQuery.getTableAs(), mainQuery.getEntityClass());
                         put(joinQuery.getTableAs(), joinQuery.getEntityClass());
                     }}, joinQuery.getSelects(), joinQuery.getAliasMap());
+                }
+            }
+        }
+    }
+
+    private void appendSelects(List<SubQueryParam> list, boolean main) {
+        if (list != null && !list.isEmpty()) {
+            for (SubQueryParam sub : list) {
+                QuerySQL querySQL = build(sub.getQuery(), new LinkedHashMap<>());
+                sql.append(" (").append(querySQL.getSQL()).append(")");
+                if (!querySQL.selectFieldColumnMap.isEmpty()) {
+                    sql.append(" AS ").append(querySQL.selectFieldColumnMap.keySet().iterator().next());
+                }
+                sql.append(",");
+                values.addAll(querySQL.values);
+            }
+        }
+        if (main && joins != null && !joins.isEmpty()) {
+            for (JoinQueryParam join : joins) {
+                List<SubQueryParam> selectSubQueryList = join.getJoinQuery().getSelectSubQueryList();
+                if (selectSubQueryList != null) {
+                    appendSelects(selectSubQueryList, false);
                 }
             }
         }

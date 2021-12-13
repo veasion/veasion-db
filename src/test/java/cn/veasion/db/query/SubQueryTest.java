@@ -7,6 +7,7 @@ import cn.veasion.db.base.Operator;
 import cn.veasion.db.model.po.ClassesPO;
 import cn.veasion.db.model.po.CoursePO;
 import cn.veasion.db.model.po.StudentPO;
+import cn.veasion.db.model.vo.StudentVO;
 
 /**
  * SubQueryTest
@@ -42,6 +43,17 @@ public class SubQueryTest extends BaseTest {
                 .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery1))
                 .addFilters(Filter.or())
                 .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery2))
+        ));
+
+        // 通过子查询来查询学生班级名称
+        // select s.*, (select class_name from t_classes where id = s.class_id) as className from t_student
+        println(studentDao.queryList(new EQ(StudentPO.class, "s")
+                .selectAll()
+                .selectSubQuery(SubQueryParam.build(
+                        new EQ(ClassesPO.class)
+                                .select("className")
+                                .filterExpression("id", Operator.EQ, "${s.classId}")
+                )), StudentVO.class
         ));
 
         /*

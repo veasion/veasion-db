@@ -145,7 +145,11 @@ public abstract class AbstractSQL<T> {
                 clazz = entityClassMap.values().iterator().next();
             }
             if (clazz == null) {
-                return field;
+                if (field.endsWith("`") && field.endsWith("`")) {
+                    return field;
+                } else {
+                    return FieldUtils.humpToLine(field);
+                }
             }
             return FieldUtils.entityFieldColumns(clazz).getOrDefault(field, field);
         });

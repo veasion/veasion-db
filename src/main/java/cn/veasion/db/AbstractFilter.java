@@ -107,7 +107,7 @@ public abstract class AbstractFilter<T> {
     }
 
     public T filterExpression(String field, Operator operator, String expression, Object... values) {
-        return filterExpression(field, Operator.EQ, Expression.filter(expression, values));
+        return filterExpression(field, operator, Expression.filter(expression, values));
     }
 
     public T filterExpression(String field, Operator operator, Expression expression) {

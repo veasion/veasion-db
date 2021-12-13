@@ -30,6 +30,7 @@ public abstract class AbstractQuery<T> extends AbstractFilter<T> {
     protected Map<String, String> aliasMap = new HashMap<>();
     private Set<String> excludeSelects;
     private List<Expression> selectExpression;
+    private List<SubQueryParam> selectSubQueryList;
     private List<String> groupBys;
     private List<OrderParam> orders;
     private List<Filter> having;
@@ -63,6 +64,13 @@ public abstract class AbstractQuery<T> extends AbstractFilter<T> {
         for (String field : fields) {
             select(field);
         }
+        return getSelf();
+    }
+
+    public T selectSubQuery(SubQueryParam subQueryParam) {
+        Objects.requireNonNull(subQueryParam, "子查询参数不能为空");
+        if (selectSubQueryList == null) selectSubQueryList = new ArrayList<>();
+        selectSubQueryList.add(subQueryParam);
         return getSelf();
     }
 
@@ -176,6 +184,10 @@ public abstract class AbstractQuery<T> extends AbstractFilter<T> {
         return selectExpression;
     }
 
+    public List<SubQueryParam> getSelectSubQueryList() {
+        return selectSubQueryList;
+    }
+
     public List<String> getGroupBys() {
         return groupBys;
     }
@@ -221,6 +233,11 @@ public abstract class AbstractQuery<T> extends AbstractFilter<T> {
             }
         }
         super.check(mainEntityClass);
+        if (selectSubQueryList != null) {
+            for (SubQueryParam sub : selectSubQueryList) {
+                sub.getQuery().check(mainEntityClass);
+            }
+        }
         checkFilter(mainEntityClass, having, false);
         if (unions != null) {
             for (UnionQueryParam union : unions) {

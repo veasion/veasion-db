@@ -49,7 +49,7 @@ public class SubQuery extends AbstractJoinQuery<SubQuery> {
         subQuery.check(mainEntityClass);
         selectAll = false;
         super.check(mainEntityClass);
-        if (_selectAll || (getSelects().isEmpty() && getSelectExpression() == null)) {
+        if (_selectAll || (getSelects().isEmpty() && getSelectExpression() == null && getSelectSubQueryList() == null)) {
             selects.add(0, handleField("*"));
         }
     }

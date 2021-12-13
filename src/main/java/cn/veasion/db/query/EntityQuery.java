@@ -19,7 +19,7 @@ public class EntityQuery extends AbstractJoinQuery<EntityQuery> {
 
     @Override
     protected boolean isEmptySelects() {
-        return getSelects().isEmpty() && getSelectExpression() == null && !isSelectAll();
+        return getSelects().isEmpty() && getSelectExpression() == null && getSelectSubQueryList() == null && !isSelectAll();
     }
 
     @Override
