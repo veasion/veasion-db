@@ -2,7 +2,6 @@ package cn.veasion.db.query;
 
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.DbException;
-import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinType;
 import cn.veasion.db.base.Operator;
@@ -34,7 +33,7 @@ public class JoinQueryParam {
     public JoinQueryParam on(String mainField, String joinField) {
         mainField = FilterUtils.tableAsField(mainQuery.getTableAs(), mainField);
         joinField = FilterUtils.tableAsField(joinQuery.getTableAs(), joinField);
-        return on(Filter.expression(mainField, Operator.EQ, Expression.filter("${" + joinField + "}")));
+        return on(Filter.expression(mainField, Operator.EQ, "${" + joinField + "}"));
     }
 
     public JoinQueryParam on(Filter filter) {

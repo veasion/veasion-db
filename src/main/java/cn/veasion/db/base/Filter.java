@@ -87,6 +87,10 @@ public class Filter {
         return build(field, operator, Objects.requireNonNull(subQueryParam), null).special();
     }
 
+    public static Filter expression(String field, Operator operator, String expression) {
+        return expression(field, operator, Expression.filter(expression));
+    }
+
     public static Filter expression(String field, Operator operator, Expression expression) {
         return build(field, operator, expression, null).special();
     }

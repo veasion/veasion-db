@@ -7,7 +7,7 @@ version-db 是一个轻量级持久层db框架，除slf4j-api外不依赖任何�
 
 框架支持自定义拦截器，内置逻辑删除拦截器，可通过SPI或调用InterceptorUtils.addInterceptor方法加入扩展。
 ## maven 依赖
-第一步：添加jitpack仓库
+第一步：添加 jitpack 仓库
 ```xml
 <repositories>
     <repository>
@@ -16,13 +16,27 @@ version-db 是一个轻量级持久层db框架，除slf4j-api外不依赖任何�
     </repository>
 </repositories>
 ```
-第二步：依赖veasion-db
+第二步：依赖 veasion-db
 ```xml
 <dependency>
     <groupId>com.github.veasion</groupId>
     <artifactId>veasion-db</artifactId>
-    <version>v1.0.0</version>
+    <version>v1.0.1</version>
 </dependency>
+```
+支持sql解析生成veasion-db代码
+```
+String sql = "select * from t_student where id = 1";
+String code = SQLParseUtils.parseSQLConvert(sql);
+// 直接把SQL转换成对应的代码，示例参考单元测试 SqlDbConvertTest
+
+// 该功能为扩展功能需要加入第三方依赖
+<dependency>
+    <groupId>com.github.jsqlparser</groupId>
+    <artifactId>jsqlparser</artifactId>
+    <version>1.2</version>
+</dependency>
+
 ```
 ## 使用方式介绍
 这里以 student 表举例
@@ -207,7 +221,7 @@ public class SubQueryTest extends BaseTest {
         EQ student = new EQ(StudentPO.class, "s");
         student.join(
                 new SubQuery(new Q().selectExpression("avg(age)", "age"), "t")
-        ).on(Filter.expression("s.age", Operator.LT, Expression.filter("t.age")));
+        ).on(Filter.expression("s.age", Operator.LT, "t.age"));
         student.selectAll().eq("sex", 2);
         println(studentDao.queryList(student));
 
@@ -223,6 +237,17 @@ public class SubQueryTest extends BaseTest {
                 .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery1))
                 .addFilters(Filter.or())
                 .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery2))
+        ));
+
+        // 通过子查询来查询学生班级名称
+        // select s.*, (select class_name from t_classes where id = s.class_id) as className from t_student
+        println(studentDao.queryList(new EQ(StudentPO.class, "s")
+                .selectAll()
+                .selectSubQuery(SubQueryParam.build(
+                        new EQ(ClassesPO.class)
+                                .select("className")
+                                .filterExpression("id", Operator.EQ, "${s.classId}")
+                )), StudentVO.class
         ));
 
         /*

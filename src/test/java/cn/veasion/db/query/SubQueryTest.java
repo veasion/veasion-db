@@ -1,7 +1,6 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.BaseTest;
-import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.Operator;
 import cn.veasion.db.model.po.ClassesPO;
@@ -27,7 +26,7 @@ public class SubQueryTest extends BaseTest {
         EQ student = new EQ(StudentPO.class, "s");
         student.join(
                 new SubQuery(new Q().selectExpression("avg(age)", "age"), "t")
-        ).on(Filter.expression("s.age", Operator.LT, Expression.filter("t.age")));
+        ).on(Filter.expression("s.age", Operator.LT, "t.age"));
         student.selectAll().eq("sex", 2);
         println(studentDao.queryList(student));
 

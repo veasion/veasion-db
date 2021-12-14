@@ -2,7 +2,6 @@ package cn.veasion.db.update;
 
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.DbException;
-import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinType;
 import cn.veasion.db.base.Operator;
@@ -46,7 +45,7 @@ public class JoinUpdateParam {
     public JoinUpdateParam on(String mainField, String joinField) {
         mainField = FilterUtils.tableAsField(mainUpdate.getTableAs(), mainField);
         joinField = FilterUtils.tableAsField(joinUpdate.getTableAs(), joinField);
-        return on(Filter.expression(mainField, Operator.EQ, Expression.filter("${" + joinField + "}")));
+        return on(Filter.expression(mainField, Operator.EQ, "${" + joinField + "}"));
     }
 
     public JoinType getJoinType() {
