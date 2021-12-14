@@ -3,22 +3,15 @@ package cn.veasion.db.interceptor;
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
-import cn.veasion.db.query.AbstractJoinQuery;
-import cn.veasion.db.query.AbstractQuery;
-import cn.veasion.db.query.JoinQueryParam;
-import cn.veasion.db.query.SubQuery;
-import cn.veasion.db.query.SubQueryParam;
-import cn.veasion.db.query.UnionQueryParam;
 import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.Delete;
-import cn.veasion.db.update.EntityUpdate;
-import cn.veasion.db.update.JoinUpdateParam;
 import cn.veasion.db.update.Update;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -30,7 +23,7 @@ import java.util.function.Supplier;
  * @author luozhuowei
  * @date 2021/12/6
  */
-public class LogicDeleteInterceptor implements EntityDaoInterceptor {
+public class LogicDeleteInterceptor extends AbstractInterceptor {
 
     private static ThreadLocal<Boolean> skipLogicDeleteFilter = new ThreadLocal<>();
     private static ThreadLocal<Set<Class<?>>> skipClassLogicDeleteFilter = new ThreadLocal<>();
@@ -48,6 +41,7 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
      *                         如需要更新特殊为特殊值，如 id 或者 userId 时可以传 Expression 对象，如 Expression.update("${id}")
      */
     public LogicDeleteInterceptor(String logicDeleteField, Object availableValue, Object deletedValue) {
+        super(true, true, true, true, false);
         this.logicDeleteField = Objects.requireNonNull(logicDeleteField);
         this.availableValue = Objects.requireNonNull(availableValue);
         this.deletedValue = Objects.requireNonNull(deletedValue);
@@ -79,79 +73,25 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
     @Override
     public <R> R intercept(EntityDaoInvocation<R> invocation) {
         try {
-            Object[] args = invocation.getArgs();
-            if (args != null && !Boolean.TRUE.equals(skipLogicDeleteFilter.get())) {
-                for (Object arg : args) {
-                    if (arg instanceof AbstractQuery) {
-                        handleQuery((AbstractQuery<?>) arg);
-                    } else if (arg instanceof AbstractUpdate) {
-                        handleUpdate((AbstractUpdate<?>) arg);
-                    } else if (arg instanceof Delete) {
-                        handleDelete((Delete) arg);
-                    } else if (arg instanceof AbstractFilter) {
-                        handleFilter((AbstractFilter<?>) arg);
-                    }
-                }
-            }
+            return super.intercept(invocation);
         } finally {
             clearSkip();
         }
-        return invocation.proceed();
     }
 
-    private boolean containSkipClass(AbstractFilter<?> filter) {
+    @Override
+    protected boolean skip() {
+        return Boolean.TRUE.equals(skipLogicDeleteFilter.get());
+    }
+
+    @Override
+    protected boolean containSkipClass(Class<?> clazz) {
         return skipClassLogicDeleteFilter.get() != null &&
-                skipClassLogicDeleteFilter.get().contains(filter.getEntityClass());
+                skipClassLogicDeleteFilter.get().contains(clazz);
     }
 
-    private void handleQuery(AbstractQuery<?> query) {
-        if (query instanceof SubQuery) {
-            handleQuery(((SubQuery) query).getSubQuery());
-        }
-        handleSelectSubQuery(query.getSelectSubQueryList());
-        handleFilter(query);
-        if (query instanceof AbstractJoinQuery) {
-            List<JoinQueryParam> joinList = ((AbstractJoinQuery<?>) query).getJoinAll();
-            if (joinList != null) {
-                for (JoinQueryParam joinQueryParam : joinList) {
-                    AbstractJoinQuery<?> joinQuery = joinQueryParam.getJoinQuery();
-                    if (joinQuery instanceof SubQuery) {
-                        handleQuery(((SubQuery) joinQuery).getSubQuery());
-                    } else {
-                        if (!containSkipClass(joinQuery)) {
-                            handleSelectSubQuery(joinQuery.getSelectSubQueryList());
-                            handleOnFilter(joinQueryParam::getOnFilters, joinQueryParam::on, joinQuery.getTableAs());
-                        }
-                        handleFilterSubQuery(joinQuery.getFilters());
-                    }
-                }
-            }
-        }
-        List<UnionQueryParam> unions = query.getUnions();
-        if (unions != null) {
-            unions.stream().map(UnionQueryParam::getUnion).forEach(this::handleQuery);
-        }
-    }
-
-    private void handleUpdate(AbstractUpdate<?> update) {
-        handleFilter(update);
-        if (update instanceof EntityUpdate) {
-            List<JoinUpdateParam> joinList = ((EntityUpdate) update).getJoinAll();
-            if (joinList == null || joinList.isEmpty()) return;
-            for (JoinUpdateParam joinUpdateParam : joinList) {
-                EntityUpdate joinUpdate = joinUpdateParam.getJoinUpdate();
-                if (!containSkipClass(joinUpdate)) {
-                    handleOnFilter(joinUpdateParam::getOnFilters, joinUpdateParam::on, joinUpdate.getTableAs());
-                }
-                handleFilterSubQuery(joinUpdate.getFilters());
-            }
-        }
-    }
-
-    private void handleDelete(Delete delete) {
-        if (containSkipClass(delete)) {
-            return;
-        }
+    @Override
+    protected void handleDelete(Delete delete) {
         AbstractUpdate<?> convertUpdate = delete.getConvertUpdate();
         if (convertUpdate == null) {
             convertUpdate = new Update();
@@ -164,7 +104,15 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
         delete.convertUpdate(convertUpdate);
     }
 
-    private void handleOnFilter(Supplier<List<Filter>> onFilters, Consumer<Filter> on, String tableAs) {
+    @Override
+    protected void handleFilter(AbstractFilter<?> abstractFilter) {
+        if (!abstractFilter.hasFilter(logicDeleteField)) {
+            abstractFilter.eq(logicDeleteField, availableValue);
+        }
+    }
+
+    @Override
+    protected void handleOnFilter(Object joinParam, Supplier<List<Filter>> onFilters, Consumer<Filter> onMethod, String tableAs) {
         List<Filter> filters = onFilters.get();
         if (filters != null && !filters.isEmpty()) {
             for (Filter filter : filters) {
@@ -174,36 +122,17 @@ public class LogicDeleteInterceptor implements EntityDaoInterceptor {
                 }
             }
         }
-        on.accept(Filter.AND);
-        on.accept(Filter.eq(logicDeleteField, availableValue).fieldAs(tableAs));
+        onMethod.accept(Filter.AND);
+        onMethod.accept(Filter.eq(logicDeleteField, availableValue).fieldAs(tableAs));
     }
 
-    private void handleFilter(AbstractFilter<?> abstractFilter) {
-        if (containSkipClass(abstractFilter)) {
-            return;
-        }
-        if (abstractFilter != null) {
-            if (!abstractFilter.hasFilter(logicDeleteField)) {
-                abstractFilter.eq(logicDeleteField, availableValue);
-            }
-            handleFilterSubQuery(abstractFilter.getFilters());
-        }
+    @Override
+    protected void handleInsert(Class<?> entityClass, List<?> entityList, List<Map<String, Object>> fieldValueMapList) {
     }
 
-    private void handleSelectSubQuery(List<SubQueryParam> list) {
-        if (list == null || list.isEmpty()) return;
-        for (SubQueryParam sub : list) {
-            handleQuery(sub.getQuery());
-        }
-    }
-
-    private void handleFilterSubQuery(List<Filter> filters) {
-        if (filters == null || filters.isEmpty()) return;
-        for (Filter filter : filters) {
-            if (filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {
-                handleQuery(((SubQueryParam) filter.getValue()).getQuery());
-            }
-        }
+    @Override
+    public int sortIndex() {
+        return -1;
     }
 
 }
