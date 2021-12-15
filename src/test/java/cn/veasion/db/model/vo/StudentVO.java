@@ -13,6 +13,7 @@ import cn.veasion.db.model.po.StudentPO;
 public class StudentVO extends StudentPO {
 
     private String className;
+    private String teacherName;
 
     public String getClassName() {
         return className;
@@ -20,5 +21,13 @@ public class StudentVO extends StudentPO {
 
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    public String getTeacherName() {
+        return teacherName;
+    }
+
+    public void setTeacherName(String teacherName) {
+        this.teacherName = teacherName;
     }
 }

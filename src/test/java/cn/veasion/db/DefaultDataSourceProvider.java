@@ -22,6 +22,8 @@ public class DefaultDataSourceProvider implements DataSourceProvider {
 
     @Override
     public DataSource getDataSource(EntityDao<?, ?> entityDao, JdbcTypeEnum jdbcTypeEnum) {
+        // 根据 jdbcTypeEnum 判断读写数据库获取数据源
+        // 集成 spring 可用通过 SpringUtils.getBean(DataSource.class) 获取数据源
         try {
             return getDataSource(BaseTest.jdbcUrl, BaseTest.user, BaseTest.password);
         } catch (SQLException e) {
@@ -31,11 +33,13 @@ public class DefaultDataSourceProvider implements DataSourceProvider {
 
     @Override
     public Connection getConnection(DataSource dataSource) throws SQLException {
+        // 集成 spring 可用通过 org.springframework.jdbc.datasource.DataSourceUtils.getConnection(dataSource) 获取连接
         return dataSource.getConnection();
     }
 
     @Override
     public boolean autoClose() {
+        // 集成 spring 时这里请设置为 false，由 spring 连接池和事务管理
         return true;
     }
 
