@@ -5,6 +5,8 @@ import cn.veasion.db.base.Filter;
 import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.EntityUpdate;
 import cn.veasion.db.update.JoinUpdateParam;
+import cn.veasion.db.utils.FieldUtils;
+import cn.veasion.db.utils.LeftRight;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +23,7 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
     protected AbstractUpdate<?> update;
 
     private List<JoinUpdateParam> joins;
+    private Map<String, Object> tableEntityMap;
 
     public UpdateSQL(AbstractUpdate<?> update) {
         this.update = update;
@@ -38,6 +41,7 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
     }
 
     public void buildUpdate() {
+        tableEntityMap = new HashMap<>();
         Map<String, Class<?>> entityClassMap = new HashMap<>();
         sql.append("UPDATE ");
         sql.append(getTableName(update.getEntityClass()));
@@ -48,8 +52,13 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
                 sql.append(" ").append(tableAs);
             }
             entityClassMap.put(tableAs, update.getEntityClass());
+            tableEntityMap.put(tableAs, ((EntityUpdate) update).getEntity());
             if (joins != null) {
-                joins.forEach(q -> entityClassMap.put(q.getJoinUpdate().getTableAs(), q.getJoinUpdate().getEntityClass()));
+                for (JoinUpdateParam join : joins) {
+                    EntityUpdate joinUpdate = join.getJoinUpdate();
+                    entityClassMap.put(joinUpdate.getTableAs(), joinUpdate.getEntityClass());
+                    tableEntityMap.put(joinUpdate.getTableAs(), joinUpdate.getEntity());
+                }
             }
         } else {
             entityClassMap.put(null, update.getEntityClass());
@@ -135,6 +144,16 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
                 }}, joinUpdate.getFilters());
             }
         }
+    }
+
+    @Override
+    protected LeftRight<Boolean, Object> expressionValue(String tableAs, String field) {
+        if (tableEntityMap == null) return null;
+        Object entity = tableEntityMap.get(tableAs);
+        if (entity == null && tableEntityMap.size() == 1) {
+            entity = tableEntityMap.values().iterator().next();
+        }
+        return LeftRight.build(Boolean.TRUE, FieldUtils.getValue(entity, field, true));
     }
 
 }

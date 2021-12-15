@@ -74,8 +74,17 @@ public abstract class AbstractQuery<T> extends AbstractFilter<T> {
         return getSelf();
     }
 
-    public T selectExpression(String expression, String alias) {
-        return selectExpression(Expression.select(expression, alias));
+    /**
+     * 表达式查询
+     *
+     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成values对应的值，${}替换成字段对应表中的列名 <br><br>
+     *                   示例一：IFNULL(${userName}, #{value1}) <br>
+     *                   示例二：IF(${u.type} = 1, AVG(${s.score}), SUM(${s.score})) <br>
+     * @param alias      别名，如 userName
+     * @param values     占位值，对应 #{value1}, #{value2}, #{value3}, #{value...}，通过占位符拼接参数防SQL注入
+     */
+    public T selectExpression(String expression, String alias, Object... values) {
+        return selectExpression(Expression.select(expression, alias, values));
     }
 
     public T selectExpression(Expression expression) {

@@ -106,6 +106,15 @@ public abstract class AbstractFilter<T> {
         return addFilter(Filter.subQuery(field, operator, subQueryParam));
     }
 
+    /**
+     * 表达式过滤
+     *
+     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成values对应的值，${}替换成字段对应表中的列名 <br><br>
+     *                   示例一：NOW() <br>
+     *                   示例二：DATE_FORMAT(#{value1},'%Y-%m-%d') <br>
+     *                   示例二：${age} + #{value1} + #{age} <br>
+     * @param values     占位值，对应 #{value1}, #{value2}, #{value3}, #{value...}，通过占位符拼接参数防SQL注入
+     */
     public T filterExpression(String field, Operator operator, String expression, Object... values) {
         return filterExpression(field, operator, Expression.filter(expression, values));
     }

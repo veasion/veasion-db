@@ -20,15 +20,17 @@ public class Expression {
     /**
      * 表达式查询（带函数或SQL类不安全查询）
      *
-     * @param expression 表达式，其中${}中间可以使用对象字段名，解析时会默认替换成表对应的列名<br><br>
+     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成values对应的值，${}替换成字段对应表中的列名 <br><br>
      *                   示例一：IFNULL(${userName}, 'xxx') <br>
      *                   示例二：IF(${u.type} = 1, AVG(${s.score}), SUM(${s.score})) <br>
      * @param alias      别名，如 userName
+     * @param values     占位值，对应 #{value1}, #{value2}, #{value3}, #{value...}，通过占位符拼接参数防SQL注入
      */
-    public static Expression select(String expression, String alias) {
+    public static Expression select(String expression, String alias, Object... values) {
         Expression o = new Expression();
         o.expression = expression;
         o.alias = alias;
+        o.values = values;
         return o;
     }
 
@@ -39,7 +41,7 @@ public class Expression {
      *                   示例一：NOW() <br>
      *                   示例二：DATE_FORMAT(#{value1},'%Y-%m-%d') <br>
      *                   示例二：${age} + #{value1} + #{age} <br>
-     * @param values     占位值，对应 #{value1}, #{value2}, #{value3}, #{value...}
+     * @param values     占位值，对应 #{value1}, #{value2}, #{value3}, #{value...}，通过占位符拼接参数防SQL注入
      */
     public static Expression filter(String expression, Object... values) {
         Expression o = new Expression();
@@ -51,11 +53,11 @@ public class Expression {
     /**
      * 表达式更新（带函数或SQL类不安全更新数据）
      *
-     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成values对应的值，${}替换成字段对应表中的列名 <br><br>
+     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成对象字段和values对应的值，${}替换成字段对应表中的列名 <br><br>
      *                   示例一：${version} + 1 <br>
-     *                   示例二：-${id} <br>
+     *                   示例二：${totalAmount} + #{totalAmount} <br>
      *                   示例三：${id} + #{value1} + #{value2} <br>
-     * @param values     占位值，对应 #{value1}, #{value2}, #{value3}, #{value...}
+     * @param values     占位值，对应 #{value1}, #{value2}, #{value3}, #{value...}，通过占位符拼接参数防SQL注入
      */
     public static Expression update(String expression, Object... values) {
         Expression o = new Expression();

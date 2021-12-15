@@ -8,6 +8,7 @@ import cn.veasion.db.base.Operator;
 import cn.veasion.db.base.Table;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FieldUtils;
+import cn.veasion.db.utils.LeftRight;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,7 +52,7 @@ public abstract class AbstractSQL<T> {
                 return getTableName(annotation.entityClass());
             }
         }
-        return FieldUtils.humpToLine(entityClazz.getName());
+        return FieldUtils.humpToLine(entityClazz.getSimpleName());
     }
 
     protected void appendFilter(Map<String, Class<?>> entityClassMap, List<Filter> filters) {
@@ -115,15 +116,20 @@ public abstract class AbstractSQL<T> {
         String eval = replaceSqlEval(expression.getExpression(), entityClassMap);
         if (eval.contains("#{")) {
             Object[] vs = expression.getValues();
-            eval = FieldUtils.replaceSqlPlaceholder(eval, null, (as, field) -> {
-                if (as != null && !"".equals(as) || !field.startsWith("value")) {
-                    throw new DbException("占位符格式错误：" + field);
-                }
-                try {
-                    int index = Integer.parseInt(field.substring(5)) - 1;
-                    values.add(vs[index]);
-                } catch (Exception e) {
-                    throw new DbException("表达式错误：" + expression.getExpression(), e);
+            eval = FieldUtils.replaceSqlPlaceholder(eval, null, (tableAs, field) -> {
+                LeftRight<Boolean, Object> value = expressionValue(tableAs, field);
+                if (value != null && Boolean.TRUE.equals(value.getLeft())) {
+                    values.add(value.getRight());
+                } else {
+                    if (tableAs != null && !"".equals(tableAs) || !field.startsWith("value")) {
+                        throw new DbException("占位符格式错误：" + field);
+                    }
+                    try {
+                        int index = Integer.parseInt(field.substring(5)) - 1;
+                        values.add(vs[index]);
+                    } catch (Exception e) {
+                        throw new DbException("表达式错误：" + expression.getExpression(), e);
+                    }
                 }
                 return "?";
             }, "#{", "}");
@@ -180,6 +186,10 @@ public abstract class AbstractSQL<T> {
             }
             return FieldUtils.entityFieldColumns(clazz).getOrDefault(field, field);
         }
+    }
+
+    protected LeftRight<Boolean, Object> expressionValue(String tableAs, String field) {
+        return null;
     }
 
     protected String toColumn(String tableAs, String field) {

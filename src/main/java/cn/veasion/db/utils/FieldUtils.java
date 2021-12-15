@@ -31,10 +31,6 @@ public class FieldUtils {
     private static Map<Class<?>, Map<String, Method>> METHOD_GET_CACHE = new HashMap<>();
     private static Map<Class<?>, Map<String, Method>> METHOD_SET_CACHE = new HashMap<>();
 
-    public static boolean isField(String field) {
-        return field.matches("[a-zA-Z_$]+[0-9a-zA-Z_$]*");
-    }
-
     public static Map<String, String> entityFieldColumns(Class<?> entityClazz) {
         Table annotation = entityClazz.getAnnotation(Table.class);
         if (annotation != null && annotation.entityClass() != Void.class) {
@@ -282,6 +278,7 @@ public class FieldUtils {
      * 驼峰转下划线
      */
     public static String humpToLine(String str) {
+        if (str == null || "".equals(str)) return str;
         Matcher matcher = HUMP_PATTERN.matcher(str.trim());
         StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
@@ -290,6 +287,7 @@ public class FieldUtils {
             matcher.appendReplacement(sb, s);
         }
         matcher.appendTail(sb);
+        sb.setCharAt(0, String.valueOf(sb.charAt(0)).toLowerCase().charAt(0));
         return sb.toString();
     }
 

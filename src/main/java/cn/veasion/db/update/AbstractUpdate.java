@@ -41,6 +41,15 @@ public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
         return getSelf();
     }
 
+    /**
+     * 表达式更新
+     *
+     * @param expression 表达式，其中#{}和${}中间可以使用占位字段，解析时#{}会默认替换成对象字段和values对应的值，${}替换成字段对应表中的列名 <br><br>
+     *                   示例一：${version} + 1 <br>
+     *                   示例二：${totalAmount} + #{totalAmount} <br>
+     *                   示例三：${id} + #{value1} + #{value2} <br>
+     * @param values     占位值，对应 #{value1}, #{value2}, #{value3}, #{value...}，通过占位符拼接参数防SQL注入
+     */
     public T updateExpression(String field, String expression, Object... values) {
         return updateExpression(field, Expression.update(expression, values));
     }

@@ -65,18 +65,12 @@ public class LogicDeleteInterceptor extends AbstractInterceptor {
         skipClassLogicDeleteFilter.set(new HashSet<>(Arrays.asList(classes)));
     }
 
+    /**
+     * 清空跳过
+     */
     public static void clearSkip() {
         skipLogicDeleteFilter.remove();
         skipClassLogicDeleteFilter.remove();
-    }
-
-    @Override
-    public <R> R intercept(EntityDaoInvocation<R> invocation) {
-        try {
-            return super.intercept(invocation);
-        } finally {
-            clearSkip();
-        }
     }
 
     @Override

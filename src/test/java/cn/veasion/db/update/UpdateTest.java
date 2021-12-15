@@ -38,6 +38,10 @@ public class UpdateTest extends BaseTest {
         studentPO.setDesc("哈哈");
         println(studentDao.updateById(studentPO));
 
+        // 年龄累加
+        // update t_student set age = age + 20 where id = ?
+        println(studentDao.update(new EU(studentPO).eq("id").updateExpression("age", "${age} + #{age}")));
+
         // 对象乐观锁更新
         // update t_student set version = version = version + 1, age = 20 where id = 2 and version = 1
         studentPO.setVersion(1);

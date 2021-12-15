@@ -193,19 +193,18 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
 
     private void appendSelects(Map<String, Class<?>> entityClassMap, List<Expression> selectExpression) {
         if (selectExpression == null || selectExpression.isEmpty()) return;
-        StringBuilder sb = new StringBuilder();
         for (Expression expression : selectExpression) {
             String alias = expression.getAlias();
             if (selectFieldColumnMap != null && alias != null) {
                 selectFieldColumnMap.put(alias, alias);
             }
-            sb.append(" ").append(replaceSqlEval(expression.getExpression(), entityClassMap));
+            sql.append(" ");
+            appendExpressionValue(entityClassMap, expression);
             if (alias != null) {
-                sb.append(" AS ").append(alias);
+                sql.append(" AS ").append(alias);
             }
-            sb.append(",");
+            sql.append(",");
         }
-        sql.append(replaceSqlEval(sb.toString(), entityClassMap));
     }
 
     private void appendSelects(Map<String, Class<?>> entityClassMap, List<String> selects, Map<String, String> aliasMap) {

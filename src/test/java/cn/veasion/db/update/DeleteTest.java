@@ -20,14 +20,22 @@ public class DeleteTest extends BaseTest {
         println(studentDao.getById(1L));
 
         // 恢复
-        LogicDeleteInterceptor.skip(true);
-        println(studentDao.update(new U().update("isDeleted", 0).eq("id", 1)));
-        println(studentDao.getById(1L));
+        try {
+            LogicDeleteInterceptor.skip(true);
+            println(studentDao.update(new U().update("isDeleted", 0).eq("id", 1)));
+            println(studentDao.getById(1L));
+        } finally {
+            LogicDeleteInterceptor.clearSkip();
+        }
 
         // 物理删除
-        LogicDeleteInterceptor.skip(true);
-        println(studentDao.deleteById(1L));
-        println(studentDao.getById(1L));
+        try {
+            LogicDeleteInterceptor.skip(true);
+            println(studentDao.deleteById(1L));
+            println(studentDao.getById(1L));
+        } finally {
+            LogicDeleteInterceptor.clearSkip();
+        }
     }
 
 }

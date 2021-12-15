@@ -89,8 +89,13 @@ public class SimpleQueryTest extends BaseTest {
 
         // 查询空表
         // select 1 from dual
-        LogicDeleteInterceptor.skip(Dual.class);
-        println(studentDao.queryForType(new EQ(Dual.class).select("1"), Integer.class));
+        try {
+            LogicDeleteInterceptor.skip(Dual.class);
+            println(studentDao.queryForType(new EQ(Dual.class).select("1"), Integer.class));
+        } finally {
+            LogicDeleteInterceptor.clearSkip();
+        }
+
     }
 
 }
