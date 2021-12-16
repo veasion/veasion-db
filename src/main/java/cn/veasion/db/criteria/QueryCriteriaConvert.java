@@ -10,14 +10,17 @@ import cn.veasion.db.query.JoinQueryParam;
 import cn.veasion.db.utils.FieldUtils;
 
 import java.lang.reflect.Field;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * QueryCriteriaConvert
@@ -26,6 +29,8 @@ import java.util.Set;
  * @date 2021/12/15
  */
 public class QueryCriteriaConvert {
+
+    public static final Pattern FIELD_PATTERN = Pattern.compile("[_0-9a-zA-Z]+");
 
     private Object object;
     private EntityQuery query;
@@ -69,6 +74,7 @@ public class QueryCriteriaConvert {
         return joinClassMap;
     }
 
+    @SuppressWarnings("unchecked")
     private void handleFilters() {
         JoinCriteriaMulti joinCriteriaMulti = object.getClass().getAnnotation(JoinCriteriaMulti.class);
         if (joinCriteriaMulti != null) {
@@ -77,53 +83,100 @@ public class QueryCriteriaConvert {
         initJoinClassMap();
         Map<String, Field> fields = FieldUtils.fields(object.getClass());
         for (Field field : fields.values()) {
-            QueryCriteria annotation = field.getAnnotation(QueryCriteria.class);
-            if (annotation == null) {
+            QueryCriteria queryCriteria = field.getAnnotation(QueryCriteria.class);
+            AutoCriteria autoCriteria = field.getAnnotation(AutoCriteria.class);
+            if (queryCriteria == null && autoCriteria == null) {
                 continue;
             }
             Object value = FieldUtils.getValue(object, field.getName(), true);
             if (value == null) {
                 continue;
             }
-            boolean skipEmpty = annotation.skipEmpty();
-            if (skipEmpty) {
-                if (value instanceof String && "".equals(value)) {
-                    continue;
-                } else if (value instanceof Collection && ((Collection<?>) value).isEmpty()) {
-                    continue;
-                } else if (value instanceof Object[] && ((Object[]) value).length == 0) {
-                    continue;
-                }
+            if (queryCriteria != null) {
+                handleQueryCriteria(field, queryCriteria, value);
+            } else if (value instanceof Map) {
+                handleAutoCriteria(autoCriteria, (Map<String, Object>) value);
+            } else {
+                handleAutoCriteria(autoCriteria, new HashMap<String, Object>() {{
+                    put(field.getName(), value);
+                }});
             }
-            String fieldName = "".equals(annotation.field()) ? field.getName() : annotation.field();
-            Operator operator = annotation.value();
-            Class<?> relationClass = annotation.relation();
+        }
+    }
 
+    private void handleAutoCriteria(AutoCriteria annotation, Map<String, Object> filters) {
+        Class<?> relationClass = annotation.relation();
+        for (Map.Entry<String, Object> entry : filters.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
+            if (annotation.skipEmpty() && isEmpty(value)) {
+                return;
+            }
+            if (!FIELD_PATTERN.matcher(key).matches()) {
+                throw new FilterException("非法字段：" + key);
+            }
             if (relationClass != Void.class) {
                 checkJoin(relationClass);
             }
+            Operator operator = Operator.EQ;
+            if (value instanceof Collection || value instanceof Object[]) {
+                operator = Operator.IN;
+            } else if (key.startsWith("start_")) {
+                key = key.substring(6);
+                operator = Operator.GTE;
+            } else if (key.startsWith("end_")) {
+                key = key.substring(4);
+                operator = Operator.LTE;
+            } else if (value instanceof String &&
+                    (String.valueOf(value).startsWith("%") || String.valueOf(value).endsWith("%"))) {
+                operator = Operator.LIKE;
+            }
+            if (value instanceof Date) {
+                value = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format((Date) value);
+            }
+            Filter filter = getFilter(key, operator, value);
+            if (relationClass != Void.class) {
+                filter.fieldAs(joinClassMap.get(relationClass).getTableAs());
+            }
+            query.addFilter(filter);
+        }
+    }
 
-            String[] orFields = annotation.orFields();
-            if (orFields.length > 0) {
-                query.addFilter(Filter.leftBracket());
-                for (int i = 0; i < orFields.length; i++) {
-                    Filter filter = getFilter(orFields[i], operator, value);
-                    if (relationClass != Void.class) {
-                        filter.fieldAs(joinClassMap.get(relationClass).getTableAs());
-                    }
-                    query.addFilter(filter);
-                    if (i < orFields.length - 1) {
-                        query.addFilter(Filter.or());
-                    }
-                }
-                query.addFilter(Filter.rightBracket());
-            } else {
-                Filter filter = getFilter(fieldName, operator, value);
+    private void handleQueryCriteria(Field field, QueryCriteria annotation, Object value) {
+        if (annotation.skipEmpty() && isEmpty(value)) {
+            return;
+        }
+        String fieldName = "".equals(annotation.field()) ? field.getName() : annotation.field();
+        Operator operator = annotation.value();
+        Class<?> relationClass = annotation.relation();
+
+        if (relationClass != Void.class) {
+            checkJoin(relationClass);
+        }
+
+        String[] orFields = annotation.orFields();
+        if (orFields.length > 0) {
+            query.addFilter(Filter.leftBracket());
+            for (int i = 0; i < orFields.length; i++) {
+                Filter filter = getFilter(orFields[i], operator, value);
                 if (relationClass != Void.class) {
                     filter.fieldAs(joinClassMap.get(relationClass).getTableAs());
                 }
                 query.addFilter(filter);
+                if (i < orFields.length - 1) {
+                    query.addFilter(Filter.or());
+                }
             }
+            query.addFilter(Filter.rightBracket());
+        } else {
+            Filter filter = getFilter(fieldName, operator, value);
+            if (relationClass != Void.class) {
+                filter.fieldAs(joinClassMap.get(relationClass).getTableAs());
+            }
+            query.addFilter(filter);
         }
     }
 
@@ -170,6 +223,20 @@ public class QueryCriteriaConvert {
         } while (joinClass != Void.class && !joined.contains(joinClass));
     }
 
+    private boolean isEmpty(Object value) {
+        if (value == null) {
+            return true;
+        }
+        if (value instanceof String && "".equals(value)) {
+            return true;
+        } else if (value instanceof Collection && ((Collection<?>) value).isEmpty()) {
+            return true;
+        } else if (value instanceof Object[] && ((Object[]) value).length == 0) {
+            return true;
+        }
+        return false;
+    }
+
     public static Filter getFilter(String field, Operator operator, Object value) {
         if (Operator.EQ.equals(operator)) {
             return Filter.eq(field, value);
@@ -200,6 +267,16 @@ public class QueryCriteriaConvert {
                 throw new FilterException(field + " 字段 Operator.IN 类型必须是集合或者数组");
             }
         } else if (Operator.LIKE.equals(operator)) {
+            if (value instanceof String) {
+                String str = (String) value;
+                if (str.startsWith("%") && str.endsWith("%")) {
+                    return Filter.like(field, str.substring(1, str.length() - 1));
+                } else if (str.startsWith("%")) {
+                    return Filter.likeLeft(field, str.substring(1));
+                } else if (str.endsWith("%")) {
+                    return Filter.likeRight(field, str.substring(0, str.length() - 1));
+                }
+            }
             return Filter.like(field, value);
         } else if (Operator.BETWEEN.equals(operator)) {
             if (value instanceof Collection) {

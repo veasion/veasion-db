@@ -5,6 +5,7 @@ import cn.veasion.db.model.po.ClassesPO;
 import cn.veasion.db.model.po.TeacherPO;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * StudentInVO
@@ -18,6 +19,7 @@ import java.util.List;
 })
 public class StudentInVO {
 
+    // 简单字段查询映射
     @QueryCriteria
     private String sno;
     @QueryCriteria(value = Operator.IN, field = "id")
@@ -34,6 +36,14 @@ public class StudentInVO {
     private String className;
     @QueryCriteria(value = Operator.LIKE, field = "name", relation = TeacherPO.class)
     private String teacherName;
+
+    // 通用查询映射
+    @AutoCriteria
+    private Map<String, Object> filters;
+    @AutoCriteria(relation = ClassesPO.class)
+    private Map<String, Object> classFilters;
+    @AutoCriteria(relation = TeacherPO.class)
+    private Map<String, Object> teacherFilters;
 
     public String getSno() {
         return sno;
@@ -97,6 +107,30 @@ public class StudentInVO {
 
     public void setTeacherName(String teacherName) {
         this.teacherName = teacherName;
+    }
+
+    public Map<String, Object> getFilters() {
+        return filters;
+    }
+
+    public void setFilters(Map<String, Object> filters) {
+        this.filters = filters;
+    }
+
+    public Map<String, Object> getClassFilters() {
+        return classFilters;
+    }
+
+    public void setClassFilters(Map<String, Object> classFilters) {
+        this.classFilters = classFilters;
+    }
+
+    public Map<String, Object> getTeacherFilters() {
+        return teacherFilters;
+    }
+
+    public void setTeacherFilters(Map<String, Object> teacherFilters) {
+        this.teacherFilters = teacherFilters;
     }
 }
 

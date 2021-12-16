@@ -7,6 +7,7 @@ import cn.veasion.db.model.vo.StudentVO;
 import cn.veasion.db.query.EntityQuery;
 
 import java.util.Arrays;
+import java.util.HashMap;
 
 /**
  * QueryCriteriaTest
@@ -47,6 +48,29 @@ public class QueryCriteriaTest extends BaseTest {
         // 根据学号或名称查询
         student = new StudentInVO();
         student.setSnoOrName("熊");
+        queryList(student);
+
+        // 根据班级id区间查询
+        student = new StudentInVO();
+        student.setFilters(new HashMap<String, Object>() {{
+            put("start_classId", 1);
+            put("end_classId", 10);
+        }});
+        queryList(student);
+
+        // 根据班级id区间查询（关联班级）
+        student = new StudentInVO();
+        student.setClassFilters(new HashMap<String, Object>() {{
+            put("start_id", 1);
+            put("end_id", 10);
+        }});
+        queryList(student);
+
+        // 根据老师名称模糊查询（关联班级）
+        student = new StudentInVO();
+        student.setTeacherFilters(new HashMap<String, Object>() {{
+            put("name", "罗%");
+        }});
         queryList(student);
 
     }
