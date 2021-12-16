@@ -7,21 +7,12 @@ veasion-db 是一个轻量级持久层db框架，除slf4j-api外不依赖任何�
 
 框架支持自定义拦截器，内置逻辑删除拦截器，可通过SPI或调用InterceptorUtils.addInterceptor方法加入扩展。
 ## maven 依赖
-第一步：添加 jitpack 仓库
-```xml
-<repositories>
-    <repository>
-        <id>jitpack.io</id>
-        <url>https://jitpack.io</url>
-    </repository>
-</repositories>
-```
-第二步：依赖 veasion-db
+添加 veasion-db 依赖
 ```xml
 <dependency>
-    <groupId>com.github.veasion</groupId>
+    <groupId>cn.veasion</groupId>
     <artifactId>veasion-db</artifactId>
-    <version>v1.0.2</version>
+    <version>1.0.2</version>
 </dependency>
 ```
 支持sql解析生成veasion-db代码
