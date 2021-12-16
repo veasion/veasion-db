@@ -30,7 +30,7 @@ import java.util.regex.Pattern;
  */
 public class QueryCriteriaConvert {
 
-    public static final Pattern FIELD_PATTERN = Pattern.compile("[_0-9a-zA-Z]+");
+    public static final Pattern FIELD_PATTERN = Pattern.compile("[_0-9a-zA-Z.]+");
 
     private Object object;
     private EntityQuery query;
@@ -115,7 +115,7 @@ public class QueryCriteriaConvert {
             if (annotation.skipEmpty() && isEmpty(value)) {
                 return;
             }
-            if (!FIELD_PATTERN.matcher(key).matches()) {
+            if (!FIELD_PATTERN.matcher(key).matches() || key.length() > 30) {
                 throw new FilterException("非法字段：" + key);
             }
             if (relationClass != Void.class) {

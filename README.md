@@ -1,9 +1,9 @@
 # veasion-db
 
-version-db 是一个轻量级持久层db框架，除slf4j-api外不依赖任何第三方jar，该框架提供丰富灵活的数据库操作，
+veasion-db 是一个轻量级持久层db框架，除slf4j-api外不依赖任何第三方jar，该框架提供丰富灵活的数据库操作，
 单元测试 query/update 目录下有大量示例及demo。
 
-框架支持sql能实现的任意查询或更新，如关联查询、子查询、关联更新、insert select、不同数据库分页扩展等。
+框架基本支持sql能实现的任意查询或更新，如关联查询、子查询、关联更新、insert select、不同数据库分页扩展等。
 
 框架支持自定义拦截器，内置逻辑删除拦截器，可通过SPI或调用InterceptorUtils.addInterceptor方法加入扩展。
 ## maven 依赖
@@ -21,7 +21,7 @@ version-db 是一个轻量级持久层db框架，除slf4j-api外不依赖任何�
 <dependency>
     <groupId>com.github.veasion</groupId>
     <artifactId>veasion-db</artifactId>
-    <version>v1.0.1</version>
+    <version>v1.0.2</version>
 </dependency>
 ```
 支持sql解析生成veasion-db代码
@@ -329,6 +329,34 @@ public class InsertTest extends BaseTest {
         return studentPO;
     }
 
+}
+```
+
+### 动态查询机制
+支持动态查询机制，可通过配置字段注解提前定义查询方式和动态关联、静态关联表。
+非常灵活的实现前端传参后端动态查询，具体参考单元测试 QueryCriteriaTest
+
+### spring 项目接入 veasion-db
+SPI 实现 cn.veasion.db.jdbc.DataSourceProvider 接口
+```java
+public class DefaultDataSourceProvider implements DataSourceProvider {
+
+    @Override
+    public DataSource getDataSource(EntityDao<?, ?> entityDao, JdbcTypeEnum jdbcTypeEnum) {
+        // 可已定义根据 jdbcTypeEnum 判断读写类型，获取不同数据源
+        // SpringUtils 是获取 bean 的工具类（自写）
+        return SpringUtils.getBean(DataSource.class);
+    }
+
+    @Override
+    public Connection getConnection(DataSource dataSource) throws SQLException {
+        return org.springframework.jdbc.datasource.DataSourceUtils.getConnection(dataSource);
+    }
+
+    @Override
+    public boolean autoClose() {
+        return false;
+    }
 }
 ```
 
