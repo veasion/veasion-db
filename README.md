@@ -351,6 +351,9 @@ public class DefaultDataSourceProvider implements DataSourceProvider {
 }
 ```
 
+### 适配 spring-mybatis
+在 springboot / spring 中适配 veasion-db 和 mybatis 共存，见项目 [veasion-db-mybatis](https://github.com/veasion/veasion-db-mybatis)
+
 ## 赞助
 
 项目的发展离不开您的支持，请作者喝杯咖啡吧~
