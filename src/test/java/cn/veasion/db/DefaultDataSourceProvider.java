@@ -38,9 +38,13 @@ public class DefaultDataSourceProvider implements DataSourceProvider {
     }
 
     @Override
-    public boolean autoClose() {
-        // 集成 spring 时这里请设置为 false，由 spring 连接池和事务管理
-        return true;
+    public void releaseConnection(DataSource dataSource, Connection connection) {
+        // 集成 spring 可用通过 org.springframework.jdbc.datasource.DataSourceUtils.releaseConnection(connection, dataSource) 释放连接
+        try {
+            connection.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static DataSource getDataSource(String url, String user, String password) throws SQLException {

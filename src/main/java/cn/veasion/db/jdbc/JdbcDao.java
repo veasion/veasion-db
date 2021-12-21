@@ -33,13 +33,15 @@ public class JdbcDao {
      *
      * @return 返回影响条数
      */
-    public static int executeUpdate(Connection connection, String sql, Object... params) throws SQLException {
+    public static int executeUpdate(Connection connection, String sql, Object... params) {
         int count;
         PreparedStatement ps = null;
         try {
             ps = prepareStatement(connection, sql, params);
             count = ps.executeUpdate();
             LOGGER.info("<==    Updates: {}", count);
+        } catch (SQLException e) {
+            throw new DbException("更新异常", e);
         } finally {
             closeAll(ps, null);
         }
@@ -51,7 +53,7 @@ public class JdbcDao {
      *
      * @return 返回自增长id
      */
-    public static Object[] executeInsert(Connection connection, String sql, Object... params) throws SQLException {
+    public static Object[] executeInsert(Connection connection, String sql, Object... params) {
         PreparedStatement ps = null;
         ResultSet result = null;
         List<Object> keys = new ArrayList<>();
@@ -65,6 +67,8 @@ public class JdbcDao {
                 }
             }
             LOGGER.info("<==    Updates: {}", count);
+        } catch (SQLException e) {
+            throw new DbException("新增异常", e);
         } finally {
             closeAll(ps, result);
         }
@@ -76,7 +80,7 @@ public class JdbcDao {
      *
      * @return 返回列表数据
      */
-    public static List<Map<String, Object>> listForMap(Connection connection, String sql, Object... params) throws SQLException {
+    public static List<Map<String, Object>> listForMap(Connection connection, String sql, Object... params) {
         return listForMap(connection, true, sql, params);
     }
 
@@ -85,7 +89,7 @@ public class JdbcDao {
      *
      * @return 返回列表数据
      */
-    public static List<Map<String, Object>> listForMap(Connection connection, boolean mapUnderscoreToCamelCase, String sql, Object... params) throws SQLException {
+    public static List<Map<String, Object>> listForMap(Connection connection, boolean mapUnderscoreToCamelCase, String sql, Object... params) {
         ResultSet rs = null;
         PreparedStatement ps = null;
         List<Map<String, Object>> list = new ArrayList<>();
@@ -109,6 +113,8 @@ public class JdbcDao {
                 list.add(map);
             }
             LOGGER.info("<==      Total: {}", list.size());
+        } catch (SQLException e) {
+            throw new DbException("查询异常", e);
         } finally {
             closeAll(ps, rs);
         }
@@ -118,14 +124,14 @@ public class JdbcDao {
     /**
      * 查询单个
      */
-    public static Map<String, Object> queryForMap(Connection connection, String sql, Object... params) throws Exception {
+    public static Map<String, Object> queryForMap(Connection connection, String sql, Object... params) {
         return queryForMap(connection, true, sql, params);
     }
 
     /**
      * 查询单个
      */
-    public static Map<String, Object> queryForMap(Connection connection, boolean mapUnderscoreToCamelCase, String sql, Object... params) throws Exception {
+    public static Map<String, Object> queryForMap(Connection connection, boolean mapUnderscoreToCamelCase, String sql, Object... params) {
         List<Map<String, Object>> list = listForMap(connection, mapUnderscoreToCamelCase, sql, params);
         if (list.isEmpty()) {
             return null;
@@ -138,7 +144,7 @@ public class JdbcDao {
     /**
      * 查询单个
      */
-    public static <T> T queryForType(Connection connection, Class<T> clazz, String sql, Object... params) throws Exception {
+    public static <T> T queryForType(Connection connection, Class<T> clazz, String sql, Object... params) {
         List<T> list = listForType(connection, clazz, sql, params);
         if (list.isEmpty()) {
             return null;
@@ -153,7 +159,7 @@ public class JdbcDao {
      *
      * @return 返回列表数据
      */
-    public static <T> List<T> listForType(Connection connection, Class<T> clazz, String sql, Object... params) throws Exception {
+    public static <T> List<T> listForType(Connection connection, Class<T> clazz, String sql, Object... params) {
         return listForType(connection, clazz, null, sql, params);
     }
 
@@ -162,7 +168,7 @@ public class JdbcDao {
      *
      * @return 返回列表数据
      */
-    public static <T> List<T> listForType(Connection connection, Class<T> clazz, FieldAssignmentHandler handler, String sql, Object... params) throws Exception {
+    public static <T> List<T> listForType(Connection connection, Class<T> clazz, FieldAssignmentHandler handler, String sql, Object... params) {
         ResultSet rs = null;
         PreparedStatement ps = null;
         List<T> list = new ArrayList<>();
@@ -203,6 +209,11 @@ public class JdbcDao {
                 list.add(obj);
             }
             LOGGER.info("<==      Total: {}", list.size());
+        } catch (SQLException e) {
+            throw new DbException("查询异常", e);
+        } catch (RuntimeException e) {
+            LOGGER.error("查询处理数据异常", e);
+            throw e;
         } finally {
             closeAll(ps, rs);
         }
@@ -214,7 +225,7 @@ public class JdbcDao {
      *
      * @return 返回结果
      */
-    public static Object queryOnly(Connection connection, String sql, Object... params) throws SQLException {
+    public static Object queryOnly(Connection connection, String sql, Object... params) {
         Object value = null;
         ResultSet rs = null;
         PreparedStatement ps = null;
@@ -229,6 +240,8 @@ public class JdbcDao {
                 total++;
             }
             LOGGER.info("<==      Total: {}", total);
+        } catch (SQLException e) {
+            throw new DbException("查询异常", e);
         } finally {
             closeAll(ps, rs);
         }

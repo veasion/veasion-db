@@ -12,7 +12,7 @@ veasion-db 是一个轻量级持久层db框架，除slf4j-api外不依赖任何�
 <dependency>
     <groupId>cn.veasion</groupId>
     <artifactId>veasion-db</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.3</version>
 </dependency>
 ```
 支持sql解析生成veasion-db代码
@@ -345,8 +345,8 @@ public class DefaultDataSourceProvider implements DataSourceProvider {
     }
 
     @Override
-    public boolean autoClose() {
-        return false;
+    public void releaseConnection(DataSource dataSource, Connection connection) {
+        return org.springframework.jdbc.datasource.DataSourceUtils.releaseConnection(connection, dataSource);
     }
 }
 ```

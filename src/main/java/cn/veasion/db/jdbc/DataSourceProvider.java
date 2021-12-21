@@ -32,10 +32,11 @@ public interface DataSourceProvider {
     Connection getConnection(DataSource dataSource) throws SQLException;
 
     /**
-     * 是否自动关闭连接
+     * 释放连接
+     *
+     * @param dataSource 数据源
+     * @param connection 连接
      */
-    default boolean autoClose() {
-        return false;
-    }
+    void releaseConnection(DataSource dataSource, Connection connection);
 
 }

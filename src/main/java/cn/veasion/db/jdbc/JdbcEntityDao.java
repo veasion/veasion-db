@@ -20,6 +20,7 @@ import cn.veasion.db.utils.TypeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.sql.DataSource;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
@@ -29,6 +30,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * JdbcEntityDao
@@ -51,9 +53,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         Field idField = FieldUtils.getIdField(entity.getClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "add", new Object[]{entityInsert}, () -> {
             InsertSQL insertSQL = entityInsert.sqlValue();
-            Connection connection = null;
-            try {
-                connection = getConnection(JdbcTypeEnum.INSERT);
+            return executeJdbc(JdbcTypeEnum.INSERT, connection -> {
                 Object[] objects = JdbcDao.executeInsert(connection, insertSQL.getSQL(), insertSQL.getValues());
                 if (objects.length > 0) {
                     ID id = (ID) TypeUtils.convert(objects[0], idField.getType());
@@ -63,12 +63,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                     return id;
                 }
                 return null;
-            } catch (SQLException e) {
-                logger.error("新增异常", e);
-                throw new DbException(e);
-            } finally {
-                checkConnection(connection);
-            }
+            });
         }));
     }
 
@@ -84,9 +79,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
             InsertSQL insertSQL = batchEntityInsert.sqlValue();
             Field idField = FieldUtils.getIdField(getEntityClass());
             List<?> entityList = batchEntityInsert.getEntityList();
-            Connection connection = null;
-            try {
-                connection = getConnection(JdbcTypeEnum.INSERT);
+            return executeJdbc(JdbcTypeEnum.INSERT, connection -> {
                 Object[] objects = JdbcDao.executeInsert(connection, insertSQL.getSQL(), insertSQL.getValues());
                 ID[] ids = (ID[]) Array.newInstance(idField.getType(), objects.length);
                 for (int i = 0; i < objects.length; i++) {
@@ -97,12 +90,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                     }
                 }
                 return ids;
-            } catch (SQLException e) {
-                logger.error("批量新增异常", e);
-                throw new DbException(e);
-            } finally {
-                checkConnection(connection);
-            }
+            });
         }));
     }
 
@@ -111,16 +99,9 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         query.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryForType", new Object[]{query, clazz}, () -> {
             QuerySQL querySQL = query.sqlValue();
-            Connection connection = null;
-            try {
-                connection = getConnection(JdbcTypeEnum.SELECT);
-                return JdbcDao.queryForType(connection, clazz, querySQL.getSQL(), querySQL.getValues());
-            } catch (Exception e) {
-                logger.error("查询异常", e);
-                throw new DbException(e);
-            } finally {
-                checkConnection(connection);
-            }
+            return executeJdbc(JdbcTypeEnum.SELECT, connection ->
+                    JdbcDao.queryForType(connection, clazz, querySQL.getSQL(), querySQL.getValues())
+            );
         }));
     }
 
@@ -129,16 +110,9 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         query.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryForMap", new Object[]{query, mapUnderscoreToCamelCase}, () -> {
             QuerySQL querySQL = query.sqlValue();
-            Connection connection = null;
-            try {
-                connection = getConnection(JdbcTypeEnum.SELECT);
-                return JdbcDao.queryForMap(connection, mapUnderscoreToCamelCase, querySQL.getSQL(), querySQL.getValues());
-            } catch (Exception e) {
-                logger.error("查询异常", e);
-                throw new DbException(e);
-            } finally {
-                checkConnection(connection);
-            }
+            return executeJdbc(JdbcTypeEnum.SELECT, connection ->
+                    JdbcDao.queryForMap(connection, mapUnderscoreToCamelCase, querySQL.getSQL(), querySQL.getValues())
+            );
         }));
     }
 
@@ -147,16 +121,9 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         query.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "listForMap", new Object[]{query, mapUnderscoreToCamelCase}, () -> {
             QuerySQL querySQL = query.sqlValue();
-            Connection connection = null;
-            try {
-                connection = getConnection(JdbcTypeEnum.SELECT);
-                return JdbcDao.listForMap(connection, mapUnderscoreToCamelCase, querySQL.getSQL(), querySQL.getValues());
-            } catch (Exception e) {
-                logger.error("查询异常", e);
-                throw new DbException(e);
-            } finally {
-                checkConnection(connection);
-            }
+            return executeJdbc(JdbcTypeEnum.SELECT, connection ->
+                    JdbcDao.listForMap(connection, mapUnderscoreToCamelCase, querySQL.getSQL(), querySQL.getValues())
+            );
         }));
     }
 
@@ -165,16 +132,9 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         query.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryList", new Object[]{query, clazz}, () -> {
             QuerySQL querySQL = query.sqlValue();
-            Connection connection = null;
-            try {
-                connection = getConnection(JdbcTypeEnum.SELECT);
-                return JdbcDao.listForType(connection, clazz, querySQL.getSQL(), querySQL.getValues());
-            } catch (Exception e) {
-                logger.error("查询异常", e);
-                throw new DbException(e);
-            } finally {
-                checkConnection(connection);
-            }
+            return executeJdbc(JdbcTypeEnum.SELECT, connection ->
+                    JdbcDao.listForType(connection, clazz, querySQL.getSQL(), querySQL.getValues())
+            );
         }));
     }
 
@@ -187,27 +147,23 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         countQuery.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "queryPage", new Object[]{query, clazz}, () -> {
             final PageParam pageParam = query.getPageParam();
-            query.page(null);
-            Connection connection = null;
             try {
+                query.page(null);
                 QuerySQL countQuerySQL = countQuery.sqlValue();
-                connection = getConnection(JdbcTypeEnum.SELECT);
-                Object value = JdbcDao.queryOnly(connection, countQuerySQL.getSQL(), countQuerySQL.getValues());
-                Integer count = TypeUtils.convert(value, Integer.class);
-                query.page(pageParam);
-                if (count > 0) {
-                    QuerySQL listQuerySQL = query.sqlValue();
-                    List<E> list = JdbcDao.listForType(connection, clazz, listQuerySQL.getSQL(), listQuerySQL.getValues());
-                    return new Page<>(count, list);
-                } else {
-                    return new Page<>(count, new ArrayList<>());
-                }
-            } catch (Exception e) {
-                logger.error("分页查询异常", e);
-                throw new DbException(e);
+                return executeJdbc(JdbcTypeEnum.SELECT, connection -> {
+                    Object value = JdbcDao.queryOnly(connection, countQuerySQL.getSQL(), countQuerySQL.getValues());
+                    Integer count = TypeUtils.convert(value, Integer.class);
+                    query.page(pageParam);
+                    if (count > 0) {
+                        QuerySQL listQuerySQL = query.sqlValue();
+                        List<E> list = JdbcDao.listForType(connection, clazz, listQuerySQL.getSQL(), listQuerySQL.getValues());
+                        return new Page<>(count, list);
+                    } else {
+                        return new Page<>(count, new ArrayList<>());
+                    }
+                });
             } finally {
                 query.page(pageParam);
-                checkConnection(connection);
             }
         }));
     }
@@ -217,16 +173,9 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         update.check(getEntityClass());
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "update", new Object[]{update}, () -> {
             UpdateSQL updateSQL = update.sqlValue();
-            Connection connection = null;
-            try {
-                connection = getConnection(JdbcTypeEnum.UPDATE);
-                return JdbcDao.executeUpdate(connection, updateSQL.getSQL(), updateSQL.getValues());
-            } catch (Exception e) {
-                logger.error("更新异常", e);
-                throw new DbException(e);
-            } finally {
-                checkConnection(connection);
-            }
+            return executeJdbc(JdbcTypeEnum.UPDATE, connection ->
+                    JdbcDao.executeUpdate(connection, updateSQL.getSQL(), updateSQL.getValues())
+            );
         }));
     }
 
@@ -250,16 +199,9 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                 jdbcTypeEnum = JdbcTypeEnum.DELETE;
                 abstractSQL = DeleteSQL.build(delete);
             }
-            Connection connection = null;
-            try {
-                connection = getConnection(jdbcTypeEnum);
-                return JdbcDao.executeUpdate(connection, abstractSQL.getSQL(), abstractSQL.getValues());
-            } catch (Exception e) {
-                logger.error("删除异常", e);
-                throw new DbException(e);
-            } finally {
-                checkConnection(connection);
-            }
+            return executeJdbc(jdbcTypeEnum, connection ->
+                    JdbcDao.executeUpdate(connection, abstractSQL.getSQL(), abstractSQL.getValues())
+            );
         }));
     }
 
@@ -280,20 +222,22 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         throw new RuntimeException("获取实体类型失败，请重写 getEntityClass() 方法");
     }
 
-    private Connection getConnection(JdbcTypeEnum jdbcTypeEnum) throws SQLException {
+    private <R> R executeJdbc(JdbcTypeEnum jdbcTypeEnum, Function<Connection, R> function) {
         if (dataSourceProvider == null) {
+            logger.info("请通过SPI实现cn.veasion.db.jdbc.DataSourceProvider接口");
             throw new DbException("未获取到 dataSourceProvider");
         }
-        return dataSourceProvider.getConnection(dataSourceProvider.getDataSource(this, jdbcTypeEnum));
-    }
-
-    private void checkConnection(Connection connection) {
-        if (connection != null && dataSourceProvider.autoClose()) {
-            try {
-                connection.close();
-            } catch (SQLException e) {
-                logger.error("关闭连接失败", e);
-            }
+        DataSource dataSource = dataSourceProvider.getDataSource(this, jdbcTypeEnum);
+        Connection connection;
+        try {
+            connection = dataSourceProvider.getConnection(dataSource);
+        } catch (SQLException e) {
+            throw new DbException("获取数据库连接失败", e);
+        }
+        try {
+            return function.apply(connection);
+        } finally {
+            dataSourceProvider.releaseConnection(dataSource, connection);
         }
     }
 
