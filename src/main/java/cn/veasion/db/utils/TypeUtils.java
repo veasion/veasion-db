@@ -1,5 +1,8 @@
 package cn.veasion.db.utils;
 
+import cn.veasion.db.base.Table;
+
+import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -8,6 +11,7 @@ import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.temporal.Temporal;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * TypeUtils
@@ -24,6 +28,19 @@ public class TypeUtils {
         typeConvert = ServiceLoaderUtils.loadOne(TypeConvert.class);
     }
 
+    public static String getTableName(Class<?> entityClazz) {
+        Table annotation = entityClazz.getAnnotation(Table.class);
+        if (annotation != null) {
+            if (!"".equals(annotation.value())) {
+                return annotation.value();
+            }
+            if (annotation.entityClass() != Void.class) {
+                return getTableName(annotation.entityClass());
+            }
+        }
+        return FieldUtils.humpToLine(entityClazz.getSimpleName());
+    }
+
     public static boolean isSimpleClass(Class<?> clazz) {
         return clazz == BigDecimal.class || clazz == Long.class || clazz == Integer.class || clazz == String.class
                 || clazz == Double.class || clazz == Float.class || clazz == Boolean.class || Date.class.isAssignableFrom(clazz)
@@ -36,6 +53,20 @@ public class TypeUtils {
         } catch (Exception e) {
             throw new RuntimeException("初始化对象失败: " + clazz.getName(), e);
         }
+    }
+
+    public static <E> E map2Obj(Map<String, Object> map, Class<E> clazz) throws Exception {
+        if (Map.class.isAssignableFrom(clazz)) {
+            return (E) map;
+        }
+        E instance = clazz.newInstance();
+        Map<String, Field> fields = FieldUtils.fields(clazz);
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+            if (fields.containsKey(entry.getKey())) {
+                FieldUtils.setValue(instance, entry.getKey(), entry.getValue(), true);
+            }
+        }
+        return instance;
     }
 
     /**

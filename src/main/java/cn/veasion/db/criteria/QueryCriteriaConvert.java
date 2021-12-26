@@ -4,19 +4,24 @@ import cn.veasion.db.DbException;
 import cn.veasion.db.FilterException;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.Operator;
+import cn.veasion.db.jdbc.EntityDao;
 import cn.veasion.db.query.EQ;
 import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.JoinQueryParam;
 import cn.veasion.db.utils.FieldUtils;
+import cn.veasion.db.utils.FilterUtils;
+import cn.veasion.db.utils.TypeUtils;
 
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -35,6 +40,7 @@ public class QueryCriteriaConvert {
     private Object object;
     private EntityQuery query;
     private JoinCriteria[] array;
+    private List<LoadRelation> loadRelations;
     private Set<Class<?>> joined = new HashSet<>();
     private Map<Class<?>, EntityQuery> joinClassMap = new HashMap<>();
 
@@ -63,11 +69,29 @@ public class QueryCriteriaConvert {
         return joined.contains(clazz);
     }
 
+    public boolean hasJoin(String tableName) {
+        for (Class<?> clazz : joined) {
+            if (tableName.equalsIgnoreCase(TypeUtils.getTableName(clazz))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * 获取关联类型查询对象
      */
     public EntityQuery getJoinEntityQuery(Class<?> clazz) {
         return joinClassMap.get(clazz);
+    }
+
+    public EntityQuery getJoinEntityQuery(String tableName) {
+        for (Map.Entry<Class<?>, EntityQuery> entry : joinClassMap.entrySet()) {
+            if (tableName.equalsIgnoreCase(TypeUtils.getTableName(entry.getKey()))) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     public Map<Class<?>, EntityQuery> getJoinClassMap() {
@@ -85,10 +109,26 @@ public class QueryCriteriaConvert {
         for (Field field : fields.values()) {
             QueryCriteria queryCriteria = field.getAnnotation(QueryCriteria.class);
             AutoCriteria autoCriteria = field.getAnnotation(AutoCriteria.class);
+            LoadRelation loadRelation = field.getAnnotation(LoadRelation.class);
+            Object value = null;
+            if (loadRelation != null) {
+                if (loadRelation.value() == Void.class || "".equals(loadRelation.resultClassField())) {
+                    throw new DbException("@LoadRelation 注解使用方式错误，字段: " + field.getName());
+                }
+                value = FieldUtils.getValue(object, field.getName(), true);
+                if (value != null && !Boolean.FALSE.equals(value)) {
+                    if (loadRelations == null) {
+                        loadRelations = new ArrayList<>();
+                    }
+                    loadRelations.add(loadRelation);
+                }
+            }
             if (queryCriteria == null && autoCriteria == null) {
                 continue;
             }
-            Object value = FieldUtils.getValue(object, field.getName(), true);
+            if (value == null) {
+                value = FieldUtils.getValue(object, field.getName(), true);
+            }
             if (value == null) {
                 continue;
             }
@@ -97,9 +137,7 @@ public class QueryCriteriaConvert {
             } else if (value instanceof Map) {
                 handleAutoCriteria(autoCriteria, (Map<String, Object>) value);
             } else {
-                handleAutoCriteria(autoCriteria, new HashMap<String, Object>() {{
-                    put(field.getName(), value);
-                }});
+                handleAutoCriteria(autoCriteria, Collections.singletonMap(field.getName(), value));
             }
         }
     }
@@ -137,7 +175,7 @@ public class QueryCriteriaConvert {
             if (value instanceof Date) {
                 value = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format((Date) value);
             }
-            Filter filter = getFilter(key, operator, value);
+            Filter filter = FilterUtils.getFilter(key, operator, value);
             if (relationClass != Void.class) {
                 filter.fieldAs(joinClassMap.get(relationClass).getTableAs());
             }
@@ -161,7 +199,7 @@ public class QueryCriteriaConvert {
         if (orFields.length > 0) {
             query.addFilter(Filter.leftBracket());
             for (int i = 0; i < orFields.length; i++) {
-                Filter filter = getFilter(orFields[i], operator, value);
+                Filter filter = FilterUtils.getFilter(orFields[i], operator, value);
                 if (relationClass != Void.class) {
                     filter.fieldAs(joinClassMap.get(relationClass).getTableAs());
                 }
@@ -172,7 +210,7 @@ public class QueryCriteriaConvert {
             }
             query.addFilter(Filter.rightBracket());
         } else {
-            Filter filter = getFilter(fieldName, operator, value);
+            Filter filter = FilterUtils.getFilter(fieldName, operator, value);
             if (relationClass != Void.class) {
                 filter.fieldAs(joinClassMap.get(relationClass).getTableAs());
             }
@@ -180,15 +218,132 @@ public class QueryCriteriaConvert {
         }
     }
 
-    private void initJoinClassMap() {
-        if (array == null || array.length == 0) return;
-        for (JoinCriteria joinCriteria : array) {
-            Class<?> join = joinCriteria.join();
-            if (join != Void.class) {
-                joinClassMap.put(join, new EQ(join, FieldUtils.firstCase(join.getSimpleName(), true)));
+    /**
+     * 查询结果处理 @LoadRelation 注解，加载关联数据
+     */
+    public <E> void handleResultLoadRelation(EntityDao<?, ?> entityDao, List<E> list) {
+        if (list == null || list.isEmpty()) return;
+        Class<?> resultClass = list.get(0).getClass();
+        Map<Field, Class<?>> fieldClassMap = loadResultRelation(resultClass);
+        if (fieldClassMap.isEmpty()) return;
+        for (Map.Entry<Field, Class<?>> entry : fieldClassMap.entrySet()) {
+            Field field = entry.getKey();
+            Class<?> clazz = entry.getValue();
+
+            Map<Class<?>, EntityQuery> joinClassMap = new HashMap<>();
+            Set<Class<?>> joined = new HashSet<>();
+            initJoinClassMap(array, new EQ(this.query.getEntityClass(), "t"), joinClassMap);
+            JoinCriteria joinCriteria = checkJoin(array, joinClassMap, joined, clazz);
+            if (!joined.contains(clazz) || joinCriteria == null) {
+                throw new DbException("@JoinCriteria 中未找到关联类：" + clazz.getName());
+            }
+            EntityQuery entityQuery = joinClassMap.get(joinCriteria.join());
+            String[] onFields = joinCriteria.onFields();
+            for (int i = 0; i < onFields.length; i += 2) {
+                entityQuery.select(onFields[i + 1], "mainField" + ((i + 2) / 2));
+                List<Object> values = new ArrayList<>(list.size());
+                for (E o : list) {
+                    values.add(FieldUtils.getValue(o, onFields[i], true));
+                }
+                entityQuery.in(onFields[i + 1], values);
+            }
+            joinClassMap.get(clazz).selectAll();
+            List<Map<String, Object>> resultList = entityDao.listForMap(entityQuery);
+            StringBuilder sb = new StringBuilder();
+            Map<String, List<Map<String, Object>>> keyList = new HashMap<>(resultList.size());
+            for (Map<String, Object> map : resultList) {
+                sb.setLength(0);
+                for (int i = 0; i < onFields.length; i += 2) {
+                    sb.append("_").append(map.get("mainField" + ((i + 2) / 2)));
+                }
+                keyList.compute(sb.toString(), (k, v) -> {
+                    if (v == null) {
+                        v = new ArrayList<>();
+                    }
+                    v.add(map);
+                    return v;
+                });
+            }
+            try {
+                for (E o : list) {
+                    sb.setLength(0);
+                    for (int i = 0; i < onFields.length; i += 2) {
+                        sb.append("_").append(FieldUtils.getValue(o, onFields[i], true));
+                    }
+                    convert(o, field, keyList.get(sb.toString()));
+                }
+            } catch (Exception e) {
+                throw new DbException("@JoinCriteria 字段类型赋值异常：" + field.getType().getName() + "." + field.getName(), e);
             }
         }
-        joinClassMap.put(Void.class, query);
+    }
+
+    private void convert(Object obj, Field field, List<Map<String, Object>> values) throws Exception {
+        Class<?> type = field.getType();
+        Object val = null;
+        if (List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type)) {
+            if (values == null || values.isEmpty()) {
+                val = Set.class.isAssignableFrom(type) ? new HashSet<>() : new ArrayList<>();
+            } else {
+                List<Class<?>> classes = FieldUtils.fieldActualType(field);
+                if (classes == null || classes.isEmpty()) {
+                    val = Set.class.isAssignableFrom(type) ? new HashSet<>(values) : values;
+                } else {
+                    Collection<Object> list = Set.class.isAssignableFrom(type) ? new HashSet<>() : new ArrayList<>();
+                    for (Map<String, Object> value : values) {
+                        list.add(TypeUtils.map2Obj(value, classes.get(0)));
+                    }
+                    val = list;
+                }
+            }
+        } else if (Map.class.isAssignableFrom(type)) {
+            if (values != null && values.size() > 0) {
+                if (values.size() > 1) {
+                    throw new DbException("@LoadRelation 加载有多个对象：" + obj.getClass().getName() + "." + field.getName());
+                }
+                val = values.get(0);
+            }
+        } else if (values != null && values.size() > 0) {
+            if (values.size() > 1) {
+                throw new DbException("@LoadRelation 加载有多个对象：" + obj.getClass().getName() + "." + field.getName());
+            }
+            val = TypeUtils.map2Obj(values.get(0), type);
+        }
+        field.setAccessible(true);
+        field.set(obj, val);
+    }
+
+    private Map<Field, Class<?>> loadResultRelation(Class<?> resultClass) {
+        Map<Field, Class<?>> result = new HashMap<>();
+        Map<String, Field> fields = FieldUtils.fields(resultClass);
+        if (loadRelations != null) {
+            for (LoadRelation loadRelation : loadRelations) {
+                Field field = fields.get(loadRelation.resultClassField());
+                if (field == null) {
+                    throw new DbException("@LoadRelation 注解resultClassField字段" + loadRelation.resultClassField() + "在" + resultClass.getName() + "中不存在");
+                }
+                if (!joinClassMap.containsKey(loadRelation.value())) {
+                    throw new DbException("@LoadRelation 注解 value = " + loadRelation.value().getName() + "未在类 @JoinCriteria 中定义");
+                }
+                result.put(field, loadRelation.value());
+            }
+        }
+        for (Field field : fields.values()) {
+            LoadRelation loadRelation = field.getAnnotation(LoadRelation.class);
+            if (loadRelation != null) {
+                if (loadRelation.value() == Void.class) {
+                    throw new DbException("@LoadRelation注解使用错误：" + resultClass.getName() + "." + field.getName());
+                }
+                if (joinClassMap.containsKey(loadRelation.value())) {
+                    result.put(field, loadRelation.value());
+                }
+            }
+        }
+        return result;
+    }
+
+    private void initJoinClassMap() {
+        initJoinClassMap(array, query, joinClassMap);
         for (JoinCriteria joinCriteria : array) {
             if (joinCriteria.staticJoin()) {
                 checkJoin(joinCriteria.join());
@@ -197,12 +352,28 @@ public class QueryCriteriaConvert {
     }
 
     private void checkJoin(Class<?> joinClass) {
+        checkJoin(array, joinClassMap, joined, joinClass);
+    }
+
+    private static void initJoinClassMap(JoinCriteria[] array, EntityQuery query, Map<Class<?>, EntityQuery> joinClassMap) {
+        if (array == null || array.length == 0) return;
+        for (JoinCriteria joinCriteria : array) {
+            Class<?> join = joinCriteria.join();
+            if (join != Void.class) {
+                joinClassMap.put(join, new EQ(join, FieldUtils.firstCase(join.getSimpleName(), true)));
+            }
+        }
+        joinClassMap.put(Void.class, query);
+    }
+
+    private static JoinCriteria checkJoin(JoinCriteria[] array, Map<Class<?>, EntityQuery> joinClassMap, Set<Class<?>> joined, Class<?> joinClass) {
         if (joined.contains(joinClass)) {
-            return;
+            return null;
         }
         if (array == null || array.length == 0) {
             throw new DbException("@JoinCriteriaMulti 中关联类未找到：" + joinClass.getSimpleName());
         }
+        JoinCriteria firstJoinCriteria = null;
         Set<JoinCriteria> joinCriteriaSet = new HashSet<>(Arrays.asList(array));
         do {
             for (JoinCriteria joinCriteria : joinCriteriaSet) {
@@ -217,13 +388,15 @@ public class QueryCriteriaConvert {
                     }
                     joinClass = joinCriteria.value();
                     joinCriteriaSet.remove(joinCriteria);
+                    firstJoinCriteria = joinCriteria;
                     break;
                 }
             }
         } while (joinClass != Void.class && !joined.contains(joinClass));
+        return firstJoinCriteria;
     }
 
-    private boolean isEmpty(Object value) {
+    private static boolean isEmpty(Object value) {
         if (value == null) {
             return true;
         }
@@ -235,66 +408,6 @@ public class QueryCriteriaConvert {
             return true;
         }
         return false;
-    }
-
-    public static Filter getFilter(String field, Operator operator, Object value) {
-        if (Operator.EQ.equals(operator)) {
-            return Filter.eq(field, value);
-        } else if (Operator.NEQ.equals(operator)) {
-            return Filter.neq(field, value);
-        } else if (Operator.GT.equals(operator)) {
-            return Filter.gt(field, value);
-        } else if (Operator.GTE.equals(operator)) {
-            return Filter.gte(field, value);
-        } else if (Operator.LT.equals(operator)) {
-            return Filter.lt(field, value);
-        } else if (Operator.LTE.equals(operator)) {
-            return Filter.lte(field, value);
-        } else if (Operator.IN.equals(operator)) {
-            if (value instanceof Collection) {
-                return Filter.in(field, (Collection<?>) value);
-            } else if (value instanceof Object[]) {
-                return Filter.in(field, (Object[]) value);
-            } else {
-                throw new FilterException(field + " 字段 Operator.IN 类型必须是集合或者数组");
-            }
-        } else if (Operator.NOT_IN.equals(operator)) {
-            if (value instanceof Collection) {
-                return Filter.notIn(field, (Collection<?>) value);
-            } else if (value instanceof Object[]) {
-                return Filter.notIn(field, (Object[]) value);
-            } else {
-                throw new FilterException(field + " 字段 Operator.IN 类型必须是集合或者数组");
-            }
-        } else if (Operator.LIKE.equals(operator)) {
-            if (value instanceof String) {
-                String str = (String) value;
-                if (str.startsWith("%") && str.endsWith("%")) {
-                    return Filter.like(field, str.substring(1, str.length() - 1));
-                } else if (str.startsWith("%")) {
-                    return Filter.likeLeft(field, str.substring(1));
-                } else if (str.endsWith("%")) {
-                    return Filter.likeRight(field, str.substring(0, str.length() - 1));
-                }
-            }
-            return Filter.like(field, value);
-        } else if (Operator.BETWEEN.equals(operator)) {
-            if (value instanceof Collection) {
-                Iterator<?> iterator = ((Collection<?>) value).iterator();
-                return Filter.between(field, iterator.next(), iterator.next());
-            } else if (value instanceof Object[]) {
-                Object[] objects = (Object[]) value;
-                return Filter.between(field, objects[0], objects[1]);
-            } else {
-                throw new FilterException(field + " 字段 Operator.BETWEEN 类型必须是集合或者数组");
-            }
-        } else if (Operator.NULL.equals(operator)) {
-            return Filter.isNull(field);
-        } else if (Operator.NOT_NULL.equals(operator)) {
-            return Filter.isNotNull(field);
-        } else {
-            throw new FilterException(field + " 不支持 Operator." + operator.name());
-        }
     }
 
 }

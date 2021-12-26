@@ -5,10 +5,10 @@ import cn.veasion.db.FilterException;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.Operator;
-import cn.veasion.db.base.Table;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.LeftRight;
+import cn.veasion.db.utils.TypeUtils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,16 +43,7 @@ public abstract class AbstractSQL<T> {
     public abstract T build();
 
     protected String getTableName(Class<?> entityClazz) {
-        Table annotation = entityClazz.getAnnotation(Table.class);
-        if (annotation != null) {
-            if (!"".equals(annotation.value())) {
-                return annotation.value();
-            }
-            if (annotation.entityClass() != Void.class) {
-                return getTableName(annotation.entityClass());
-            }
-        }
-        return FieldUtils.humpToLine(entityClazz.getSimpleName());
+        return TypeUtils.getTableName(entityClazz);
     }
 
     protected void appendFilter(Map<String, Class<?>> entityClassMap, List<Filter> filters) {
@@ -203,11 +194,20 @@ public abstract class AbstractSQL<T> {
     }
 
     protected void trimEndSql(String end) {
-        int idx = sql.lastIndexOf(end);
-        int len = sql.length() - end.length();
-        if (idx >= len) {
-            sql.setLength(len);
+        if (endsWith(end)) {
+            sql.setLength(sql.length() - end.length());
         }
+    }
+
+    protected boolean endsWith(String end) {
+        int len1 = end.length();
+        int len2 = sql.length() - len1;
+        for (int i = 0; i < len1; i++) {
+            if (end.charAt(i) != sql.charAt(len2 + i)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     protected String securityCheck(String sql) {

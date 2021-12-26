@@ -261,7 +261,9 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             AbstractJoinQuery<?> mainQuery = join.getMainQuery();
             AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
             if (joinQuery.hasFilters()) {
-                sql.append(" AND");
+                if (!endsWith(" WHERE")) {
+                    sql.append(" AND");
+                }
                 appendFilter(new HashMap<String, Class<?>>() {{
                     put(mainQuery.getTableAs(), mainQuery.getEntityClass());
                     put(joinQuery.getTableAs(), joinQuery.getEntityClass());

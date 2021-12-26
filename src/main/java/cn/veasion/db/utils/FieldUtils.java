@@ -7,7 +7,10 @@ import cn.veasion.db.base.Table;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,7 +87,7 @@ public class FieldUtils {
                 }
             }
         }
-        FIELD_COLUMN_CACHE.put(entityClazz, fieldColumnMap);
+        FIELD_COLUMN_CACHE.put(entityClazz, Collections.unmodifiableMap(fieldColumnMap));
         return fieldColumnMap;
     }
 
@@ -189,7 +192,7 @@ public class FieldUtils {
                 result.put(field, method);
             }
         }
-        METHOD_GET_CACHE.put(clazz, result);
+        METHOD_GET_CACHE.put(clazz, Collections.unmodifiableMap(result));
         return result;
     }
 
@@ -220,7 +223,7 @@ public class FieldUtils {
                 }
             }
         }
-        METHOD_SET_CACHE.put(clazz, result);
+        METHOD_SET_CACHE.put(clazz, Collections.unmodifiableMap(result));
         return result;
     }
 
@@ -245,7 +248,7 @@ public class FieldUtils {
                 result.put(field.getName(), field);
             }
         }
-        FIELD_CACHE.put(clazz, result);
+        FIELD_CACHE.put(clazz, Collections.unmodifiableMap(result));
         return result;
     }
 
@@ -353,6 +356,21 @@ public class FieldUtils {
             sb.append(eval.substring(startIndex));
         }
         return sb.toString();
+    }
+
+    public static List<Class<?>> fieldActualType(Field field) {
+        Type genericType = field.getGenericType();
+        if (genericType instanceof ParameterizedType) {
+            List<Class<?>> classes = new ArrayList<>();
+            Type[] arguments = ((ParameterizedType) genericType).getActualTypeArguments();
+            for (int i = 0; i < arguments.length; i++) {
+                if (arguments[0] instanceof Class) {
+                    classes.add((Class<?>) arguments[0]);
+                }
+            }
+            return classes;
+        }
+        return null;
     }
 
 }

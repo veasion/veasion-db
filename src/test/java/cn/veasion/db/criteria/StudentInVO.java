@@ -45,6 +45,10 @@ public class StudentInVO {
     @AutoCriteria(relation = TeacherPO.class)
     private Map<String, Object> teacherFilters;
 
+    // 加载关联
+    @LoadRelation(value = ClassesPO.class, resultClassField = "classList")
+    private Boolean loadClasses;
+
     public String getSno() {
         return sno;
     }
@@ -131,6 +135,14 @@ public class StudentInVO {
 
     public void setTeacherFilters(Map<String, Object> teacherFilters) {
         this.teacherFilters = teacherFilters;
+    }
+
+    public Boolean getLoadClasses() {
+        return loadClasses;
+    }
+
+    public void setLoadClasses(Boolean loadClasses) {
+        this.loadClasses = loadClasses;
     }
 }
 

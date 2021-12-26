@@ -137,7 +137,9 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
             EntityUpdate mainUpdate = join.getMainUpdate();
             EntityUpdate joinUpdate = join.getJoinUpdate();
             if (joinUpdate.hasFilters()) {
-                sql.append(" AND");
+                if (!endsWith(" WHERE")) {
+                    sql.append(" AND");
+                }
                 appendFilter(new HashMap<String, Class<?>>() {{
                     put(mainUpdate.getTableAs(), mainUpdate.getEntityClass());
                     put(joinUpdate.getTableAs(), joinUpdate.getEntityClass());
