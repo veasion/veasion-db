@@ -4,6 +4,7 @@ import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinType;
 import cn.veasion.db.base.JoinTypeEnum;
+import cn.veasion.db.base.Operator;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.FilterUtils;
 import cn.veasion.db.utils.TypeUtils;
@@ -95,6 +96,11 @@ public class EntityUpdate extends AbstractUpdate<EntityUpdate> {
             return this;
         }
         return super.updateExpression(field, expression.tableAs(tableAs));
+    }
+
+    @Override
+    public EntityUpdate filterExpression(String field, Operator operator, Expression expression) {
+        return super.filterExpression(field, operator, expression.tableAs(tableAs));
     }
 
     @Override

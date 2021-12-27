@@ -4,6 +4,7 @@ import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinType;
 import cn.veasion.db.base.JoinTypeEnum;
+import cn.veasion.db.base.Operator;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;
@@ -50,6 +51,11 @@ public abstract class AbstractJoinQuery<T> extends AbstractQuery<T> {
             return getSelf();
         }
         return super.selectExpression(expression.tableAs(tableAs));
+    }
+
+    @Override
+    public T filterExpression(String field, Operator operator, Expression expression) {
+        return super.filterExpression(field, operator, expression.tableAs(tableAs));
     }
 
     @Override

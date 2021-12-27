@@ -240,7 +240,7 @@ public class QueryCriteriaConvert {
             EntityQuery entityQuery = joinClassMap.get(joinCriteria.join());
             String[] onFields = joinCriteria.onFields();
             for (int i = 0; i < onFields.length; i += 2) {
-                entityQuery.select(onFields[i + 1], "mainField" + ((i + 2) / 2));
+                entityQuery.selectExpression("${" + onFields[i + 1] + "}", "mainField" + ((i + 2) / 2));
                 List<Object> values = new ArrayList<>(list.size());
                 for (E o : list) {
                     values.add(FieldUtils.getValue(o, onFields[i], true));
@@ -344,9 +344,11 @@ public class QueryCriteriaConvert {
 
     private void initJoinClassMap() {
         initJoinClassMap(array, query, joinClassMap);
-        for (JoinCriteria joinCriteria : array) {
-            if (joinCriteria.staticJoin()) {
-                checkJoin(joinCriteria.join());
+        if (array != null) {
+            for (JoinCriteria joinCriteria : array) {
+                if (joinCriteria.staticJoin()) {
+                    checkJoin(joinCriteria.join());
+                }
             }
         }
     }
@@ -400,12 +402,14 @@ public class QueryCriteriaConvert {
         if (value == null) {
             return true;
         }
-        if (value instanceof String && "".equals(value)) {
-            return true;
-        } else if (value instanceof Collection && ((Collection<?>) value).isEmpty()) {
-            return true;
-        } else if (value instanceof Object[] && ((Object[]) value).length == 0) {
-            return true;
+        if (value instanceof String) {
+            return "".equals(value);
+        } else if (value instanceof Collection) {
+            return ((Collection<?>) value).isEmpty();
+        } else if (value instanceof Object[]) {
+            return ((Object[]) value).length == 0;
+        } else if (value instanceof Map) {
+            return ((Map<?, ?>) value).isEmpty();
         }
         return false;
     }

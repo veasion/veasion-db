@@ -6,10 +6,13 @@ import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.utils.FieldUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * BatchEntityInsert
@@ -21,11 +24,19 @@ public class BatchEntityInsert {
 
     private List<?> entityList;
     private Class<?> entityClass;
+    private Set<String> skipFields;
     private AbstractQuery<?> insertSelectQuery;
     private List<Map<String, Object>> fieldValueMapList;
 
     public <T> BatchEntityInsert(List<T> entityList) {
         this.entityList = Objects.requireNonNull(entityList);
+    }
+
+    public <T> BatchEntityInsert(List<T> entityList, String... skipFields) {
+        this(entityList);
+        if (skipFields.length > 0) {
+            this.skipFields = new HashSet<>(Arrays.asList(skipFields));
+        }
     }
 
     public BatchEntityInsert(AbstractQuery<?> insertSelectQuery) {
@@ -68,6 +79,9 @@ public class BatchEntityInsert {
         for (Object entity : entityList) {
             fieldValueMap = new HashMap<>();
             for (String field : fieldColumns.keySet()) {
+                if (skipFields != null && skipFields.contains(field)) {
+                    continue;
+                }
                 fieldValueMap.put(field, FieldUtils.getValue(entity, field, false));
             }
             fieldValueMapList.add(fieldValueMap);

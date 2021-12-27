@@ -22,7 +22,7 @@ public class StudentVO extends StudentPO {
 
     private List<ClassesPO> classList;
     @LoadRelation(TeacherPO.class)
-    private List<TeacherPO> teacherList;
+    private List<? extends TeacherPO> teacherList;
 
     public String getClassName() {
         return className;
@@ -48,7 +48,7 @@ public class StudentVO extends StudentPO {
         this.classList = classList;
     }
 
-    public List<TeacherPO> getTeacherList() {
+    public List<? extends TeacherPO> getTeacherList() {
         return teacherList;
     }
 

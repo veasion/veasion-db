@@ -56,7 +56,7 @@ public class TypeUtils {
     }
 
     public static <E> E map2Obj(Map<String, Object> map, Class<E> clazz) throws Exception {
-        if (Map.class.isAssignableFrom(clazz)) {
+        if (Map.class.isAssignableFrom(clazz) || Object.class.equals(clazz)) {
             return (E) map;
         }
         E instance = clazz.newInstance();

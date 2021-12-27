@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -316,10 +317,6 @@ public class FieldUtils {
         return result;
     }
 
-    public static String replaceSqlPlaceholder(String eval, String tableAs, Map<String, String> map) {
-        return replaceSqlPlaceholder(eval, tableAs, (as, field) -> map.getOrDefault(field, field));
-    }
-
     public static String replaceSqlPlaceholder(String eval, String tableAs, BiFunction<String, String, String> asFieldColumnFun) {
         return replaceSqlPlaceholder(eval, tableAs, asFieldColumnFun, "${", "}");
     }
@@ -363,9 +360,11 @@ public class FieldUtils {
         if (genericType instanceof ParameterizedType) {
             List<Class<?>> classes = new ArrayList<>();
             Type[] arguments = ((ParameterizedType) genericType).getActualTypeArguments();
-            for (int i = 0; i < arguments.length; i++) {
-                if (arguments[0] instanceof Class) {
-                    classes.add((Class<?>) arguments[0]);
+            for (Type argument : arguments) {
+                if (argument instanceof Class) {
+                    classes.add((Class<?>) argument);
+                } else if (argument instanceof WildcardType) {
+                    classes.add((Class<?>) ((WildcardType) argument).getUpperBounds()[0]);
                 }
             }
             return classes;

@@ -1,6 +1,6 @@
 package cn.veasion.db.base;
 
-import cn.veasion.db.utils.FieldUtils;
+import cn.veasion.db.DbException;
 
 /**
  * Expression
@@ -67,8 +67,21 @@ public class Expression {
     }
 
     public Expression tableAs(String tableAs) {
-        if (tableAs != null && expression != null && !expression.contains(".")) {
-            expression = FieldUtils.replaceSqlPlaceholder(expression, tableAs, null, "${", "}");
+        if (tableAs != null && expression != null && expression.contains("${")) {
+            int startIdx = 0, idx;
+            StringBuilder sb = new StringBuilder();
+            while ((idx = expression.indexOf("${", startIdx)) > -1) {
+                int endIdx = expression.indexOf("}", idx);
+                if (endIdx == -1) {
+                    throw new DbException("错误表达式：" + expression);
+                }
+                sb.append(expression.substring(startIdx, idx + 2));
+                String field = expression.substring(idx + 2, endIdx + 1);
+                sb.append(field.contains(".") ? field : (tableAs + "." + field));
+                startIdx = endIdx + 1;
+            }
+            sb.append(expression.substring(startIdx));
+            expression = sb.toString();
         }
         return this;
     }
