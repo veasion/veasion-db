@@ -113,6 +113,9 @@ public class TypeUtils {
             if (object instanceof Number) {
                 return (T) new Integer(((Number) object).intValue());
             }
+            if (object instanceof Boolean) {
+                return (T) (Boolean.TRUE.equals(object) ? new Integer(1) : new Integer(0));
+            }
             if (toStr.contains(".")) {
                 toStr = toStr.split("\\.")[0];
             }

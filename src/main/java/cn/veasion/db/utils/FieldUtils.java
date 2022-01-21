@@ -216,7 +216,7 @@ public class FieldUtils {
                 String field = firstCase(methodName.substring(3), true);
                 if (result.containsKey(field)) {
                     Field f = fields(clazz).get(field);
-                    if (f.getType().equals(method.getParameterTypes()[0])) {
+                    if (f != null && f.getType().equals(method.getParameterTypes()[0])) {
                         result.put(field, method);
                     }
                 } else {
