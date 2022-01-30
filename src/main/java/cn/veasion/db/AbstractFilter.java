@@ -8,8 +8,10 @@ import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * AbstractFilter
@@ -154,6 +156,12 @@ public abstract class AbstractFilter<T> {
             }
         }
         return false;
+    }
+
+    public List<Filter> getFilters(String field) {
+        if (!hasFilters()) return Collections.emptyList();
+        String _field = handleFilter(Filter.eq(field, null)).getField();
+        return filters.stream().filter(filter -> Objects.equals(filter.getField(), _field)).collect(Collectors.toList());
     }
 
     public Filter removeFilter(String field) {

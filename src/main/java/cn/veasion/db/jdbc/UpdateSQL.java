@@ -44,7 +44,7 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
         tableEntityMap = new HashMap<>();
         Map<String, Class<?>> entityClassMap = new HashMap<>();
         sql.append("UPDATE ");
-        sql.append(getTableName(update.getEntityClass()));
+        sql.append(getTableName(update.getEntityClass(), update, update));
         if (update instanceof EntityUpdate) {
             joins = ((EntityUpdate) update).getJoinAll();
             String tableAs = ((EntityUpdate) update).getTableAs();
@@ -81,7 +81,7 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
             EntityUpdate mainUpdate = join.getMainUpdate();
             EntityUpdate joinUpdate = join.getJoinUpdate();
             sql.append(" ").append(join.getJoinType().getJoin());
-            sql.append(" ").append(getTableName(joinUpdate.getEntityClass()));
+            sql.append(" ").append(getTableName(joinUpdate.getEntityClass(), joinUpdate, join));
             if (joinUpdate.getTableAs() != null) {
                 sql.append(" ").append(joinUpdate.getTableAs());
             }

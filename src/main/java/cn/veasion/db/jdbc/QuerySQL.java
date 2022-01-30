@@ -79,7 +79,7 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             sql.append("(").append(subQuerySQL.getSQL()).append(")");
             values.addAll(Arrays.asList(subQuerySQL.getValues()));
         } else {
-            sql.append(getTableName(query.getEntityClass()));
+            sql.append(getTableName(query.getEntityClass(), query, query));
         }
         if (tableAs != null) {
             sql.append(" ").append(tableAs);
@@ -238,7 +238,7 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
                 sql.append(" (").append(joinSubQuerySQL.getSQL()).append(")");
                 values.addAll(Arrays.asList(joinSubQuerySQL.getValues()));
             } else {
-                sql.append(" ").append(getTableName(joinQuery.getEntityClass()));
+                sql.append(" ").append(getTableName(joinQuery.getEntityClass(), joinQuery, join));
             }
             if (joinQuery.getTableAs() != null) {
                 sql.append(" ").append(joinQuery.getTableAs());

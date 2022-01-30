@@ -44,19 +44,19 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
     public InsertSQL build() {
         this.reset();
         if (entityInsert != null) {
-            insert(entityInsert.getEntityClass(), Collections.singletonList(entityInsert.getFieldValueMap()));
+            insert(entityInsert.getEntityClass(), Collections.singletonList(entityInsert.getFieldValueMap()), entityInsert);
         } else {
             AbstractQuery<?> insertSelectQuery = batchEntityInsert.getInsertSelectQuery();
             if (insertSelectQuery != null) {
                 insertSelect(batchEntityInsert.getEntityClass(), insertSelectQuery);
             } else {
-                insert(batchEntityInsert.getEntityClass(), batchEntityInsert.getFieldValueMapList());
+                insert(batchEntityInsert.getEntityClass(), batchEntityInsert.getFieldValueMapList(), batchEntityInsert);
             }
         }
         return this;
     }
 
-    private void insert(Class<?> entityClazz, List<Map<String, Object>> fieldValueMapList) {
+    private void insert(Class<?> entityClazz, List<Map<String, Object>> fieldValueMapList, Object source) {
         if (fieldValueMapList == null || fieldValueMapList.isEmpty()) {
             throw new DbException("fieldValueMapList is empty");
         }
@@ -64,7 +64,7 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
         Set<String> fields = fieldValueMapList.get(0).keySet();
 
         sql.append("INSERT INTO ");
-        sql.append(getTableName(entityClazz)).append(" (");
+        sql.append(getTableName(entityClazz, null, source)).append(" (");
         for (String field : fields) {
             appendInsertColumn(fieldColumns.get(field));
         }
@@ -86,7 +86,7 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
         QuerySQL querySQL = QuerySQL.build(query, selectFieldColumnMap);
 
         sql.append("INSERT INTO ");
-        sql.append(getTableName(entityClass)).append(" (");
+        sql.append(getTableName(entityClass, query, batchEntityInsert)).append(" (");
         for (String field : selectFieldColumnMap.keySet()) {
             appendInsertColumn(fieldColumns.getOrDefault(field, selectFieldColumnMap.getOrDefault(field, field)));
         }

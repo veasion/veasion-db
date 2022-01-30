@@ -1,5 +1,6 @@
 package cn.veasion.db.jdbc;
 
+import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.DbException;
 import cn.veasion.db.FilterException;
 import cn.veasion.db.base.Expression;
@@ -8,6 +9,7 @@ import cn.veasion.db.base.Operator;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.LeftRight;
+import cn.veasion.db.utils.ServiceLoaderUtils;
 import cn.veasion.db.utils.TypeUtils;
 
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ public abstract class AbstractSQL<T> {
 
     protected StringBuilder sql = new StringBuilder();
     protected List<Object> values = new ArrayList<>();
+    protected DynamicTableExt dynamicTableExt = ServiceLoaderUtils.dynamicTableExt();
 
     public String getSQL() {
         return sql.toString();
@@ -42,8 +45,13 @@ public abstract class AbstractSQL<T> {
 
     public abstract T build();
 
-    protected String getTableName(Class<?> entityClazz) {
-        return TypeUtils.getTableName(entityClazz);
+    protected String getTableName(Class<?> entityClazz, AbstractFilter<?> filter, Object source) {
+        String tableName = TypeUtils.getTableName(entityClazz);
+        if (dynamicTableExt != null) {
+            String changeTableName = dynamicTableExt.getTableName(tableName, entityClazz, filter, source);
+            tableName = changeTableName != null ? changeTableName : tableName;
+        }
+        return tableName;
     }
 
     protected void appendFilter(Map<String, Class<?>> entityClassMap, List<Filter> filters) {

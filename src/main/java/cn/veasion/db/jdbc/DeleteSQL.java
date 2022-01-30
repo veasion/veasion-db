@@ -25,7 +25,7 @@ public class DeleteSQL extends AbstractSQL<DeleteSQL> {
     @Override
     public DeleteSQL build() {
         this.reset();
-        sql.append("DELETE FROM ").append(getTableName(delete.getEntityClass())).append(" WHERE");
+        sql.append("DELETE FROM ").append(getTableName(delete.getEntityClass(), delete, delete)).append(" WHERE");
         appendFilter(new HashMap<String, Class<?>>() {{
             put(null, delete.getEntityClass());
         }}, delete.getFilters());
