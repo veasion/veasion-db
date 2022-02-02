@@ -37,6 +37,8 @@ public class DynamicTableTest extends BaseTest {
         // 注意：分表后设计到当前学生表的所有增删改查语句都必须带有classId，不支持 in classId，如果 in 需要动态用 union all 写路由规则
         // 批量新增不支持，需要按classId维度group成集合在进行批量操作
 
+        // 最好按时间进行分表，这样不需要关注字段值，比如按月分表，直接拼接当前月份就行，如果需要跨月查询分表是处理不了的，可以直接写个方法动态 union all 处理
+
         // 动态创建表，历史数据迁移
         createAndSplitTable();
 

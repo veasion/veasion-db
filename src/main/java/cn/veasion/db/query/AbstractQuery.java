@@ -115,11 +115,11 @@ public abstract class AbstractQuery<T> extends AbstractFilter<T> {
     }
 
     public T asc(String field) {
-        return order(new OrderParam(field, true));
+        return order(new OrderParam(field, false));
     }
 
     public T desc(String field) {
-        return order(new OrderParam(field, false));
+        return order(new OrderParam(field, true));
     }
 
     public T order(OrderParam orderParam) {

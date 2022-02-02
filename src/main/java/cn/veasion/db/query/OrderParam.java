@@ -9,14 +9,18 @@ package cn.veasion.db.query;
 public class OrderParam {
 
     private String field;
-    private boolean asc = true;
+    private Boolean desc;
 
     public OrderParam() {
     }
 
-    public OrderParam(String field, boolean asc) {
+    public OrderParam(String field) {
         this.field = field;
-        this.asc = asc;
+    }
+
+    public OrderParam(String field, boolean desc) {
+        this.field = field;
+        this.desc = desc;
     }
 
     public String getField() {
@@ -27,11 +31,15 @@ public class OrderParam {
         this.field = field;
     }
 
-    public boolean isAsc() {
-        return asc;
+    public boolean isDesc() {
+        return Boolean.TRUE.equals(desc);
     }
 
-    public void setAsc(boolean asc) {
-        this.asc = asc;
+    public Boolean getDesc() {
+        return desc;
+    }
+
+    public void setDesc(Boolean desc) {
+        this.desc = desc;
     }
 }

@@ -288,7 +288,7 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         sql.append(" ORDER BY");
         for (OrderParam order : orders) {
             sql.append(" ").append(handleFieldToColumn(order.getField(), entityClassMap));
-            if (!order.isAsc()) {
+            if (order.isDesc()) {
                 sql.append(" DESC");
             }
             sql.append(",");
