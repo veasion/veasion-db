@@ -16,7 +16,7 @@ import java.util.List;
  * @author luozhuowei
  * @date 2021/12/11
  */
-public abstract class AbstractJoinQuery<T> extends AbstractQuery<T> {
+public abstract class AbstractJoinQuery<T extends AbstractJoinQuery<?>> extends AbstractQuery<T> {
 
     protected String tableAs;
     protected List<JoinQueryParam> joins;

@@ -22,7 +22,7 @@ import java.util.Set;
  * @author luozhuowei
  * @date 2021/12/2
  */
-public abstract class AbstractQuery<T> extends AbstractFilter<T> {
+public abstract class AbstractQuery<T extends AbstractQuery<?>> extends AbstractFilter<T> {
 
     private boolean distinct;
     protected boolean selectAll;
@@ -201,8 +201,9 @@ public abstract class AbstractQuery<T> extends AbstractFilter<T> {
         return groupBys;
     }
 
-    public void setGroupBys(List<String> groupBys) {
+    public T setGroupBys(List<String> groupBys) {
         this.groupBys = groupBys;
+        return getSelf();
     }
 
     public List<OrderParam> getOrders() {

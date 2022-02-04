@@ -151,7 +151,9 @@ public abstract class AbstractInterceptor implements EntityDaoInterceptor {
         if (containSkipClass(abstractFilter)) {
             return;
         }
-        handleFilter(abstractFilter);
+        if (!(abstractFilter instanceof SubQuery)) {
+            handleFilter(abstractFilter);
+        }
         handleFilterSubQuery(abstractFilter.getFilters());
     }
 

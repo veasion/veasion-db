@@ -62,7 +62,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                     }
                     return id;
                 }
-                return null;
+                return entity instanceof IBaseId ? ((IBaseId<ID>) entity).getId() : null;
             });
         }));
     }
@@ -81,12 +81,23 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
             List<?> entityList = batchEntityInsert.getEntityList();
             return executeJdbc(JdbcTypeEnum.INSERT, connection -> {
                 Object[] objects = JdbcDao.executeInsert(connection, insertSQL.getSQL(), insertSQL.getValues());
-                ID[] ids = (ID[]) Array.newInstance(idField.getType(), objects.length);
-                for (int i = 0; i < objects.length; i++) {
-                    ID id = (ID) TypeUtils.convert(objects[i], idField.getType());
-                    Array.set(ids, i, id);
-                    if (entityList != null && entityList.get(i) instanceof IBaseId) {
-                        ((IBaseId<ID>) entityList.get(i)).setId(id);
+                if (idField == null) {
+                    return null;
+                }
+                ID[] ids = (ID[]) Array.newInstance(idField.getType(), objects.length > 0 ? objects.length : entityList.size());
+                if (objects.length > 0) {
+                    for (int i = 0; i < objects.length; i++) {
+                        ID id = (ID) TypeUtils.convert(objects[i], idField.getType());
+                        Array.set(ids, i, id);
+                        if (entityList != null && entityList.get(i) instanceof IBaseId) {
+                            ((IBaseId<ID>) entityList.get(i)).setId(id);
+                        }
+                    }
+                } else {
+                    for (int i = 0; i < entityList.size(); i++) {
+                        if (entityList.get(i) instanceof IBaseId) {
+                            Array.set(ids, i, ((IBaseId<ID>) entityList.get(i)).getId());
+                        }
                     }
                 }
                 return ids;

@@ -18,7 +18,7 @@ import java.util.Set;
  * @author luozhuowei
  * @date 2021/12/3
  */
-public abstract class AbstractUpdate<T> extends AbstractFilter<T> {
+public abstract class AbstractUpdate<T extends AbstractUpdate<?>> extends AbstractFilter<T> {
 
     private boolean skipNullField;
     private Set<String> excludeUpdates;

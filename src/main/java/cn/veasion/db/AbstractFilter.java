@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * @author luozhuowei
  * @date 2021/12/2
  */
-public abstract class AbstractFilter<T> {
+public abstract class AbstractFilter<T extends AbstractFilter<?>> {
 
     protected boolean checked;
     private Class<?> entityClass;
@@ -133,8 +133,9 @@ public abstract class AbstractFilter<T> {
         return skipNullValueFilter;
     }
 
-    public void setSkipNullValueFilter(boolean skipNullValueFilter) {
+    public T setSkipNullValueFilter(boolean skipNullValueFilter) {
         this.skipNullValueFilter = skipNullValueFilter;
+        return getSelf();
     }
 
     public T addFilter(Filter filter) {
