@@ -151,7 +151,7 @@ public class QueryCriteriaConvert {
                 continue;
             }
             if (annotation.skipEmpty() && isEmpty(value)) {
-                return;
+                continue;
             }
             if (!FIELD_PATTERN.matcher(key).matches() || key.length() > 30) {
                 throw new FilterException("非法字段：" + key);
