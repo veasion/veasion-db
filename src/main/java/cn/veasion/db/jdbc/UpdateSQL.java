@@ -1,5 +1,6 @@
 package cn.veasion.db.jdbc;
 
+import cn.veasion.db.DbException;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.update.AbstractUpdate;
@@ -155,7 +156,21 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
         if (entity == null && tableEntityMap.size() == 1) {
             entity = tableEntityMap.values().iterator().next();
         }
-        return LeftRight.build(Boolean.TRUE, FieldUtils.getValue(entity, field, true));
+        if (entity == null) {
+            if (field.startsWith("value")) {
+                return LeftRight.build(Boolean.FALSE, null);
+            } else {
+                throw new DbException("获取字段失败: " + field + "，对象为空");
+            }
+        }
+        Object value = FieldUtils.getValue(entity, field, false);
+        if (value != null) {
+            return LeftRight.build(Boolean.TRUE, value);
+        } else if (field.startsWith("value")) {
+            return LeftRight.build(Boolean.FALSE, null);
+        } else {
+            throw new DbException("字段不存在: " + field + " => " + entity.getClass().getName());
+        }
     }
 
 }

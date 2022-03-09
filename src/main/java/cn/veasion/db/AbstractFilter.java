@@ -204,7 +204,7 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> {
         }
     }
 
-    public synchronized static void checkFilter(Class<?> mainEntityClass, List<Filter> filters, boolean ignoreNullValueFilter) {
+    public static void checkFilter(Class<?> mainEntityClass, List<Filter> filters, boolean ignoreNullValueFilter) {
         if (filters == null || filters.isEmpty()) return;
         boolean preIsJoin = true;
         for (int i = 0; i < filters.size(); i++) {
