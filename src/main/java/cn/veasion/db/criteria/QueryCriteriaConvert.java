@@ -366,6 +366,9 @@ public class QueryCriteriaConvert {
             }
         }
         joinClassMap.put(Void.class, query);
+        if (query.getEntityClass() != null && !joinClassMap.containsKey(query.getEntityClass())) {
+            joinClassMap.put(query.getEntityClass(), query);
+        }
     }
 
     private static JoinCriteria checkJoin(JoinCriteria[] array, Map<Class<?>, EntityQuery> joinClassMap, Set<Class<?>> joined, Class<?> joinClass) {
