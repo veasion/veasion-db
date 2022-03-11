@@ -94,21 +94,26 @@ public class JdbcDao {
         PreparedStatement ps = null;
         List<Map<String, Object>> list = new ArrayList<>();
         try {
-            String columnName;
-            Map<String, Object> map;
             ps = prepareStatement(connection, sql, params);
             rs = ps.executeQuery();
-            ResultSetMetaData data;
+
+            ResultSetMetaData data = rs.getMetaData();
+            int count = data.getColumnCount();
+            String[] columnNames = new String[count];
+            String columnName;
+            for (int i = 0; i < count; i++) {
+                columnName = data.getColumnLabel(i + 1);
+                if (mapUnderscoreToCamelCase) {
+                    columnName = FieldUtils.lineToHump(columnName.toLowerCase());
+                }
+                columnNames[i] = columnName;
+            }
+
+            Map<String, Object> map;
             while (rs.next()) {
-                map = new HashMap<>();
-                data = rs.getMetaData();
-                int count = data.getColumnCount();
-                for (int i = 1; i <= count; i++) {
-                    columnName = data.getColumnLabel(i);
-                    if (mapUnderscoreToCamelCase) {
-                        columnName = FieldUtils.lineToHump(columnName);
-                    }
-                    map.put(columnName, rs.getObject(i));
+                map = new HashMap<>(count);
+                for (int i = 0; i < count; i++) {
+                    map.put(columnNames[i], rs.getObject(i + 1));
                 }
                 list.add(map);
             }
@@ -172,37 +177,32 @@ public class JdbcDao {
         ResultSet rs = null;
         PreparedStatement ps = null;
         List<T> list = new ArrayList<>();
-        Map<String, String> fieldColumnMap = FieldUtils.fieldColumns(clazz);
-        Map<String, String> columnFieldMap = fieldColumnMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey, (v1, v2) -> v1));
         try {
-            String columnName;
+            String[] fieldNames = null;
+            boolean simpleClass = TypeUtils.isSimpleClass(clazz);
             ps = prepareStatement(connection, sql, params);
             rs = ps.executeQuery();
-            ResultSetMetaData data;
+            ResultSetMetaData data = rs.getMetaData();
+            if (simpleClass && data.getColumnCount() > 1) {
+                throw new DbException("类型转换失败，结果有多列(" + data.getColumnCount() + ")无法转换为" + clazz.getName());
+            }
             while (rs.next()) {
-                data = rs.getMetaData();
-                int count = data.getColumnCount();
-                if (count == 1) {
+                if (simpleClass) {
                     Object object = rs.getObject(1);
-                    if ((object != null && clazz.isAssignableFrom(object.getClass())) || TypeUtils.isSimpleClass(clazz)) {
-                        list.add(TypeUtils.convert(object, clazz));
-                        continue;
-                    }
+                    list.add(TypeUtils.convert(object, clazz));
+                    continue;
+                }
+                if (fieldNames == null) {
+                    fieldNames = convertFieldName(data, clazz);
                 }
                 T obj = TypeUtils.newInstance(clazz);
-                for (int i = 1; i <= count; i++) {
-                    columnName = data.getColumnLabel(i);
-                    String fieldName = null;
-                    if (fieldColumnMap.containsKey(columnName)) {
-                        fieldName = columnName;
-                    } else if (columnFieldMap.containsKey(columnName)) {
-                        fieldName = columnFieldMap.get(columnName);
-                    }
+                for (int i = 0; i < fieldNames.length; i++) {
+                    String fieldName = fieldNames[i];
                     if (fieldName != null) {
                         if (handler != null) {
-                            handler.handle(obj, fieldName, rs.getObject(i));
+                            handler.handle(obj, fieldName, rs.getObject(i + 1));
                         } else {
-                            FieldUtils.setValue(obj, fieldName, rs.getObject(i), true);
+                            FieldUtils.setValue(obj, fieldName, rs.getObject(i + 1), true);
                         }
                     }
                 }
@@ -218,6 +218,29 @@ public class JdbcDao {
             closeAll(ps, rs);
         }
         return list;
+    }
+
+    private static String[] convertFieldName(ResultSetMetaData data, Class<?> clazz) throws SQLException {
+        Map<String, String> fieldColumnMap = FieldUtils.fieldColumns(clazz);
+        Map<String, String> columnFieldMap = fieldColumnMap.entrySet().stream().collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey, (v1, v2) -> v1));
+        int count = data.getColumnCount();
+        String[] fieldNames = new String[count];
+        for (int i = 0; i < count; i++) {
+            String columnName = data.getColumnLabel(i + 1);
+            String fieldName = null;
+            if (fieldColumnMap.containsKey(columnName)) {
+                fieldName = columnName;
+            } else if (columnFieldMap.containsKey(columnName)) {
+                fieldName = columnFieldMap.get(columnName);
+            } else {
+                String s = FieldUtils.lineToHump(columnName.toLowerCase());
+                if (fieldColumnMap.containsKey(s)) {
+                    fieldName = s;
+                }
+            }
+            fieldNames[i] = fieldName;
+        }
+        return fieldNames;
     }
 
     /**
