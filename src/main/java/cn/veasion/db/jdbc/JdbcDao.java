@@ -103,7 +103,7 @@ public class JdbcDao {
             String columnName;
             for (int i = 0; i < count; i++) {
                 columnName = data.getColumnLabel(i + 1);
-                if (mapUnderscoreToCamelCase) {
+                if (mapUnderscoreToCamelCase && columnName.contains("_")) {
                     columnName = FieldUtils.lineToHump(columnName.toLowerCase());
                 }
                 columnNames[i] = columnName;
