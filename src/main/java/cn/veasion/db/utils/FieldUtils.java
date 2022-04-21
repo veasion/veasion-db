@@ -33,7 +33,7 @@ public class FieldUtils {
     private static Map<Class<?>, Map<String, String>> FIELD_COLUMN_CACHE = new HashMap<>();
     private static Map<Class<?>, Map<String, Field>> FIELD_CACHE = new HashMap<>();
     private static Map<Class<?>, Map<String, Method>> METHOD_GET_CACHE = new HashMap<>();
-    private static Map<Class<?>, Map<String, Method>> METHOD_SET_CACHE = new HashMap<>();
+    private static Map<Class<?>, Map<String, List<Method>>> METHOD_SET_CACHE = new HashMap<>();
 
     public static Map<String, String> entityFieldColumns(Class<?> entityClazz) {
         Table annotation = entityClazz.getAnnotation(Table.class);
@@ -132,9 +132,8 @@ public class FieldUtils {
      */
     public static boolean setValue(Object object, String field, Object value, boolean typeAutoConvert) {
         try {
-            Map<String, Method> methodMap = setterMethod(object.getClass());
-            if (methodMap.containsKey(field)) {
-                Method method = methodMap.get(field);
+            Method method = getSetterMethodByField(object.getClass(), field, value != null ? value.getClass() : null);
+            if (method != null) {
                 if (typeAutoConvert) {
                     method.invoke(object, TypeUtils.convert(value, method.getParameterTypes()[0]));
                 } else {
@@ -156,6 +155,30 @@ public class FieldUtils {
         } catch (Exception e) {
             throw new DbException("字段赋值异常: " + field, e);
         }
+    }
+
+    public static Method getSetterMethodByField(Class<?> clazz, String field, Class<?> paramClass) {
+        Map<String, List<Method>> methodMap = setterMethod(clazz);
+        List<Method> methods = methodMap.get(field);
+        if (methods == null || methods.isEmpty()) {
+            return null;
+        }
+        if (methods.size() == 1) {
+            return methods.get(0);
+        }
+        for (Method method : methods) {
+            if (paramClass == null) {
+                Field f = fields(clazz).get(field);
+                if (f != null && f.getType().equals(method.getParameterTypes()[0])) {
+                    return method;
+                }
+            } else {
+                if (method.getParameterTypes()[0].isAssignableFrom(paramClass)) {
+                    return method;
+                }
+            }
+        }
+        return methods.get(0);
     }
 
     private static Field getField(Object object, String field) {
@@ -197,8 +220,8 @@ public class FieldUtils {
         return result;
     }
 
-    public static Map<String, Method> setterMethod(Class<?> clazz) {
-        Map<String, Method> result = METHOD_SET_CACHE.get(clazz);
+    public static Map<String, List<Method>> setterMethod(Class<?> clazz) {
+        Map<String, List<Method>> result = METHOD_SET_CACHE.get(clazz);
         if (result != null) {
             return result;
         }
@@ -214,14 +237,13 @@ public class FieldUtils {
             }
             if (method.getParameterCount() == 1 && methodName.startsWith("set")) {
                 String field = firstCase(methodName.substring(3), true);
-                if (result.containsKey(field)) {
-                    Field f = fields(clazz).get(field);
-                    if (f != null && f.getType().equals(method.getParameterTypes()[0])) {
-                        result.put(field, method);
+                result.compute(field, (k, v) -> {
+                    if (v == null) {
+                        v = new ArrayList<>();
                     }
-                } else {
-                    result.put(field, method);
-                }
+                    v.add(method);
+                    return v;
+                });
             }
         }
         METHOD_SET_CACHE.put(clazz, Collections.unmodifiableMap(result));

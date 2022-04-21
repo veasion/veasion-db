@@ -60,11 +60,17 @@ public abstract class AbstractJoinQuery<T extends AbstractJoinQuery<?>> extends 
 
     @Override
     protected String handleField(String field) {
+        if (aliasMap.containsKey(field)) {
+            return field;
+        }
         return FilterUtils.tableAsField(tableAs, field);
     }
 
     @Override
     protected Filter handleFilter(Filter filter) {
+        if (aliasMap.containsKey(filter.getField())) {
+            return filter;
+        }
         return filter.fieldAs(tableAs);
     }
 
