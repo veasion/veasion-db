@@ -25,15 +25,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * DynamicTableTest
+ * 动态分表解决方案 <br>
+ * <pre>
+ * Mysql单表超过2000万查询性能就开始下降，这时需要分表，预估未来日增量算出需要拆分多少张表(2的N次幂)，
+ * 如业内订单表解决方案，根据 userId hash对数量取模路由分表，订单号orderCode中包含userId，订单C/B落库双写，
+ * 分页查询根据 id > lastId limit 不查 count. 数据统计走实时/离线数仓（Flink+ClickHouse）
+ *
+ * 下面是一个简单的动态表路由示例
+ * </pre>
  *
  * @author luozhuowei
  * @date 2022/1/30
  */
 public class DynamicTableTest extends BaseTest {
 
+    private static final int MAX_HASH_COUNT = 2;
+
     public static void main(String[] args) throws Exception {
-        // 测试根据 班级ID % 2 动态分表
+        // 测试根据 班级 ID % MAX_HASH_COUNT 动态分表
         // 注意：分表后设计到当前学生表的所有增删改查语句都必须带有classId，不支持 in classId，如果 in 需要动态用 union all 写路由规则
         // 批量新增不支持，需要按classId维度group成集合在进行批量操作
 
@@ -50,7 +59,7 @@ public class DynamicTableTest extends BaseTest {
                 if (classId == null) {
                     throw new DbException("classId不能为空");
                 }
-                return tableName + "_" + (classId.longValue() % 2);
+                return tableName + "_" + (classId.longValue() % MAX_HASH_COUNT);
             }
 
             @Override
@@ -64,7 +73,7 @@ public class DynamicTableTest extends BaseTest {
                         throw new DbException("classId不能为空");
                     }
                     Number classId = (Number) classIds.get(0);
-                    return tableName + "_" + (classId.longValue() % 2);
+                    return tableName + "_" + (classId.longValue() % MAX_HASH_COUNT);
                 } else {
                     throw new DbException("insert select不支持分表");
                 }
@@ -77,7 +86,7 @@ public class DynamicTableTest extends BaseTest {
                     throw new DbException("条件 classId (eq)不能为空");
                 }
                 Number classId = (Number) eqClassId.getValue();
-                return tableName + "_" + (classId.longValue() % 2);
+                return tableName + "_" + (classId.longValue() % MAX_HASH_COUNT);
             }
         });
 
@@ -113,14 +122,14 @@ public class DynamicTableTest extends BaseTest {
         Connection connection = dataSource.getConnection();
         try {
             for (Long classId : classIds) {
-                JdbcDao.executeUpdate(connection, String.format(createSQL, classId % 2));
-                Long count = DefaultDynamicTableExt.withDynamicTableExt((tableName, clazz, filter, source) -> tableName + "_" + classId % 2,
+                JdbcDao.executeUpdate(connection, String.format(createSQL, classId % MAX_HASH_COUNT));
+                Long count = DefaultDynamicTableExt.withDynamicTableExt((tableName, clazz, filter, source) -> tableName + "_" + classId % MAX_HASH_COUNT,
                         () -> studentDao.queryForType(new Q().selectExpression("count(1)", "count"), Long.class));
                 if (count == 0) {
-                    JdbcDao.executeInsert(connection, String.format(insertSQL, classId % 2), classId);
+                    JdbcDao.executeInsert(connection, String.format(insertSQL, classId % MAX_HASH_COUNT), classId);
                 }
                 // String sql = "create table if not exists t_student_%d as select * from t_student where class_id = ?";
-                // JdbcDao.executeInsert(connection, String.format(sql, classId % 2), classId);
+                // JdbcDao.executeInsert(connection, String.format(sql, classId % MAX_HASH_COUNT), classId);
             }
         } finally {
             dataSourceProvider.releaseConnection(dataSource, connection);

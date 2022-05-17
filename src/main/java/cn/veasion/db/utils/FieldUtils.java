@@ -30,10 +30,10 @@ public class FieldUtils {
     private static final Pattern LINE_PATTERN = Pattern.compile("_(\\w)");
     private static final Pattern HUMP_PATTERN = Pattern.compile("[a-z][A-Z]");
 
-    private static Map<Class<?>, Map<String, String>> FIELD_COLUMN_CACHE = new HashMap<>();
-    private static Map<Class<?>, Map<String, Field>> FIELD_CACHE = new HashMap<>();
-    private static Map<Class<?>, Map<String, Method>> METHOD_GET_CACHE = new HashMap<>();
-    private static Map<Class<?>, Map<String, List<Method>>> METHOD_SET_CACHE = new HashMap<>();
+    private static final Map<Class<?>, Map<String, String>> FIELD_COLUMN_CACHE = new HashMap<>();
+    private static final Map<Class<?>, Map<String, Field>> FIELD_CACHE = new HashMap<>();
+    private static final Map<Class<?>, Map<String, Method>> METHOD_GET_CACHE = new HashMap<>();
+    private static final Map<Class<?>, Map<String, List<Method>>> METHOD_SET_CACHE = new HashMap<>();
 
     public static Map<String, String> entityFieldColumns(Class<?> entityClazz) {
         Table annotation = entityClazz.getAnnotation(Table.class);
@@ -76,19 +76,21 @@ public class FieldUtils {
         if (TypeUtils.isSimpleClass(entityClazz)) {
             return new HashMap<>();
         }
-        fieldColumnMap = new HashMap<>();
-        Map<String, Field> fieldMap = fields(entityClazz);
-        for (Field field : fieldMap.values()) {
-            Column column = field.getAnnotation(Column.class);
-            if (column == null || !column.ignore()) {
-                if (column != null && !"".equals(column.value())) {
-                    fieldColumnMap.put(field.getName(), column.value());
-                } else {
-                    fieldColumnMap.put(field.getName(), humpToLine(field.getName()));
+        synchronized (FIELD_COLUMN_CACHE) {
+            fieldColumnMap = new HashMap<>();
+            Map<String, Field> fieldMap = fields(entityClazz);
+            for (Field field : fieldMap.values()) {
+                Column column = field.getAnnotation(Column.class);
+                if (column == null || !column.ignore()) {
+                    if (column != null && !"".equals(column.value())) {
+                        fieldColumnMap.put(field.getName(), column.value());
+                    } else {
+                        fieldColumnMap.put(field.getName(), humpToLine(field.getName()));
+                    }
                 }
             }
+            FIELD_COLUMN_CACHE.put(entityClazz, Collections.unmodifiableMap(fieldColumnMap));
         }
-        FIELD_COLUMN_CACHE.put(entityClazz, Collections.unmodifiableMap(fieldColumnMap));
         return fieldColumnMap;
     }
 
@@ -201,22 +203,24 @@ public class FieldUtils {
         if (result != null) {
             return result;
         }
-        result = new HashMap<>();
-        Method[] methods = clazz.getMethods();
-        for (Method method : methods) {
-            String methodName = method.getName();
-            if (!Modifier.isPublic(method.getModifiers()) || Modifier.isStatic(method.getModifiers())) {
-                continue;
+        synchronized (METHOD_GET_CACHE) {
+            result = new HashMap<>();
+            Method[] methods = clazz.getMethods();
+            for (Method method : methods) {
+                String methodName = method.getName();
+                if (!Modifier.isPublic(method.getModifiers()) || Modifier.isStatic(method.getModifiers())) {
+                    continue;
+                }
+                if (Object.class.equals(method.getDeclaringClass())) {
+                    continue;
+                }
+                if (method.getParameterCount() == 0 && methodName.startsWith("get")) {
+                    String field = firstCase(methodName.substring(3), true);
+                    result.put(field, method);
+                }
             }
-            if (Object.class.equals(method.getDeclaringClass())) {
-                continue;
-            }
-            if (method.getParameterCount() == 0 && methodName.startsWith("get")) {
-                String field = firstCase(methodName.substring(3), true);
-                result.put(field, method);
-            }
+            METHOD_GET_CACHE.put(clazz, Collections.unmodifiableMap(result));
         }
-        METHOD_GET_CACHE.put(clazz, Collections.unmodifiableMap(result));
         return result;
     }
 
@@ -225,28 +229,30 @@ public class FieldUtils {
         if (result != null) {
             return result;
         }
-        result = new HashMap<>();
-        Method[] methods = clazz.getMethods();
-        for (Method method : methods) {
-            String methodName = method.getName();
-            if (!Modifier.isPublic(method.getModifiers()) || Modifier.isStatic(method.getModifiers())) {
-                continue;
+        synchronized (METHOD_SET_CACHE) {
+            result = new HashMap<>();
+            Method[] methods = clazz.getMethods();
+            for (Method method : methods) {
+                String methodName = method.getName();
+                if (!Modifier.isPublic(method.getModifiers()) || Modifier.isStatic(method.getModifiers())) {
+                    continue;
+                }
+                if (Object.class.equals(method.getDeclaringClass())) {
+                    continue;
+                }
+                if (method.getParameterCount() == 1 && methodName.startsWith("set")) {
+                    String field = firstCase(methodName.substring(3), true);
+                    result.compute(field, (k, v) -> {
+                        if (v == null) {
+                            v = new ArrayList<>();
+                        }
+                        v.add(method);
+                        return v;
+                    });
+                }
             }
-            if (Object.class.equals(method.getDeclaringClass())) {
-                continue;
-            }
-            if (method.getParameterCount() == 1 && methodName.startsWith("set")) {
-                String field = firstCase(methodName.substring(3), true);
-                result.compute(field, (k, v) -> {
-                    if (v == null) {
-                        v = new ArrayList<>();
-                    }
-                    v.add(method);
-                    return v;
-                });
-            }
+            METHOD_SET_CACHE.put(clazz, Collections.unmodifiableMap(result));
         }
-        METHOD_SET_CACHE.put(clazz, Collections.unmodifiableMap(result));
         return result;
     }
 
@@ -255,23 +261,25 @@ public class FieldUtils {
         if (result != null) {
             return result;
         }
-        result = new HashMap<>();
-        List<Class<?>> classList = new ArrayList<>();
-        Class<?> currentClazz = clazz;
-        while (currentClazz != null) {
-            classList.add(0, currentClazz);
-            currentClazz = currentClazz.getSuperclass();
-        }
-        for (Class<?> c : classList) {
-            Field[] fields = c.getDeclaredFields();
-            for (Field field : fields) {
-                if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
-                    continue;
-                }
-                result.put(field.getName(), field);
+        synchronized (FIELD_CACHE) {
+            result = new HashMap<>();
+            List<Class<?>> classList = new ArrayList<>();
+            Class<?> currentClazz = clazz;
+            while (currentClazz != null) {
+                classList.add(0, currentClazz);
+                currentClazz = currentClazz.getSuperclass();
             }
+            for (Class<?> c : classList) {
+                Field[] fields = c.getDeclaredFields();
+                for (Field field : fields) {
+                    if (Modifier.isFinal(field.getModifiers()) || Modifier.isStatic(field.getModifiers())) {
+                        continue;
+                    }
+                    result.put(field.getName(), field);
+                }
+            }
+            FIELD_CACHE.put(clazz, Collections.unmodifiableMap(result));
         }
-        FIELD_CACHE.put(clazz, Collections.unmodifiableMap(result));
         return result;
     }
 
