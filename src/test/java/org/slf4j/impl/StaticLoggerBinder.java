@@ -62,7 +62,7 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
                 if (object instanceof Throwable) {
                     continue;
                 }
-                s = s.replace("{}", String.valueOf(object));
+                s = s.replaceFirst("\\{}", String.valueOf(object));
             }
             ("error".equalsIgnoreCase(level) ? System.err : System.out).println(
                     String.format("%s [%s] [%s] [%s] - %s",

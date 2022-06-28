@@ -10,18 +10,36 @@ import java.util.List;
  */
 public class Page<T> {
 
-    private int count;
+    private int page;
+    private int size;
+    private long count;
     private List<T> list;
 
     public Page() {
     }
 
-    public Page(int count, List<T> list) {
+    public Page(int page, int size, long count, List<T> list) {
         this.count = count;
         this.list = list;
     }
 
-    public int getCount() {
+    public int getPage() {
+        return page;
+    }
+
+    public void setPage(int page) {
+        this.page = page;
+    }
+
+    public int getSize() {
+        return size;
+    }
+
+    public void setSize(int size) {
+        this.size = size;
+    }
+
+    public long getCount() {
         return count;
     }
 

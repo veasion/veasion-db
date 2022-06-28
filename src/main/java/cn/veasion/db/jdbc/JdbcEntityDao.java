@@ -163,14 +163,14 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                 QuerySQL countQuerySQL = countQuery.sqlValue();
                 return executeJdbc(JdbcTypeEnum.SELECT, connection -> {
                     Object value = JdbcDao.queryOnly(connection, countQuerySQL.getSQL(), countQuerySQL.getValues());
-                    Integer count = TypeUtils.convert(value, Integer.class);
+                    Long count = TypeUtils.convert(value, Long.class);
                     query.page(pageParam);
                     if (count > 0) {
                         QuerySQL listQuerySQL = query.sqlValue();
                         List<E> list = JdbcDao.listForType(connection, clazz, listQuerySQL.getSQL(), listQuerySQL.getValues());
-                        return new Page<>(count, list);
+                        return new Page<>(pageParam.getPage(), pageParam.getSize(), count, list);
                     } else {
-                        return new Page<>(count, new ArrayList<>());
+                        return new Page<>(pageParam.getPage(), pageParam.getSize(), count, new ArrayList<>());
                     }
                 });
             } finally {

@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -28,9 +29,9 @@ public class LogicDeleteInterceptor extends AbstractInterceptor {
     private static ThreadLocal<Boolean> skipLogicDeleteFilter = new ThreadLocal<>();
     private static ThreadLocal<Set<Class<?>>> skipClassLogicDeleteFilter = new ThreadLocal<>();
 
-    private String logicDeleteField;
-    private Object availableValue;
-    private Object deletedValue;
+    protected String logicDeleteField;
+    protected Object availableValue;
+    protected Object deletedValue;
 
     /**
      * 逻辑删除处理拦截器
@@ -43,7 +44,7 @@ public class LogicDeleteInterceptor extends AbstractInterceptor {
     public LogicDeleteInterceptor(String logicDeleteField, Object availableValue, Object deletedValue) {
         super(true, true, true, true, false);
         this.logicDeleteField = Objects.requireNonNull(logicDeleteField);
-        this.availableValue = Objects.requireNonNull(availableValue);
+        this.availableValue = availableValue;
         this.deletedValue = Objects.requireNonNull(deletedValue);
     }
 
@@ -85,10 +86,15 @@ public class LogicDeleteInterceptor extends AbstractInterceptor {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void handleDelete(Delete delete) {
         AbstractUpdate<?> convertUpdate = delete.getConvertUpdate();
         if (convertUpdate == null) {
             convertUpdate = new Update();
+        }
+        Object deletedValue = this.deletedValue;
+        if (deletedValue instanceof Function) {
+            deletedValue = ((Function<Delete, Object>) deletedValue).apply(delete);
         }
         if (deletedValue instanceof Expression) {
             convertUpdate.updateExpression(logicDeleteField, (Expression) deletedValue);
@@ -101,7 +107,7 @@ public class LogicDeleteInterceptor extends AbstractInterceptor {
     @Override
     protected void handleFilter(AbstractFilter<?> abstractFilter) {
         if (!abstractFilter.hasFilter(logicDeleteField)) {
-            abstractFilter.eq(logicDeleteField, availableValue);
+            abstractFilter.addFilter(getAvailableFilter());
         }
     }
 
@@ -117,7 +123,11 @@ public class LogicDeleteInterceptor extends AbstractInterceptor {
             }
         }
         onMethod.accept(Filter.AND);
-        onMethod.accept(Filter.eq(logicDeleteField, availableValue).fieldAs(tableAs));
+        onMethod.accept(getAvailableFilter().fieldAs(tableAs));
+    }
+
+    protected Filter getAvailableFilter() {
+        return availableValue == null ? Filter.isNull(logicDeleteField) : Filter.eq(logicDeleteField, availableValue);
     }
 
     @Override
