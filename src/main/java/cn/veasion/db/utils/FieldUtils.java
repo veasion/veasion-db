@@ -137,7 +137,14 @@ public class FieldUtils {
             Method method = getSetterMethodByField(object.getClass(), field, value != null ? value.getClass() : null);
             if (method != null) {
                 if (typeAutoConvert) {
-                    method.invoke(object, TypeUtils.convert(value, method.getParameterTypes()[0]));
+                    Class<?> parameterType = method.getParameterTypes()[0];
+                    if (Object.class.equals(parameterType)) {
+                        Field _field = getField(object.getClass(), field);
+                        if (_field != null) {
+                            parameterType = _field.getType();
+                        }
+                    }
+                    method.invoke(object, TypeUtils.convert(value, parameterType));
                 } else {
                     method.invoke(object, value);
                 }
