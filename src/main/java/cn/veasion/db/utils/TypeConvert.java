@@ -10,4 +10,8 @@ public interface TypeConvert {
 
     <T> T convert(Object object, Class<T> clazz);
 
+    default Object convertValue(Object value) {
+        return value;
+    }
+
 }

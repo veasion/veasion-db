@@ -10,6 +10,7 @@ import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.LeftRight;
 import cn.veasion.db.utils.ServiceLoaderUtils;
+import cn.veasion.db.utils.TypeConvert;
 import cn.veasion.db.utils.TypeUtils;
 
 import java.util.ArrayList;
@@ -30,12 +31,22 @@ public abstract class AbstractSQL<T> {
     protected List<Object> values = new ArrayList<>();
     protected DynamicTableExt dynamicTableExt = ServiceLoaderUtils.dynamicTableExt();
 
+    static TypeConvert typeConvert;
+
+    static {
+        typeConvert = ServiceLoaderUtils.loadOne(TypeConvert.class);
+    }
+
     public String getSQL() {
         return sql.toString();
     }
 
     public Object[] getValues() {
-        return values.toArray();
+        if (typeConvert != null) {
+            return values.stream().map(typeConvert::convertValue).toArray();
+        } else {
+            return values.toArray();
+        }
     }
 
     public void reset() {
