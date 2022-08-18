@@ -202,7 +202,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                     delete.getFilters().forEach(convertUpdate::addFilter);
                 }
                 if (convertUpdate.getEntityClass() == null) {
-                    convertUpdate.setEntityClass(getEntityClass());
+                    convertUpdate.setEntityClass(delete.getEntityClass());
                 }
                 jdbcTypeEnum = JdbcTypeEnum.UPDATE;
                 abstractSQL = convertUpdate.sqlValue();
