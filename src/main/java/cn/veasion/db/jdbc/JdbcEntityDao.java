@@ -54,7 +54,13 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         return InterceptorUtils.intercept(new EntityDaoInvocation<>(this, "add", new Object[]{entityInsert}, () -> {
             InsertSQL insertSQL = entityInsert.sqlValue();
             return executeJdbc(JdbcTypeEnum.INSERT, connection -> {
-                Object[] objects = JdbcDao.executeInsert(connection, insertSQL.getSQL(), insertSQL.getValues());
+                Object[] objects;
+                if (entityInsert.isUseGeneratedKeys()) {
+                    objects = JdbcDao.executeInsert(connection, insertSQL.getSQL(), insertSQL.getValues());
+                } else {
+                    JdbcDao.executeInsertNoKeys(connection, insertSQL.getSQL(), insertSQL.getValues());
+                    objects = new Object[0];
+                }
                 if (objects.length > 0) {
                     ID id = (ID) TypeUtils.convert(objects[0], idField.getType());
                     if (entity instanceof IBaseId) {
@@ -80,7 +86,13 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
             Field idField = FieldUtils.getIdField(getEntityClass());
             List<?> entityList = batchEntityInsert.getEntityList();
             return executeJdbc(JdbcTypeEnum.INSERT, connection -> {
-                Object[] objects = JdbcDao.executeInsert(connection, insertSQL.getSQL(), insertSQL.getValues());
+                Object[] objects;
+                if (batchEntityInsert.isUseGeneratedKeys()) {
+                    objects = JdbcDao.executeInsert(connection, insertSQL.getSQL(), insertSQL.getValues());
+                } else {
+                    JdbcDao.executeInsertNoKeys(connection, insertSQL.getSQL(), insertSQL.getValues());
+                    objects = new Object[0];
+                }
                 if (idField == null) {
                     return null;
                 }

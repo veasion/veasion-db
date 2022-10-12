@@ -21,6 +21,7 @@ public class EntityInsert {
     private Object entity;
     private Class<?> entityClass;
     private Set<String> skipFields;
+    private boolean useGeneratedKeys = true;
     private Map<String, Object> fieldValueMap;
 
     public EntityInsert(Object entity) {
@@ -40,6 +41,15 @@ public class EntityInsert {
 
     public Map<String, Object> getFieldValueMap() {
         return fieldValueMap;
+    }
+
+    public EntityInsert setUseGeneratedKeys(boolean useGeneratedKeys) {
+        this.useGeneratedKeys = useGeneratedKeys;
+        return this;
+    }
+
+    public boolean isUseGeneratedKeys() {
+        return useGeneratedKeys;
     }
 
     public Class<?> getEntityClass() {

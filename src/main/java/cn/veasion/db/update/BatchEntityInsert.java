@@ -25,6 +25,7 @@ public class BatchEntityInsert {
     private List<?> entityList;
     private Class<?> entityClass;
     private Set<String> skipFields;
+    private boolean useGeneratedKeys = true;
     private AbstractQuery<?> insertSelectQuery;
     private List<Map<String, Object>> fieldValueMapList;
 
@@ -41,6 +42,15 @@ public class BatchEntityInsert {
 
     public BatchEntityInsert(AbstractQuery<?> insertSelectQuery) {
         this.insertSelectQuery = Objects.requireNonNull(insertSelectQuery);
+    }
+
+    public BatchEntityInsert setUseGeneratedKeys(boolean useGeneratedKeys) {
+        this.useGeneratedKeys = useGeneratedKeys;
+        return this;
+    }
+
+    public boolean isUseGeneratedKeys() {
+        return useGeneratedKeys;
     }
 
     public List<?> getEntityList() {
