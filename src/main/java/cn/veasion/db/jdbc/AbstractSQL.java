@@ -31,11 +31,7 @@ public abstract class AbstractSQL<T> {
     protected List<Object> values = new ArrayList<>();
     protected DynamicTableExt dynamicTableExt = ServiceLoaderUtils.dynamicTableExt();
 
-    static TypeConvert typeConvert;
-
-    static {
-        typeConvert = ServiceLoaderUtils.loadOne(TypeConvert.class);
-    }
+    static TypeConvert typeConvert = ServiceLoaderUtils.typeConvert();
 
     public String getSQL() {
         return sql.toString();

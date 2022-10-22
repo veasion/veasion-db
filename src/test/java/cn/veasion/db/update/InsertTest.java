@@ -50,6 +50,14 @@ public class InsertTest extends BaseTest {
                         .eq("sno", "s001")
                         .notExists(SubQueryParam.build(new Q("1").eq("sno", "copy_s001")))
         )));
+
+        // replace into
+        StudentPO student = getStudent();
+        student.setId(System.currentTimeMillis());
+        student.setDesc("replace: add");
+        studentDao.add(new EntityInsert(student).withReplace());
+        student.setDesc("replace: update");
+        studentDao.add(new EntityInsert(student).withReplace());
     }
 
     private static StudentPO getStudent() {

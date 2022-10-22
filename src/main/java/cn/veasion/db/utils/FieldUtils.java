@@ -162,7 +162,7 @@ public class FieldUtils {
                 return f != null;
             }
         } catch (Exception e) {
-            throw new DbException("字段赋值异常: " + field, e);
+            throw new DbException("字段赋值异常: " + field + " [" + (value == null ? null : value.getClass().getName()) + "]", e);
         }
     }
 

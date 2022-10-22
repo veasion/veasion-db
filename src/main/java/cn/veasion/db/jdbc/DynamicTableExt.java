@@ -12,4 +12,8 @@ public interface DynamicTableExt {
 
     String getTableName(String tableName, Class<?> entityClazz, AbstractFilter<?> filter, Object source);
 
+    default int sort() {
+        return 0;
+    }
+
 }

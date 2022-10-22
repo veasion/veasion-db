@@ -14,4 +14,8 @@ public interface TypeConvert {
         return value;
     }
 
+    default int sort() {
+        return 0;
+    }
+
 }

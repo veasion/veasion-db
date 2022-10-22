@@ -38,4 +38,9 @@ public abstract class PageParam {
     public void setSize(int size) {
         this.size = size;
     }
+
+    public int sort() {
+        return 0;
+    }
+
 }

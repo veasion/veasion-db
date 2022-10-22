@@ -2,6 +2,7 @@ package cn.veasion.db.utils;
 
 import cn.veasion.db.jdbc.DataSourceProvider;
 import cn.veasion.db.jdbc.DynamicTableExt;
+import cn.veasion.db.query.PageParam;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +22,8 @@ public class ServiceLoaderUtils {
 
     private static DataSourceProvider dataSourceProvider;
     private static DynamicTableExt dynamicTableExt;
+    private static TypeConvert typeConvert;
+    private static PageParam pageParam;
 
     public synchronized static DataSourceProvider dataSourceProvider() {
         if (dataSourceProvider != null) {
@@ -39,13 +42,64 @@ public class ServiceLoaderUtils {
         return dataSourceProvider;
     }
 
-    public synchronized static DynamicTableExt dynamicTableExt() {
+    public static DynamicTableExt dynamicTableExt() {
         if (dynamicTableExt != null) {
             return dynamicTableExt;
         }
-        return dynamicTableExt = loadOne(DynamicTableExt.class);
+        synchronized (ServiceLoaderUtils.class) {
+            if (dynamicTableExt != null) {
+                return dynamicTableExt;
+            }
+            List<DynamicTableExt> list = loadList(DynamicTableExt.class);
+            if (list.size() > 0) {
+                if (list.size() > 1) {
+                    list.sort((a, b) -> -Integer.compare(a.sort(), b.sort()));
+                }
+                dynamicTableExt = list.get(0);
+            }
+            return dynamicTableExt;
+        }
     }
 
+    public static TypeConvert typeConvert() {
+        if (typeConvert != null) {
+            return typeConvert;
+        }
+        synchronized (ServiceLoaderUtils.class) {
+            if (typeConvert != null) {
+                return typeConvert;
+            }
+            List<TypeConvert> list = loadList(TypeConvert.class);
+            if (list.size() > 0) {
+                if (list.size() > 1) {
+                    list.sort((a, b) -> -Integer.compare(a.sort(), b.sort()));
+                }
+                typeConvert = list.get(0);
+            }
+            return typeConvert;
+        }
+    }
+
+    public static PageParam pageParam() {
+        if (pageParam != null) {
+            return pageParam;
+        }
+        synchronized (ServiceLoaderUtils.class) {
+            if (pageParam != null) {
+                return pageParam;
+            }
+            List<PageParam> list = loadList(PageParam.class);
+            if (list.size() > 0) {
+                if (list.size() > 1) {
+                    list.sort((a, b) -> -Integer.compare(a.sort(), b.sort()));
+                }
+                pageParam = list.get(0);
+            }
+            return pageParam;
+        }
+    }
+
+    @Deprecated
     public static <T> T loadOne(Class<T> clazz) {
         List<T> list = loadList(clazz);
         return list.size() > 0 ? list.get(0) : null;

@@ -63,7 +63,11 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
         Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(entityClazz);
         Set<String> fields = fieldValueMapList.get(0).keySet();
 
-        sql.append("INSERT INTO ");
+        if (source instanceof EntityInsert && ((EntityInsert) source).isReplace()) {
+            sql.append("REPLACE INTO ");
+        } else {
+            sql.append("INSERT INTO ");
+        }
         sql.append(getTableName(entityClazz, null, source)).append(" (");
         for (String field : fields) {
             appendInsertColumn(fieldColumns.get(field));

@@ -160,7 +160,7 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
     }
 
     public T page(int page, int size) {
-        PageParam pageParam = ServiceLoaderUtils.loadOne(PageParam.class);
+        PageParam pageParam = ServiceLoaderUtils.pageParam();
         if (pageParam != null) {
             this.pageParam = pageParam;
             this.pageParam.setPage(page);

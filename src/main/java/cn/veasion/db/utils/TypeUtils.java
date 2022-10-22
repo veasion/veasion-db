@@ -22,11 +22,7 @@ import java.util.Map;
 @SuppressWarnings("unchecked")
 public class TypeUtils {
 
-    static TypeConvert typeConvert;
-
-    static {
-        typeConvert = ServiceLoaderUtils.loadOne(TypeConvert.class);
-    }
+    static TypeConvert typeConvert = ServiceLoaderUtils.typeConvert();
 
     public static String getTableName(Class<?> entityClazz) {
         Table annotation = entityClazz.getAnnotation(Table.class);

@@ -23,6 +23,7 @@ public class EntityInsert {
     private Set<String> skipFields;
     private boolean useGeneratedKeys = true;
     private Map<String, Object> fieldValueMap;
+    private boolean replace;
 
     public EntityInsert(Object entity) {
         this.entity = Objects.requireNonNull(entity);
@@ -58,6 +59,15 @@ public class EntityInsert {
 
     public void setEntityClass(Class<?> entityClass) {
         this.entityClass = entityClass;
+    }
+
+    public EntityInsert withReplace() {
+        this.replace = true;
+        return this;
+    }
+
+    public boolean isReplace() {
+        return replace;
     }
 
     public void check(Class<?> mainEntityClass) {
