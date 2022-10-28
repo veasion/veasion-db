@@ -18,11 +18,12 @@ public class OtherTest extends BaseTest {
                 .select("id")
                 .selectExpression("ifnull(${id}, ${sno})", "`key`")
                 .filterExpression("id", Operator.EQ, "${id} + 1")
+                .sqlFilter(handler -> handler.asField("id") + " > ?", 0)
         ));
         studentDao.update(new EU(StudentPO.class, "t")
                 .updateExpression("id", "${id}")
                 .filterExpression("id", Operator.EQ, "${id}")
-                .lt("id", 5)
+                .sqlFilter(handler -> handler.asField("id") + " < 5")
         );
     }
 

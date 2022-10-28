@@ -84,6 +84,12 @@ public abstract class AbstractSQL<T> {
                     sql.append(" ").append(filter.getOperator().getOpt()).append(" ");
                     Expression expression = (Expression) filter.getValue();
                     appendExpressionValue(entityClassMap, expression);
+                } else if (filter instanceof Filter.SqlFilter) {
+                    // sql filter
+                    sql.append(filter.getSql());
+                    if (filter.getValue() instanceof Collection) {
+                        values.addAll((Collection<?>) filter.getValue());
+                    }
                 } else {
                     throw new FilterException("不支持过滤器：" + filter);
                 }

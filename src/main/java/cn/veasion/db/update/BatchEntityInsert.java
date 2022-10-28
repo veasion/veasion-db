@@ -28,6 +28,7 @@ public class BatchEntityInsert {
     private boolean useGeneratedKeys = true;
     private AbstractQuery<?> insertSelectQuery;
     private List<Map<String, Object>> fieldValueMapList;
+    private boolean replace;
 
     public <T> BatchEntityInsert(List<T> entityList) {
         this.entityList = Objects.requireNonNull(entityList);
@@ -47,6 +48,18 @@ public class BatchEntityInsert {
     public BatchEntityInsert setUseGeneratedKeys(boolean useGeneratedKeys) {
         this.useGeneratedKeys = useGeneratedKeys;
         return this;
+    }
+
+    public BatchEntityInsert withReplace() {
+        if (this.insertSelectQuery != null) {
+            throw new DbException("insert select 方式不支持 replace");
+        }
+        this.replace = true;
+        return this;
+    }
+
+    public boolean isReplace() {
+        return replace;
     }
 
     public boolean isUseGeneratedKeys() {

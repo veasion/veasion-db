@@ -125,6 +125,16 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> {
         return addFilters(Filter.expression(field, operator, expression));
     }
 
+    /**
+     * SQL过滤
+     *
+     * @param sqlFilterHandler 获取SQL接口，参数支持字段处理
+     * @param values           占位符对应值
+     */
+    public T sqlFilter(Filter.SqlFilterHandler sqlFilterHandler, Object... values) {
+        return addFilter(Filter.sqlFilter(sqlFilterHandler, values));
+    }
+
     public List<Filter> getFilters() {
         return filters;
     }

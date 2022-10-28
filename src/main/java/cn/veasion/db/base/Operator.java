@@ -32,4 +32,14 @@ public enum Operator {
     public String getOpt() {
         return opt;
     }
+
+    public static Operator of(String opt) {
+        for (Operator value : values()) {
+            if (value.opt.equalsIgnoreCase(opt)) {
+                return value;
+            }
+        }
+        return null;
+    }
+
 }

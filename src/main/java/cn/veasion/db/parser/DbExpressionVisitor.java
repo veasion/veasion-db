@@ -478,7 +478,23 @@ public class DbExpressionVisitor implements ExpressionVisitor {
     private void handleComparisonOperator(ComparisonOperator operator, String opt) {
         Expression leftExpression = operator.getLeftExpression();
         Expression rightExpression = operator.getRightExpression();
-        leftRight(leftExpression, opt, rightExpression);
+
+        if (leftExpression instanceof Function) {
+            if (havingFilter) {
+                appendVarFun("having(", false);
+            } else if (onFilter) {
+                appendVarFun("on(", false);
+            } else {
+                appendVarFun("addFilter(", false);
+            }
+            sb.append("Filter.sqlFilter(fieldHandler -> \"").append(operator.toString()).append("\")");
+            sb.append(")");
+            if (!onFilter) {
+                sb.append(";\r\n");
+            }
+        } else {
+            leftRight(leftExpression, opt, rightExpression);
+        }
     }
 
     private void leftRight(Expression leftExpression, String opt, Expression rightExpression) {

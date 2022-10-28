@@ -104,6 +104,16 @@ public class Filter {
         return build(field, operator, expression, null).special();
     }
 
+    /**
+     * SQL过滤
+     *
+     * @param sqlFilterHandler 获取SQL接口，参数支持字段处理
+     * @param values           占位符对应值
+     */
+    public static Filter sqlFilter(SqlFilterHandler sqlFilterHandler, Object... values) {
+        return new SqlFilter(sqlFilterHandler, values);
+    }
+
     public static Filter AND = build("AND");
     public static Filter OR = build("OR");
     public static Filter LEFT_BRACKET = build("(");
@@ -213,6 +223,54 @@ public class Filter {
             return field + " " + operator.opt;
         } else {
             return sql;
+        }
+    }
+
+    @FunctionalInterface
+    public interface SqlFilterHandler {
+        String getSQL(ColumnFieldHandler columnFieldHandler);
+    }
+
+    @FunctionalInterface
+    public interface ColumnFieldHandler {
+        String asField(String columnField);
+    }
+
+    public static class SqlFilter extends Filter {
+
+        private String tableAs;
+        private SqlFilterHandler sqlFilterHandler;
+
+        private SqlFilter(SqlFilterHandler sqlFilterHandler, Object... values) {
+            this.sqlFilterHandler = sqlFilterHandler;
+            if (values != null && values.length > 0) {
+                super.value = Arrays.asList(values);
+            }
+        }
+
+        @Override
+        public String getSql() {
+            if (tableAs != null) {
+                return sqlFilterHandler.getSQL(field -> FilterUtils.tableAsField(tableAs, field));
+            } else {
+                return sqlFilterHandler.getSQL(field -> field);
+            }
+        }
+
+        @Override
+        public SqlFilter fieldAs(String tableAs) {
+            this.tableAs = tableAs;
+            return this;
+        }
+
+        @Override
+        public boolean isSpecial() {
+            return true;
+        }
+
+        @Override
+        public String toString() {
+            return getSql();
         }
     }
 

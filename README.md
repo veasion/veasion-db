@@ -1,18 +1,18 @@
 # veasion-db
 
-veasion-db 是一个轻量级持久层db框架，除slf4j-api外不依赖任何第三方jar，该框架提供丰富灵活的数据库操作，
+veasion-db 是一个轻量级持久层ORM框架，除slf4j-api外不依赖任何第三方jar，该框架提供丰富灵活的数据库操作，
 单元测试 query/update 目录下有大量示例及demo。
 
-框架基本支持sql能实现的任意查询或更新，如关联查询、子查询、关联更新、insert select、不同数据库分页扩展等。
+框架无需写任何SQL基本支持sql能实现的任意查询或更新，如关联查询、子查询、关联更新、insert select、不同数据库分页扩展等。
 
-框架支持自定义拦截器，内置逻辑删除拦截器，可通过SPI或调用InterceptorUtils.addInterceptor方法加入扩展。
+框架支持自定义拦截器，内置逻辑删除、数据隔离拦截器，可通过SPI或调用InterceptorUtils.addInterceptor方法加入扩展。
 ## maven 依赖
 添加 veasion-db 依赖
 ```xml
 <dependency>
     <groupId>cn.veasion</groupId>
     <artifactId>veasion-db</artifactId>
-    <version>1.1.8</version>
+    <version>1.1.9</version>
 </dependency>
 ```
 支持sql解析生成veasion-db代码
@@ -21,7 +21,7 @@ String sql = "select * from t_student where id = 1";
 String code = SQLParseUtils.parseSQLConvert(sql);
 // 直接把SQL转换成对应的代码，示例参考单元测试 SqlDbConvertTest
 
-// 该功能为扩展功能需要加入第三方依赖
+// 该功能为扩展功能需要加入第三方依赖，示例见单元测试 SqlDbConvertTest
 <dependency>
     <groupId>com.github.jsqlparser</groupId>
     <artifactId>jsqlparser</artifactId>
@@ -325,7 +325,24 @@ public class InsertTest extends BaseTest {
 
 ### 动态查询机制
 支持动态查询机制，可通过配置字段注解提前定义查询方式和动态关联、静态关联表。
-非常灵活的实现前端传参后端动态查询，具体参考单元测试 QueryCriteriaTest
+非常灵活的实现前端传参后端动态查询，支持后端不需要写任何代码，根据前端传参自动关联表进行各种条件的动态查询
+<br><br>
+动态查询说明：<br>
+前端传 { id: 1 } 自动映射成 id = 1 <br>
+前端传 { id: [1, 2, 3] } 自动映射成 id in (1,2,3) <br>
+前端传 { start_age: 18 } 自动映射成 age >= 18 <br>
+前端传 { end_age: 30 } 自动映射成 age <= 30 <br>
+前端传 { name: '罗' } 自动映射成 name = '罗' <br>
+前端传 { name: '罗%' } 自动映射成 name like '罗%' <br>
+前端传 { name: '%罗%' } 自动映射成 name like '%罗%' <br>
+
+动态关联说明：<br>
+有一张学生表 t_student 和一张班级表 t_classes
+如果前端传了 className 字段（学生表只有 class_id 关联班级表）就会进行自动关联 t_classes 表去查询，不用写任何代码自动根据参数去动态关联表查询。<br>
+前端传 { id: 1 } 自动映射成 select * from t_student where id = 1 <br>
+前端传 { id: 1, className: '三年二班' } 自动映射成 select s.* from t_student s join t_classes c on s.class_id = c.id where s.id = 1 and c.name = '三年二班' <br>
+
+具体参考单元测试 QueryCriteriaTest
 
 ### spring 项目接入 veasion-db
 SPI 实现 cn.veasion.db.jdbc.DataSourceProvider 接口

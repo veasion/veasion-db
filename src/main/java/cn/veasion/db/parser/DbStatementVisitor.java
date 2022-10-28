@@ -11,6 +11,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.StatementVisitorAdapter;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.insert.Insert;
+import net.sf.jsqlparser.statement.replace.Replace;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.update.Update;
 
@@ -60,6 +61,32 @@ public class DbStatementVisitor extends StatementVisitorAdapter {
             } else {
                 sb.append("EntityInsert insert = new EntityInsert(").append(var).append(");");
             }
+        }
+    }
+
+    @Override
+    public void visit(Replace replace) {
+        Table table = replace.getTable();
+        List<Column> columns = replace.getColumns();
+        ItemsList itemsList = replace.getItemsList();
+        String var = SQLParseUtils.getVarByTable(table);
+        String entity = SQLParseUtils.getByTable(table);
+        sb.append(entity).append(" ").append(var);
+        sb.append(" = new ").append(entity).append("();\r\n");
+        if (columns != null && !columns.isEmpty()) {
+            for (Column column : columns) {
+                String fieldSetter = FieldUtils.firstCase(SQLParseUtils.columnToField(column.getColumnName()), false);
+                sb.append(var).append(".set").append(fieldSetter).append("(null);\r\n");
+            }
+        }
+        sb.append("\r\n");
+        if (itemsList instanceof MultiExpressionList) {
+            sb.append("List<").append(entity);
+            sb.append("> list = new ArrayList<>();\r\n");
+            sb.append("list.add(").append(var).append(");\r\n");
+            sb.append("BatchEntityInsert batchInsert = new BatchEntityInsert(list).withReplace();");
+        } else {
+            sb.append("EntityInsert insert = new EntityInsert(").append(var).append(").withReplace();");
         }
     }
 
