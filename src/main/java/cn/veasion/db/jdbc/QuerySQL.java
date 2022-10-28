@@ -85,7 +85,7 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             sql.append(" ").append(tableAs);
         }
         // join
-        appendJoins();
+        appendJoins(entityClassMap);
         sql.append(" WHERE");
         // filter & join filter
         appendFilters(entityClassMap);
@@ -144,26 +144,18 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             appendSelects(entityClassMap, query.getSelectExpression());
             if (joins == null || joins.isEmpty()) return;
             for (JoinQueryParam join : joins) {
-                AbstractJoinQuery<?> mainQuery = join.getMainQuery();
                 AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
                 if (joinQuery.getSelectExpression() != null) {
-                    appendSelects(new HashMap<String, Class<?>>() {{
-                        put(mainQuery.getTableAs(), mainQuery.getEntityClass());
-                        put(joinQuery.getTableAs(), joinQuery.getEntityClass());
-                    }}, joinQuery.getSelectExpression());
+                    appendSelects(entityClassMap, joinQuery.getSelectExpression());
                 }
             }
         } else {
             appendSelects(entityClassMap, query.getSelects(), query.getAliasMap());
             if (joins == null || joins.isEmpty()) return;
             for (JoinQueryParam join : joins) {
-                AbstractJoinQuery<?> mainQuery = join.getMainQuery();
                 AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
                 if (!joinQuery.getSelects().isEmpty()) {
-                    appendSelects(new HashMap<String, Class<?>>() {{
-                        put(mainQuery.getTableAs(), mainQuery.getEntityClass());
-                        put(joinQuery.getTableAs(), joinQuery.getEntityClass());
-                    }}, joinQuery.getSelects(), joinQuery.getAliasMap());
+                    appendSelects(entityClassMap, joinQuery.getSelects(), joinQuery.getAliasMap());
                 }
             }
         }
@@ -227,10 +219,9 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         sql.append(securityCheck(sb.toString()));
     }
 
-    private void appendJoins() {
+    private void appendJoins(Map<String, Class<?>> entityClassMap) {
         if (joins == null || joins.isEmpty()) return;
         for (JoinQueryParam join : joins) {
-            AbstractJoinQuery<?> mainQuery = join.getMainQuery();
             AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
             sql.append(" ").append(join.getJoinType().getJoin());
             if (joinQuery instanceof SubQuery) {
@@ -246,10 +237,7 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             List<Filter> filters = join.getOnFilters();
             if (filters != null && filters.size() > 0) {
                 sql.append(" ON");
-                appendFilter(new HashMap<String, Class<?>>() {{
-                    put(mainQuery.getTableAs(), mainQuery.getEntityClass());
-                    put(joinQuery.getTableAs(), joinQuery.getEntityClass());
-                }}, filters);
+                appendFilter(entityClassMap, filters);
             }
         }
     }
@@ -258,16 +246,12 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         appendFilter(entityClassMap, query.getFilters());
         if (joins == null || joins.isEmpty()) return;
         for (JoinQueryParam join : joins) {
-            AbstractJoinQuery<?> mainQuery = join.getMainQuery();
             AbstractJoinQuery<?> joinQuery = join.getJoinQuery();
             if (joinQuery.hasFilters()) {
                 if (!endsWith(" WHERE")) {
                     sql.append(" AND");
                 }
-                appendFilter(new HashMap<String, Class<?>>() {{
-                    put(mainQuery.getTableAs(), mainQuery.getEntityClass());
-                    put(joinQuery.getTableAs(), joinQuery.getEntityClass());
-                }}, joinQuery.getFilters());
+                appendFilter(entityClassMap, joinQuery.getFilters());
             }
         }
     }

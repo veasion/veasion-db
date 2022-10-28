@@ -2,7 +2,7 @@ package cn.veasion.db.jdbc;
 
 import cn.veasion.db.update.Delete;
 
-import java.util.HashMap;
+import java.util.Collections;
 
 /**
  * DeleteSQL
@@ -26,9 +26,7 @@ public class DeleteSQL extends AbstractSQL<DeleteSQL> {
     public DeleteSQL build() {
         this.reset();
         sql.append("DELETE FROM ").append(getTableName(delete.getEntityClass(), delete, delete)).append(" WHERE");
-        appendFilter(new HashMap<String, Class<?>>() {{
-            put(null, delete.getEntityClass());
-        }}, delete.getFilters());
+        appendFilter(Collections.singletonMap(null, delete.getEntityClass()), delete.getFilters());
         return this;
     }
 

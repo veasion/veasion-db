@@ -65,7 +65,7 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
             entityClassMap.put(null, update.getEntityClass());
         }
         // join on
-        appendJoinOn();
+        appendJoinOn(entityClassMap);
         // set
         sql.append(" SET");
         // update
@@ -76,10 +76,9 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
         trimEndSql("WHERE");
     }
 
-    private void appendJoinOn() {
+    private void appendJoinOn(Map<String, Class<?>> entityClassMap) {
         if (joins == null || joins.isEmpty()) return;
         for (JoinUpdateParam join : joins) {
-            EntityUpdate mainUpdate = join.getMainUpdate();
             EntityUpdate joinUpdate = join.getJoinUpdate();
             sql.append(" ").append(join.getJoinType().getJoin());
             sql.append(" ").append(getTableName(joinUpdate.getEntityClass(), joinUpdate, join));
@@ -89,10 +88,7 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
             List<Filter> onFilters = join.getOnFilters();
             if (onFilters != null && onFilters.size() > 0) {
                 sql.append(" ON");
-                appendFilter(new HashMap<String, Class<?>>() {{
-                    put(mainUpdate.getTableAs(), mainUpdate.getEntityClass());
-                    put(joinUpdate.getTableAs(), joinUpdate.getEntityClass());
-                }}, onFilters);
+                appendFilter(entityClassMap, onFilters);
             }
         }
     }
@@ -101,14 +97,10 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
         appendUpdates(entityClassMap, update.getUpdates());
         if (joins == null || joins.isEmpty()) return;
         for (JoinUpdateParam join : joins) {
-            EntityUpdate mainUpdate = join.getMainUpdate();
             EntityUpdate joinUpdate = join.getJoinUpdate();
             if (joinUpdate.getUpdates() != null) {
                 sql.append(",");
-                appendUpdates(new HashMap<String, Class<?>>() {{
-                    put(mainUpdate.getTableAs(), mainUpdate.getEntityClass());
-                    put(joinUpdate.getTableAs(), joinUpdate.getEntityClass());
-                }}, joinUpdate.getUpdates());
+                appendUpdates(entityClassMap, joinUpdate.getUpdates());
             }
         }
     }
@@ -135,16 +127,12 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
         appendFilter(entityClassMap, update.getFilters());
         if (joins == null || joins.isEmpty()) return;
         for (JoinUpdateParam join : joins) {
-            EntityUpdate mainUpdate = join.getMainUpdate();
             EntityUpdate joinUpdate = join.getJoinUpdate();
             if (joinUpdate.hasFilters()) {
                 if (!endsWith(" WHERE")) {
                     sql.append(" AND");
                 }
-                appendFilter(new HashMap<String, Class<?>>() {{
-                    put(mainUpdate.getTableAs(), mainUpdate.getEntityClass());
-                    put(joinUpdate.getTableAs(), joinUpdate.getEntityClass());
-                }}, joinUpdate.getFilters());
+                appendFilter(entityClassMap, joinUpdate.getFilters());
             }
         }
     }

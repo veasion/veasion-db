@@ -12,7 +12,7 @@ import cn.veasion.db.model.vo.StudentCourseScoreVO;
 import cn.veasion.db.model.vo.StudentVO;
 
 /**
- * JoinQueryTest (join优化：建议用小表关联大表，最大join数不超过3)
+ * JoinQueryTest (join优化：mysql建议用小表关联大表（clickhouse相反），最大join数不超过3)
  *
  * @author luozhuowei
  * @date 2021/12/12

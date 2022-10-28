@@ -96,7 +96,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                 if (idField == null) {
                     return null;
                 }
-                ID[] ids = (ID[]) Array.newInstance(idField.getType(), objects.length > 0 ? objects.length : entityList.size());
+                ID[] ids = (ID[]) Array.newInstance(idField.getType(), objects.length > 0 ? objects.length : (entityList == null ? 0 : entityList.size()));
                 if (objects.length > 0) {
                     for (int i = 0; i < objects.length; i++) {
                         ID id = (ID) TypeUtils.convert(objects[i], idField.getType());
@@ -105,7 +105,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                             ((IBaseId<ID>) entityList.get(i)).setId(id);
                         }
                     }
-                } else {
+                } else if (entityList != null) {
                     for (int i = 0; i < entityList.size(); i++) {
                         if (entityList.get(i) instanceof IBaseId) {
                             Array.set(ids, i, ((IBaseId<ID>) entityList.get(i)).getId());

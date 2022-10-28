@@ -43,6 +43,9 @@ public class BatchEntityInsert {
 
     public BatchEntityInsert(AbstractQuery<?> insertSelectQuery) {
         this.insertSelectQuery = Objects.requireNonNull(insertSelectQuery);
+        if (this.insertSelectQuery.isSelectAll()) {
+            this.insertSelectQuery.selectAllWithNoAsterisk();
+        }
     }
 
     public BatchEntityInsert setUseGeneratedKeys(boolean useGeneratedKeys) {

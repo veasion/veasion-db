@@ -1,6 +1,7 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.AbstractFilter;
+import cn.veasion.db.DbException;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.jdbc.QuerySQL;
@@ -26,6 +27,7 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
 
     private boolean distinct;
     protected boolean selectAll;
+    private boolean asterisk = true;
     protected List<String> selects = new ArrayList<>();
     protected Map<String, String> aliasMap = new HashMap<>();
     private Set<String> excludeSelects;
@@ -44,6 +46,12 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
 
     public T selectAll() {
         this.selectAll = true;
+        return getSelf();
+    }
+
+    public T selectAllWithNoAsterisk() {
+        this.selectAll = true;
+        this.asterisk = false;
         return getSelf();
     }
 
@@ -156,19 +164,21 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
 
     public T page(PageParam pageParam) {
         this.pageParam = pageParam;
+        if (pageParam != null && (pageParam.getPage() <= 0 || pageParam.getSize() <= 0)) {
+            throw new DbException("分页参数page、size必须大于0");
+        }
         return getSelf();
     }
 
     public T page(int page, int size) {
         PageParam pageParam = ServiceLoaderUtils.pageParam();
         if (pageParam != null) {
-            this.pageParam = pageParam;
-            this.pageParam.setPage(page);
-            this.pageParam.setSize(size);
+            pageParam.setPage(page);
+            pageParam.setSize(size);
         } else {
-            this.pageParam = new MysqlPage(page, size);
+            pageParam = new MysqlPage(page, size);
         }
-        return getSelf();
+        return this.page(pageParam);
     }
 
     protected abstract String handleField(String field);
@@ -225,10 +235,13 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
     @Override
     public void check(Class<?> mainEntityClass) {
         if (selectAll && !checked) {
-            Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(getEntityClass() != null ? getEntityClass() : mainEntityClass);
             if (excludeSelects != null && excludeSelects.size() > 0) {
+                Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(getEntityClass() != null ? getEntityClass() : mainEntityClass);
                 fieldColumns.keySet().stream().map(this::handleField).filter(k -> !excludeSelects.contains(k)).forEach(this::select);
+            } else if (asterisk) {
+                this.select(this.handleField("*"));
             } else {
+                Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(getEntityClass() != null ? getEntityClass() : mainEntityClass);
                 fieldColumns.keySet().stream().map(this::handleField).forEach(this::select);
             }
         }

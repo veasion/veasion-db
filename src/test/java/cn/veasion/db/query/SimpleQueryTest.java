@@ -15,9 +15,13 @@ import cn.veasion.db.model.po.Dual;
 public class SimpleQueryTest extends BaseTest {
 
     public static void main(String[] args) {
-        // 查询全部学生
+        // 查询全部学生（*）
         // select * from t_student
         println(studentDao.queryList(new Q()));
+
+        // 查询全部学生（全部字段）
+        // select id, sno, name, class_id, sex, age, `desc`, version, is_deleted, create_time, update_time from t_student
+        println(studentDao.queryList(new Q().selectAllWithNoAsterisk()));
 
         // 根据id查询学生
         // select * from t_student where id = 1
