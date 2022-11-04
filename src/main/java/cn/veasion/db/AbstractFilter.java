@@ -149,7 +149,9 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> {
     }
 
     public T addFilter(Filter filter) {
-        if (filters == null) filters = new ArrayList<>();
+        if (filters == null) {
+            filters = new ArrayList<>();
+        }
         Objects.requireNonNull(filter, "过滤器不能为空");
         if (!isSkipNullValueFilter() || (isSkipNullValueFilter() && FilterUtils.hasFilter(filter))) {
             filters.add(handleFilter(filter));

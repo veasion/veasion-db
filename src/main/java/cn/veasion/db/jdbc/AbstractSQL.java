@@ -126,7 +126,9 @@ public abstract class AbstractSQL<T> {
 
     protected void appendExpressionValue(Map<String, Class<?>> entityClassMap, Expression expression) {
         String eval = replaceSqlEval(expression.getExpression(), entityClassMap);
-        if (eval.contains("#{")) {
+        if (expression.getSqlValues() != null && expression.getSqlValues().length > 0) {
+            values.addAll(Arrays.asList(expression.getSqlValues()));
+        } else if (eval.contains("#{")) {
             Object[] vs = expression.getValues();
             eval = FieldUtils.replaceSqlPlaceholder(eval, null, (tableAs, field) -> {
                 LeftRight<Boolean, Object> value = expressionValue(tableAs, field);

@@ -26,7 +26,7 @@ import java.util.Set;
 public class BaseTest {
 
     static final String jdbcUrl = "jdbc:mysql://127.0.0.1:3306/veasion_db?useUnicode=true&characterEncoding=utf-8&autoReconnect=true";
-    static final String user = "user";
+    static final String user = "root";
     static final String password = "123456";
 
     static {
@@ -97,7 +97,7 @@ public class BaseTest {
                 sb.setLength(sb.length() - 2);
             }
             sb.append("}");
-        } else if (TypeUtils.isSimpleClass(object.getClass())) {
+        } else if (TypeUtils.isSimpleClass(object.getClass()) || object instanceof Number) {
             if (Number.class.isAssignableFrom(object.getClass())) {
                 sb.append(object);
             } else {

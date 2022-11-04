@@ -60,7 +60,9 @@ public abstract class AbstractUpdate<T extends AbstractUpdate<?>> extends Abstra
     }
 
     public T excludeUpdates(String... fields) {
-        if (excludeUpdates == null) excludeUpdates = new HashSet<>();
+        if (excludeUpdates == null) {
+            excludeUpdates = new HashSet<>();
+        }
         for (String field : fields) {
             excludeUpdates.add(handleField(field));
         }

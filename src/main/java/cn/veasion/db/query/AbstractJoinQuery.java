@@ -39,7 +39,9 @@ public abstract class AbstractJoinQuery<T extends AbstractJoinQuery<?>> extends 
     }
 
     public JoinQueryParam join(JoinType joinType, AbstractJoinQuery<?> entityQuery) {
-        if (joins == null) joins = new ArrayList<>();
+        if (joins == null) {
+            joins = new ArrayList<>();
+        }
         JoinQueryParam joinQueryParam = new JoinQueryParam(this, joinType, entityQuery);
         joins.add(joinQueryParam);
         return joinQueryParam;
@@ -68,7 +70,7 @@ public abstract class AbstractJoinQuery<T extends AbstractJoinQuery<?>> extends 
 
     @Override
     protected Filter handleFilter(Filter filter) {
-        if (aliasMap.containsKey(filter.getField())) {
+        if (aliasMap.containsKey(filter.getField()) || isAlias(filter.getField())) {
             return filter;
         }
         return filter.fieldAs(tableAs);

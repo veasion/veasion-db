@@ -27,12 +27,13 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
 
     private boolean distinct;
     protected boolean selectAll;
-    private boolean asterisk = true;
+    protected boolean asterisk = true;
     protected List<String> selects = new ArrayList<>();
     protected Map<String, String> aliasMap = new HashMap<>();
     private Set<String> excludeSelects;
     private List<Expression> selectExpression;
     private List<SubQueryParam> selectSubQueryList;
+    private Window window;
     private List<String> groupBys;
     private List<OrderParam> orders;
     private List<Filter> having;
@@ -77,7 +78,9 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
 
     public T selectSubQuery(SubQueryParam subQueryParam) {
         Objects.requireNonNull(subQueryParam, "子查询参数不能为空");
-        if (selectSubQueryList == null) selectSubQueryList = new ArrayList<>();
+        if (selectSubQueryList == null) {
+            selectSubQueryList = new ArrayList<>();
+        }
         selectSubQueryList.add(subQueryParam);
         return getSelf();
     }
@@ -96,7 +99,9 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
     }
 
     public T selectExpression(Expression expression) {
-        if (selectExpression == null) selectExpression = new ArrayList<>();
+        if (selectExpression == null) {
+            selectExpression = new ArrayList<>();
+        }
         selectExpression.add(Objects.requireNonNull(expression));
         return getSelf();
     }
@@ -106,18 +111,36 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
         return getSelf();
     }
 
+    public T overWithWindow(Expression expression) {
+        this.selectExpression(expression);
+        return getSelf();
+    }
+
     public T excludeFields(String... fields) {
-        if (excludeSelects == null) excludeSelects = new HashSet<>();
+        if (excludeSelects == null) {
+            excludeSelects = new HashSet<>();
+        }
         for (String field : fields) {
             excludeSelects.add(handleField(field));
         }
         return getSelf();
     }
 
+    public T window(Window window) {
+        this.window = window;
+        return getSelf();
+    }
+
     public T groupBy(String... fields) {
-        if (groupBys == null) groupBys = new ArrayList<>();
+        if (groupBys == null) {
+            groupBys = new ArrayList<>();
+        }
         for (String field : fields) {
-            groupBys.add(handleField(field));
+            if (isAlias(field)) {
+                groupBys.add(field);
+            } else {
+                groupBys.add(handleField(field));
+            }
         }
         return getSelf();
     }
@@ -131,21 +154,23 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
     }
 
     public T order(OrderParam orderParam) {
-        if (orders == null) orders = new ArrayList<>();
-        orderParam.setField(handleField(orderParam.getField()));
+        if (orders == null) {
+            orders = new ArrayList<>();
+        }
+        if (!isAlias(orderParam.getField())) {
+            orderParam.setField(handleField(orderParam.getField()));
+        }
         orders.add(orderParam);
         return getSelf();
     }
 
     public T having(Filter filter) {
-        if (having == null) having = new ArrayList<>();
+        if (having == null) {
+            having = new ArrayList<>();
+        }
         Objects.requireNonNull(filter, "过滤器不能为空");
         if (!isSkipNullValueFilter() || (isSkipNullValueFilter() && FilterUtils.hasFilter(filter))) {
-            if (selectExpression != null && selectExpression.stream().map(Expression::getAlias).anyMatch(s -> s != null && s.equals(filter.getField()))) {
-                having.add(filter);
-            } else {
-                having.add(handleFilter(filter));
-            }
+            having.add(handleFilter(filter));
         }
         return getSelf();
     }
@@ -207,6 +232,10 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
         return selectSubQueryList;
     }
 
+    public Window getWindow() {
+        return window;
+    }
+
     public List<String> getGroupBys() {
         return groupBys;
     }
@@ -232,13 +261,22 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
         return pageParam;
     }
 
+    protected boolean isAlias(String field) {
+        if (field == null) {
+            return false;
+        }
+        return aliasMap.containsValue(field) || (selectExpression != null && selectExpression.stream().map(Expression::getAlias).anyMatch(s -> s != null && s.equals(field)));
+    }
+
     @Override
     public void check(Class<?> mainEntityClass) {
         if (selectAll && !checked) {
             if (excludeSelects != null && excludeSelects.size() > 0) {
+                // 显性查询所有字段
                 Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(getEntityClass() != null ? getEntityClass() : mainEntityClass);
                 fieldColumns.keySet().stream().map(this::handleField).filter(k -> !excludeSelects.contains(k)).forEach(this::select);
             } else if (asterisk) {
+                // 隐性查询所有字段用 * 代替
                 this.select(this.handleField("*"));
             } else {
                 Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(getEntityClass() != null ? getEntityClass() : mainEntityClass);

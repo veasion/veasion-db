@@ -9,6 +9,7 @@ import cn.veasion.db.query.OrderParam;
 import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.query.UnionQueryParam;
+import cn.veasion.db.query.Window;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.Arrays;
@@ -86,6 +87,10 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         }
         // join
         appendJoins(entityClassMap);
+        // window
+        if (query.getWindow() != null && query.getWindow().isWhereBefore()) {
+            appendWindow(query.getWindow(), entityClassMap);
+        }
         sql.append(" WHERE");
         // filter & join filter
         appendFilters(entityClassMap);
@@ -97,6 +102,10 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             sql.append(" HAVING");
             appendFilter(entityClassMap, query.getHaving());
             trimEndSql("HAVING");
+        }
+        // window
+        if (query.getWindow() != null && !query.getWindow().isWhereBefore()) {
+            appendWindow(query.getWindow(), entityClassMap);
         }
         // union all
         List<UnionQueryParam> unions = query.getUnions();
@@ -254,6 +263,13 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
                 appendFilter(entityClassMap, joinQuery.getFilters());
             }
         }
+    }
+
+    private void appendWindow(Window window, Map<String, Class<?>> entityClassMap) {
+        sql.append(" WINDOW ").append(window.getAlias());
+        sql.append(" AS (");
+        appendExpressionValue(entityClassMap, window.getExpression());
+        sql.append(")");
     }
 
     private void appendGroups(Map<String, Class<?>> entityClassMap) {

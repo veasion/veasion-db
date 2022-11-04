@@ -13,6 +13,7 @@ public class Expression {
     private String alias;
     private String expression;
     private Object[] values;
+    private Object[] sqlValues;
 
     private Expression() {
     }
@@ -66,6 +67,19 @@ public class Expression {
         return o;
     }
 
+    /**
+     * SQL表达式
+     *
+     * @param sql       示例：xxx = ?
+     * @param sqlValues SQL中 ? 对应的占位符
+     */
+    public static Expression sql(String sql, Object... sqlValues) {
+        Expression o = new Expression();
+        o.expression = sql;
+        o.sqlValues = sqlValues;
+        return o;
+    }
+
     public Expression tableAs(String tableAs) {
         if (tableAs != null && expression != null && expression.contains("${")) {
             int startIdx = 0, idx;
@@ -86,6 +100,11 @@ public class Expression {
         return this;
     }
 
+    public Expression setAlias(String alias) {
+        this.alias = alias;
+        return this;
+    }
+
     public String getAlias() {
         return alias;
     }
@@ -96,6 +115,10 @@ public class Expression {
 
     public Object[] getValues() {
         return values;
+    }
+
+    public Object[] getSqlValues() {
+        return sqlValues;
     }
 
 }

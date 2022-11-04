@@ -1,6 +1,7 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.BaseTest;
+import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.model.po.ClassesPO;
 import cn.veasion.db.model.po.CoursePO;
@@ -81,6 +82,40 @@ public class JoinQueryTest extends BaseTest {
         _student.selectExpression("if(score.score>=60, '及格', '不及格')", "scoreLabel");
 
         println(studentDao.queryList(_student, StudentCourseScoreVO.class));
+
+        // 查询学生学科分数排名（开窗1）
+        // select student.name, course.course_name, score.score, rank() over w1 as `rank`
+        // from t_student student
+        // join t_score score on student.sno = score.sno
+        // join t_course course on score.course_id = course.id
+        // where score.score > 60
+        // window w1 as (partition by course.course_name order by score.score desc)
+        // order by score.score desc
+        EQ query = new EQ(StudentPO.class, "student");
+        query.join(new EQ(ScorePO.class, "score")).on("sno", "sno");
+        query.join(new EQ(CoursePO.class, "course")).on("score.courseId", "id");
+        query.selects("name", "course.courseName", "score.score");
+        query.overWithWindow(Expression.select("rank() over w1", "`rank`"));
+        query.gte("score.score", 60);
+        query.window(new Window("w1", Expression.sql("partition by course.course_name order by score.score desc")));
+        query.desc("score.score");
+        println(studentDao.listForMap(query));
+
+        // 查询学生学科分数排名（开窗2）
+        // select student.name, course.course_name, score.score, rank() over (partition by course.course_name order by score.score desc) as `rank`
+        // from t_student student
+        // join t_score score on student.sno = score.sno
+        // join t_course course on score.course_id = course.id
+        // where score.score > 60
+        // order by score.score desc
+        EQ _query = new EQ(StudentPO.class, "student");
+        _query.join(new EQ(ScorePO.class, "score")).on("sno", "sno");
+        _query.join(new EQ(CoursePO.class, "course")).on("score.courseId", "id");
+        _query.selects("name", "course.courseName", "score.score");
+        _query.overWithWindow(Expression.select("rank() over (partition by course.course_name order by score.score desc)", "`rank`"));
+        _query.gte("score.score", 60);
+        _query.desc("score.score");
+        println(studentDao.listForMap(_query));
     }
 
 }
