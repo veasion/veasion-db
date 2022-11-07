@@ -13,7 +13,6 @@ import java.util.Objects;
 public class Window {
 
     private String alias;
-    private boolean whereBefore;
     private Expression expression;
 
     /**
@@ -32,28 +31,12 @@ public class Window {
         Objects.requireNonNull(alias, "window必须有别名");
     }
 
-    /**
-     * 开窗
-     *
-     * @param alias       别名
-     * @param expression  SQL表达式
-     * @param whereBefore mysql语法中window在where后，应设置为 false，clickhouse语法中则是在where前，应设置为 true
-     */
-    public Window(String alias, Expression expression, boolean whereBefore) {
-        this(alias, expression);
-        this.whereBefore = whereBefore;
-    }
-
     public String getAlias() {
         return alias;
     }
 
     public Expression getExpression() {
         return expression;
-    }
-
-    public boolean isWhereBefore() {
-        return whereBefore;
     }
 
 }

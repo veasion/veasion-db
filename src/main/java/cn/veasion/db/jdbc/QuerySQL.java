@@ -87,10 +87,6 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         }
         // join
         appendJoins(entityClassMap);
-        // window
-        if (query.getWindow() != null && query.getWindow().isWhereBefore()) {
-            appendWindow(query.getWindow(), entityClassMap);
-        }
         sql.append(" WHERE");
         // filter & join filter
         appendFilters(entityClassMap);
@@ -104,7 +100,7 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
             trimEndSql("HAVING");
         }
         // window
-        if (query.getWindow() != null && !query.getWindow().isWhereBefore()) {
+        if (query.getWindow() != null) {
             appendWindow(query.getWindow(), entityClassMap);
         }
         // union all
