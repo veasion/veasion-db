@@ -73,6 +73,23 @@ CREATE TABLE `t_score` (
   KEY `idx_sno_course` (`sno`,`course_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='分数';
 
+-- 区域表
+CREATE TABLE `t_area` (
+ `id` bigint NOT NULL AUTO_INCREMENT,
+ `code` varchar(20) DEFAULT NULL COMMENT '区域编码',
+ `name` varchar(50) DEFAULT NULL COMMENT '区域名称',
+ `level` int NOT NULL COMMENT '区域级别',
+ `abbreviation` char(10) DEFAULT NULL COMMENT '首字母',
+ `parent_code` varchar(20) NOT NULL COMMENT '区域父编码',
+ `post_code` varchar(10)DEFAULT NULL COMMENT '邮编',
+ `name_lan2` varchar(100) DEFAULT NULL COMMENT '区域拼音',
+ `is_deleted` bigint(20) DEFAULT '0',
+ `create_time` timestamp NULL DEFAULT NULL COMMENT '创建时间',
+ PRIMARY KEY (`id`) USING BTREE,
+ UNIQUE KEY `idx_code` (`code`, `is_deleted`) USING BTREE,
+ KEY `idx_parent_code` (`parent_code`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='区域表';
+
 -- 初始化数据
 INSERT INTO `t_teacher`(`id`, `tno`, `name`, `sex`, `work_years`, `competent`, `department`, `version`, `is_deleted`, `create_time`, `update_time`) VALUES
 (1, 't001', '王老师', 2, 10, '教导主任', '教研部', 0, 0, NOW(), NOW()),
@@ -139,3 +156,27 @@ INSERT INTO `t_score`(`sno`, `course_id`, `score`, `is_deleted`, `create_time`, 
 ('s012', 2, 100, 0, NOW(), NOW()),
 ('s012', 3, 100, 0, NOW(), NOW());
 
+INSERT INTO `t_area`(`code`, `name`, `level`, `abbreviation`, `parent_code`, `is_deleted`, `create_time`, `post_code`, `name_lan2`) VALUES
+('310000', '上海', 1, 'S', '100000', 0, NOW(), NULL, 'shanghai'),
+('310100', '上海市', 2, 'S', '310000', 0, NOW(), '200000', 'shanghaishi'),
+('310101', '黄浦区', 3, 'H', '310100', 0, NOW(), '200001', 'huangpuqu'),
+('310103', '卢湾区', 3, 'L', '310100', 0, NOW(), '200020', 'luwanqu'),
+('310108', '闸北区', 3, 'Z', '310100', 0, NOW(), '200070', 'zhabeiqu'),
+('310109', '虹口区', 3, 'H', '310100', 0, NOW(), '200080', 'hongkouqu'),
+('310110', '杨浦区', 3, 'Y', '310100', 0, NOW(), '200082', 'yangpuqu'),
+('310104', '徐汇区', 3, 'X', '310100', 0, NOW(), '200030', 'xuhuiqu'),
+('310105', '长宁区', 3, 'Z', '310100', 0, NOW(), '200050', 'zhangningqu'),
+('310106', '静安区', 3, 'J', '310100', 0, NOW(), '200040', 'jinganqu'),
+('310107', '普陀区', 3, 'P', '310100', 0, NOW(), '200062', 'putuoqu'),
+('310116', '金山区', 3, 'J', '310100', 0, NOW(), '201540', 'jinshanqu'),
+('310117', '松江区', 3, 'S', '310100', 0, NOW(), '201600', 'songjiangqu'),
+('310118', '青浦区', 3, 'Q', '310100', 0, NOW(), '201700', 'qingpuqu'),
+('310119', '南汇区', 3, 'N', '310100', 0, NOW(), '201300', 'nanhuiqu'),
+('310112', '闵行区', 3, 'M', '310100', 0, NOW(), '201100', 'minxingqu'),
+('310113', '宝山区', 3, 'B', '310100', 0, NOW(), '201900', 'baoshanqu'),
+('310114', '嘉定区', 3, 'J', '310100', 0, NOW(), '201800', 'jiadingqu'),
+('310115', '浦东新区', 3, 'P', '310100', 0, NOW(), '200120', 'pudongxinqu'),
+('310120', '奉贤区', 3, 'F', '310100', 0, NOW(), '201400', 'fengxianqu'),
+('310152', '川沙区', 3, 'C', '310100', 0, NOW(), NULL, 'chuanshaqu'),
+('310230', '崇明区', 3, 'C', '310100', 0, NOW(), '202150', 'chongmingqu'),
+('310231', '其它区', 3, 'Q', '310100', 0, NOW(), NULL, 'qitaqu');

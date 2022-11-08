@@ -1,6 +1,7 @@
 package cn.veasion.db.model.po;
 
 import cn.veasion.db.base.Table;
+import cn.veasion.db.interceptor.ILogicDelete;
 
 import java.util.Date;
 
@@ -11,7 +12,7 @@ import java.util.Date;
  * @date 2021/12/12
  */
 @Table("t_score")
-public class ScorePO {
+public class ScorePO implements ILogicDelete {
 
     private String sno;
     private Long courseId;

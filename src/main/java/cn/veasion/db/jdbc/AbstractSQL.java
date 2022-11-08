@@ -3,6 +3,7 @@ package cn.veasion.db.jdbc;
 import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.DbException;
 import cn.veasion.db.FilterException;
+import cn.veasion.db.TableEntity;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.Operator;
@@ -53,7 +54,13 @@ public abstract class AbstractSQL<T> {
     public abstract T build();
 
     protected String getTableName(Class<?> entityClazz, AbstractFilter<?> filter, Object source) {
-        String tableName = TypeUtils.getTableName(entityClazz);
+        TableEntity tableEntity = filter != null ? filter.getTableEntity() : null;
+        String tableName;
+        if (tableEntity != null) {
+            tableName = tableEntity.getTable();
+        } else {
+            tableName = TypeUtils.getTableName(entityClazz);
+        }
         if (dynamicTableExt != null) {
             String changeTableName = dynamicTableExt.getTableName(tableName, entityClazz, filter, source);
             tableName = changeTableName != null ? changeTableName : tableName;

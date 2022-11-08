@@ -4,13 +4,16 @@ import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.query.AbstractJoinQuery;
 import cn.veasion.db.query.AbstractQuery;
+import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.JoinQueryParam;
 import cn.veasion.db.query.OrderParam;
 import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.query.UnionQueryParam;
 import cn.veasion.db.query.Window;
+import cn.veasion.db.query.With;
 import cn.veasion.db.utils.FilterUtils;
+import cn.veasion.db.utils.LeftRight;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -58,6 +61,9 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
     }
 
     private void buildQuery() {
+        if (query instanceof EntityQuery) {
+            appendWith(((EntityQuery) query).getWith());
+        }
         if (query instanceof SubQuery) {
             subQuery = (SubQuery) query;
             subQuerySQL = build(subQuery.getSubQuery(), new HashMap<>());
@@ -75,12 +81,17 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         appendSelects(query.getSelectSubQueryList(), true);
         trimEndSql(",");
         // from table
-        sql.append(" FROM ");
         if (subQuerySQL != null) {
-            sql.append("(").append(subQuerySQL.getSQL()).append(")");
+            sql.append(" FROM (").append(subQuerySQL.getSQL()).append(")");
             values.addAll(Arrays.asList(subQuerySQL.getValues()));
         } else {
-            sql.append(getTableName(query.getEntityClass(), query, query));
+            String tableName = getTableName(query.getEntityClass(), query, query);
+            if (tableName != null && !"".equals(tableName)) {
+                sql.append(" FROM ");
+                sql.append(tableName);
+            } else {
+                return;
+            }
         }
         if (tableAs != null) {
             sql.append(" ").append(tableAs);
@@ -108,6 +119,7 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         if (unions != null) {
             for (UnionQueryParam union : unions) {
                 QuerySQL querySQL = build(union.getUnion());
+                trimEndSql(" ");
                 sql.append(union.isUnionAll() ? " UNION ALL " : " UNION ").append(querySQL.getSQL()).append(" ");
                 values.addAll(Arrays.asList(querySQL.getValues()));
             }
@@ -142,6 +154,37 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         }
         entityClassMap.put(tableAs, query.getEntityClass());
         return entityClassMap;
+    }
+
+    private void appendWith(With with) {
+        if (with == null) {
+            return;
+        }
+        List<LeftRight<EntityQuery, String>> withs = with.getWiths();
+        if (withs == null || withs.isEmpty()) {
+            return;
+        }
+        sql.append("WITH ");
+        if (with.isRecursive()) {
+            sql.append("RECURSIVE ");
+        }
+        for (LeftRight<EntityQuery, String> leftRight : withs) {
+            EntityQuery entityQuery = leftRight.getLeft();
+            String as = leftRight.getRight();
+            QuerySQL querySQL = build(entityQuery);
+            if (with.isAsAfter()) {
+                sql.append("(").append(querySQL.getSQL());
+                trimEndSql(" ");
+                sql.append(") AS ").append(as).append(", ");
+            } else {
+                sql.append(as).append(" AS (").append(querySQL.getSQL());
+                trimEndSql(" ");
+                sql.append("), ");
+            }
+            values.addAll(Arrays.asList(querySQL.getValues()));
+        }
+        trimEndSql(", ");
+        sql.append(" ");
     }
 
     private void appendSelects(Map<String, Class<?>> entityClassMap, boolean isExpression) {

@@ -12,7 +12,7 @@ veasion-db 是一个轻量级持久层ORM框架，除slf4j-api外不依赖任何
 <dependency>
     <groupId>cn.veasion</groupId>
     <artifactId>veasion-db</artifactId>
-    <version>1.2.1</version>
+    <version>1.2.2</version>
 </dependency>
 ```
 支持sql解析生成veasion-db代码
@@ -49,9 +49,13 @@ public class StudentDao extends JdbcEntityDao<StudentPO, Long> {
 public class SimpleQueryTest extends BaseTest {
 
     public static void main(String[] args) {
-        // 查询全部学生
+        // 查询全部学生（*）
         // select * from t_student
         println(studentDao.queryList(new Q()));
+
+        // 查询全部学生（全部字段）
+        // select id, sno, name, class_id, sex, age, `desc`, version, is_deleted, create_time, update_time from t_student
+        println(studentDao.queryList(new Q().selectAllWithNoAsterisk()));
 
         // 根据id查询学生
         // select * from t_student where id = 1
@@ -123,7 +127,11 @@ public class SimpleQueryTest extends BaseTest {
 
         // 查询空表
         // select 1 from dual
-        println(studentDao.queryForType(new EQ(Dual.class).select("1"), Integer.class));
+        println(studentDao.queryForType(new EQ(new TableEntity("dual")).select("1"), Integer.class));
+
+        // 无表查询
+        // select 1
+        println(studentDao.queryForType(new EQ(new TableEntity(null)).select("1"), Integer.class));
     }
 
 }
@@ -194,6 +202,40 @@ public class JoinQueryTest extends BaseTest {
         _student.selectExpression("if(score.score>=60, '及格', '不及格')", "scoreLabel");
 
         println(studentDao.queryList(_student, StudentCourseScoreVO.class));
+
+        // 查询学生学科分数排名（开窗1）
+        // select student.name, course.course_name, score.score, rank() over w1 as `rank`
+        // from t_student student
+        // join t_score score on student.sno = score.sno
+        // join t_course course on score.course_id = course.id
+        // where score.score > 60
+        // window w1 as (partition by course.course_name order by score.score desc)
+        // order by score.score desc
+        EQ query = new EQ(StudentPO.class, "student");
+        query.join(new EQ(ScorePO.class, "score")).on("sno", "sno");
+        query.join(new EQ(CoursePO.class, "course")).on("score.courseId", "id");
+        query.selects("name", "course.courseName", "score.score");
+        query.overWithWindow(Expression.select("rank() over w1", "`rank`"));
+        query.gte("score.score", 60);
+        query.window(new Window("w1", Expression.sql("partition by course.course_name order by score.score desc")));
+        query.desc("score.score");
+        println(studentDao.listForMap(query));
+
+        // 查询学生学科分数排名（开窗2）
+        // select student.name, course.course_name, score.score, rank() over (partition by course.course_name order by score.score desc) as `rank`
+        // from t_student student
+        // join t_score score on student.sno = score.sno
+        // join t_course course on score.course_id = course.id
+        // where score.score > 60
+        // order by score.score desc
+        EQ _query = new EQ(StudentPO.class, "student");
+        _query.join(new EQ(ScorePO.class, "score")).on("sno", "sno");
+        _query.join(new EQ(CoursePO.class, "course")).on("score.courseId", "id");
+        _query.selects("name", "course.courseName", "score.score");
+        _query.overWithWindow(Expression.select("rank() over (partition by course.course_name order by score.score desc)", "`rank`"));
+        _query.gte("score.score", 60);
+        _query.desc("score.score");
+        println(studentDao.listForMap(_query));
     }
 
 }
@@ -260,6 +302,46 @@ public class SubQueryTest extends BaseTest {
 
 }
 ```
+```
+### With查询示例
+```java
+public class WithQueryTest extends BaseTest {
+
+    public static void main(String[] args) {
+        // 通过 with 联合查询
+        // with area1 as (select * from t_area where level = 1),
+        // area2 as (select * from t_area where level = 2)
+        // select * from area1
+        // union all
+        // select * from area2
+        EntityQuery entityQuery = With.build()
+                .with(new EQ(AreaPO.class).eq("level", 1), "area1")
+                .with(new EQ(AreaPO.class).eq("level", 2), "area2")
+                .buildQuery(
+                        new EQ(new TableEntity("area1")).unionAll(new EQ(new TableEntity("area2")))
+                );
+        println(areaDao.queryList(entityQuery));
+
+        // 通过 with 递归查询
+        // with recursive area as (
+        //   select * from t_area where code = '310000'
+        //   union all
+        //   select t1.* from t_area t1 join area t2 on t1.parent_code = t2.code
+        // )
+        // select * from area
+        EntityQuery t1 = new EQ(AreaPO.class, "t1");
+        EntityQuery t2 = new EQ(new TableEntity("area"), "t2");
+        t1.join(t2).on("parentCode", "code");
+        t1.selectAll();
+
+        EntityQuery entityQuery2 = With.buildRecursive()
+                .with(new EQ(AreaPO.class).eq("code", "310000").unionAll(t1), "area")
+                .buildQuery(new EQ(new TableEntity("area")));
+        println(areaDao.queryList(entityQuery2));
+    }
+
+}
+```
 
 ### 新增示例
 ```java
@@ -298,6 +380,14 @@ public class InsertTest extends BaseTest {
                         .eq("sno", "s001")
                         .notExists(SubQueryParam.build(new Q("1").eq("sno", "copy_s001")))
         )));
+
+        // replace into
+        StudentPO student = getStudent();
+        student.setId(System.currentTimeMillis());
+        student.setDesc("replace: add");
+        studentDao.add(new EntityInsert(student).withReplace());
+        student.setDesc("replace: update");
+        studentDao.add(new EntityInsert(student).withReplace());
     }
 
     private static StudentPO getStudent() {
@@ -370,6 +460,9 @@ public class DefaultDataSourceProvider implements DataSourceProvider {
 
 ### 适配 spring-mybatis
 在 springboot / spring 中适配 veasion-db 和 mybatis 共存，见项目 [veasion-db-mybatis](https://github.com/veasion/veasion-db-mybatis)
+
+### 基础封装
+基于 springboot 基础封装见项目 [veasion-project-base](https://github.com/veasion/veasion-project-base)
 
 ## 赞助
 

@@ -1,5 +1,7 @@
 package cn.veasion.db.query;
 
+import cn.veasion.db.TableEntity;
+
 /**
  * EQ
  *
@@ -14,6 +16,14 @@ public class EQ extends EntityQuery {
 
     public EQ(Class<?> entityClass, String alias) {
         super(entityClass, alias);
+    }
+
+    public EQ(TableEntity tableEntity, String alias) {
+        super(tableEntity, alias);
+    }
+
+    public EQ(TableEntity tableEntity) {
+        super(tableEntity);
     }
 
 }

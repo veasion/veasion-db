@@ -10,6 +10,7 @@ import net.sf.jsqlparser.statement.select.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * SelectStatementVisitor
@@ -20,12 +21,15 @@ import java.util.List;
 public class DbSelectVisitor implements SelectVisitor {
 
     String var;
+    Set<String> withAs;
     StringBuilder sb = new StringBuilder();
 
     @Override
     public void visit(PlainSelect plainSelect) {
         FromItem fromItem = plainSelect.getFromItem();
         DbFromItemVisitor dbFromItemVisitor = new DbFromItemVisitor();
+        dbFromItemVisitor.var = var;
+        dbFromItemVisitor.withAs = withAs;
         fromItem.accept(dbFromItemVisitor);
         var = dbFromItemVisitor.var;
         sb.append(dbFromItemVisitor.sb);
@@ -77,6 +81,7 @@ public class DbSelectVisitor implements SelectVisitor {
             FromItem rightItem = join.getRightItem();
             Expression onExpression = join.getOnExpression();
             DbFromItemVisitor joinFromItemVisitor = new DbFromItemVisitor();
+            joinFromItemVisitor.withAs = withAs;
             rightItem.accept(joinFromItemVisitor);
             sb.append(joinFromItemVisitor.sb);
             String joinType = "join";
@@ -204,6 +209,7 @@ public class DbSelectVisitor implements SelectVisitor {
         if (selects != null && !selects.isEmpty()) {
             for (SelectBody select : selects) {
                 DbSelectVisitor selectVisitor = new DbSelectVisitor();
+                selectVisitor.withAs = withAs;
                 select.accept(selectVisitor);
                 sb.append(selectVisitor.sb);
                 _vars.add(selectVisitor.var);

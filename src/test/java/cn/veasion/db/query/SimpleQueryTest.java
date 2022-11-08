@@ -1,10 +1,9 @@
 package cn.veasion.db.query;
 
 import cn.veasion.db.BaseTest;
+import cn.veasion.db.TableEntity;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.Operator;
-import cn.veasion.db.interceptor.LogicDeleteInterceptor;
-import cn.veasion.db.model.po.Dual;
 
 /**
  * SimpleQueryTest
@@ -93,13 +92,11 @@ public class SimpleQueryTest extends BaseTest {
 
         // 查询空表
         // select 1 from dual
-        try {
-            LogicDeleteInterceptor.skip(Dual.class);
-            println(studentDao.queryForType(new EQ(Dual.class).select("1"), Integer.class));
-        } finally {
-            LogicDeleteInterceptor.clearSkip();
-        }
+        println(studentDao.queryForType(new EQ(new TableEntity("dual")).select("1"), Integer.class));
 
+        // 无表查询
+        // select 1
+        println(studentDao.queryForType(new EQ(new TableEntity(null)).select("1"), Integer.class));
     }
 
 }

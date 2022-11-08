@@ -1,6 +1,7 @@
 package cn.veasion.db;
 
 import cn.veasion.db.base.Expression;
+import cn.veasion.db.dao.AreaDao;
 import cn.veasion.db.dao.ClassesDao;
 import cn.veasion.db.dao.CourseDao;
 import cn.veasion.db.dao.ScoreDao;
@@ -41,6 +42,7 @@ public class BaseTest {
     protected static final ClassesDao classesDao = new ClassesDao();
     protected static final CourseDao courseDao = new CourseDao();
     protected static final ScoreDao scoreDao = new ScoreDao();
+    protected static final AreaDao areaDao = new AreaDao();
 
     private static Set<String> printSkipField = new HashSet<String>() {{
         add("version");

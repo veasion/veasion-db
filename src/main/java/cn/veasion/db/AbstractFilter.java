@@ -23,6 +23,7 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> {
 
     protected boolean checked;
     private Class<?> entityClass;
+    private TableEntity tableEntity;
     private List<Filter> filters;
     private boolean skipNullValueFilter;
 
@@ -254,6 +255,14 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> {
 
     public void setEntityClass(Class<?> entityClass) {
         this.entityClass = entityClass;
+    }
+
+    public void setTableEntity(TableEntity tableEntity) {
+        this.tableEntity = tableEntity;
+    }
+
+    public TableEntity getTableEntity() {
+        return tableEntity;
     }
 
     protected abstract Filter handleFilter(Filter filter);

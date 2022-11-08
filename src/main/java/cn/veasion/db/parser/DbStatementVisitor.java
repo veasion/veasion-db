@@ -13,10 +13,14 @@ import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.insert.Insert;
 import net.sf.jsqlparser.statement.replace.Replace;
 import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.select.WithItem;
 import net.sf.jsqlparser.statement.update.Update;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 /**
  * DbStatementVisitor
@@ -159,9 +163,33 @@ public class DbStatementVisitor extends StatementVisitorAdapter {
 
     @Override
     public void visit(Select select) {
-        DbSelectVisitor selectVisitor = new DbSelectVisitor();
-        select.getSelectBody().accept(selectVisitor);
-        sb.append(selectVisitor.toString());
+        if (select.getWithItemsList() != null && select.getWithItemsList().size() > 0) {
+            Map<WithItem, String> varMap = new HashMap<>();
+            for (WithItem withItem : select.getWithItemsList()) {
+                DbSelectVisitor withSelectVisitor = new DbSelectVisitor();
+                withSelectVisitor.var = withItem.getName();
+                withItem.getSelectBody().accept(withSelectVisitor);
+                varMap.put(withItem, withSelectVisitor.var);
+                sb.append(withSelectVisitor.toString());
+            }
+            DbSelectVisitor selectVisitor = new DbSelectVisitor();
+            selectVisitor.withAs = new HashSet<>(varMap.values());
+            select.getSelectBody().accept(selectVisitor);
+            sb.append(selectVisitor.toString()).append("\r\n");
+            if (select.getWithItemsList().get(0).isRecursive()) {
+                sb.append("EntityQuery entityQuery = With.buildRecursive()");
+            } else {
+                sb.append("EntityQuery entityQuery = With.build()");
+            }
+            for (WithItem withItem : select.getWithItemsList()) {
+                sb.append(".with(").append(varMap.get(withItem)).append(", \"").append(withItem.getName()).append("\")");
+            }
+            sb.append(".buildQuery(").append(selectVisitor.var).append(");");
+        } else {
+            DbSelectVisitor selectVisitor = new DbSelectVisitor();
+            select.getSelectBody().accept(selectVisitor);
+            sb.append(selectVisitor.toString());
+        }
     }
 
     @Override

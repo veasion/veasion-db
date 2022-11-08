@@ -4,16 +4,19 @@ import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.query.AbstractJoinQuery;
 import cn.veasion.db.query.AbstractQuery;
+import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.JoinQueryParam;
 import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.query.UnionQueryParam;
+import cn.veasion.db.query.With;
 import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityInsert;
 import cn.veasion.db.update.EntityUpdate;
 import cn.veasion.db.update.JoinUpdateParam;
+import cn.veasion.db.utils.LeftRight;
 
 import java.util.Collections;
 import java.util.List;
@@ -95,6 +98,14 @@ public abstract class AbstractInterceptor implements EntityDaoInterceptor {
         if (query instanceof SubQuery) {
             handleQuery(((SubQuery) query).getSubQuery());
         }
+        if (query instanceof EntityQuery) {
+            With with = ((EntityQuery) query).getWith();
+            if (with != null && with.getWiths() != null) {
+                for (LeftRight<EntityQuery, String> withWith : with.getWiths()) {
+                    handleQuery(withWith.getLeft());
+                }
+            }
+        }
         handleSelectSubQuery(query.getSelectSubQueryList());
         handleAbstractFilter(query);
         if (query instanceof AbstractJoinQuery) {
@@ -147,8 +158,7 @@ public abstract class AbstractInterceptor implements EntityDaoInterceptor {
     }
 
     protected void handleAbstractFilter(AbstractFilter<?> abstractFilter) {
-        if (abstractFilter == null) return;
-        if (containSkipClass(abstractFilter)) {
+        if (abstractFilter == null || abstractFilter.getTableEntity() != null || containSkipClass(abstractFilter)) {
             return;
         }
         if (!(abstractFilter instanceof SubQuery)) {

@@ -275,7 +275,7 @@ public abstract class AbstractQuery<T extends AbstractQuery<?>> extends Abstract
                 // 显性查询所有字段
                 Map<String, String> fieldColumns = FieldUtils.entityFieldColumns(getEntityClass() != null ? getEntityClass() : mainEntityClass);
                 fieldColumns.keySet().stream().map(this::handleField).filter(k -> !excludeSelects.contains(k)).forEach(this::select);
-            } else if (asterisk) {
+            } else if (asterisk || getTableEntity() != null) {
                 // 隐性查询所有字段用 * 代替
                 this.select(this.handleField("*"));
             } else {

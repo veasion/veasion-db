@@ -10,6 +10,7 @@ import net.sf.jsqlparser.statement.select.TableFunction;
 import net.sf.jsqlparser.statement.select.ValuesList;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,6 +26,7 @@ public class DbFromItemVisitor implements FromItemVisitor {
     String var;
     String tableName;
     boolean isSubQuery;
+    Set<String> withAs;
     StringBuilder sb = new StringBuilder();
 
     public static final ThreadLocal<Map<String, AtomicInteger>> NAME_INDEX = ThreadLocal.withInitial(ConcurrentHashMap::new);
@@ -34,14 +36,20 @@ public class DbFromItemVisitor implements FromItemVisitor {
         this.table = table;
         tableName = SQLParseUtils.sqlTrim(table.getName());
         String tableAs = table.getAlias() != null ? table.getAlias().getName() : null;
-        var = SQLParseUtils.getVarByTable(table);
+        if (var == null) {
+            var = SQLParseUtils.getVarByTable(table);
+        }
         if (var == null) {
             var = tableAs;
         }
         var = checkVar(var);
         sb.append("\r\n");
         sb.append("EQ ").append(var).append(" = new EQ(");
-        sb.append(SQLParseUtils.getTableClass(tableName));
+        if (withAs != null && withAs.contains(tableName)) {
+            sb.append("new TableEntity(\"").append(tableName).append("\")");
+        } else {
+            sb.append(SQLParseUtils.getTableClass(tableName));
+        }
         if (tableAs != null) {
             sb.append(", \"").append(tableAs).append("\"");
         }

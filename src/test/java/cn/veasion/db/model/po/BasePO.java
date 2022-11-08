@@ -1,6 +1,7 @@
 package cn.veasion.db.model.po;
 
 import cn.veasion.db.base.IBaseId;
+import cn.veasion.db.interceptor.ILogicDelete;
 
 import java.util.Date;
 
@@ -10,7 +11,7 @@ import java.util.Date;
  * @author luozhuowei
  * @date 2021/12/3
  */
-public class BasePO implements IBaseId<Long> {
+public class BasePO implements IBaseId<Long>, ILogicDelete {
 
     private Long id;
     private Integer version;
