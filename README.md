@@ -3,7 +3,7 @@
 veasion-db 是一个轻量级持久层ORM框架，除slf4j-api外不依赖任何第三方jar，该框架提供丰富灵活的数据库操作，
 单元测试 query/update 目录下有大量示例及demo。
 
-框架无需写任何SQL基本支持sql能实现的任意查询或更新，如关联查询、子查询、关联更新、insert select、不同数据库分页扩展等。
+框架无需写任何SQL，基本支持sql能实现的任意查询或更新，如多表关联查询、多表关联更新、子查询、with、window、insert select、replace、不同数据库分页等。
 
 框架支持自定义拦截器，内置逻辑删除、数据隔离拦截器，可通过SPI或调用InterceptorUtils.addInterceptor方法加入扩展。
 ## maven 依赖
@@ -202,40 +202,6 @@ public class JoinQueryTest extends BaseTest {
         _student.selectExpression("if(score.score>=60, '及格', '不及格')", "scoreLabel");
 
         println(studentDao.queryList(_student, StudentCourseScoreVO.class));
-
-        // 查询学生学科分数排名（开窗1）
-        // select student.name, course.course_name, score.score, rank() over w1 as `rank`
-        // from t_student student
-        // join t_score score on student.sno = score.sno
-        // join t_course course on score.course_id = course.id
-        // where score.score > 60
-        // window w1 as (partition by course.course_name order by score.score desc)
-        // order by score.score desc
-        EQ query = new EQ(StudentPO.class, "student");
-        query.join(new EQ(ScorePO.class, "score")).on("sno", "sno");
-        query.join(new EQ(CoursePO.class, "course")).on("score.courseId", "id");
-        query.selects("name", "course.courseName", "score.score");
-        query.overWithWindow(Expression.select("rank() over w1", "`rank`"));
-        query.gte("score.score", 60);
-        query.window(new Window("w1", Expression.sql("partition by course.course_name order by score.score desc")));
-        query.desc("score.score");
-        println(studentDao.listForMap(query));
-
-        // 查询学生学科分数排名（开窗2）
-        // select student.name, course.course_name, score.score, rank() over (partition by course.course_name order by score.score desc) as `rank`
-        // from t_student student
-        // join t_score score on student.sno = score.sno
-        // join t_course course on score.course_id = course.id
-        // where score.score > 60
-        // order by score.score desc
-        EQ _query = new EQ(StudentPO.class, "student");
-        _query.join(new EQ(ScorePO.class, "score")).on("sno", "sno");
-        _query.join(new EQ(CoursePO.class, "course")).on("score.courseId", "id");
-        _query.selects("name", "course.courseName", "score.score");
-        _query.overWithWindow(Expression.select("rank() over (partition by course.course_name order by score.score desc)", "`rank`"));
-        _query.gte("score.score", 60);
-        _query.desc("score.score");
-        println(studentDao.listForMap(_query));
     }
 
 }
@@ -302,7 +268,7 @@ public class SubQueryTest extends BaseTest {
 
 }
 ```
-```
+
 ### With查询示例
 ```java
 public class WithQueryTest extends BaseTest {
@@ -467,7 +433,5 @@ public class DefaultDataSourceProvider implements DataSourceProvider {
 ## 赞助
 
 项目的发展离不开您的支持，请作者喝杯咖啡吧~
-
-ps：辣条也行 ☕
 
 ![支付宝](https://veasion.oss-cn-shanghai.aliyuncs.com/alipay.png?x-oss-process=image/resize,m_lfit,h_360,w_360)
