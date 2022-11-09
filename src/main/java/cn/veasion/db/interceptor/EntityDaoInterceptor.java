@@ -11,6 +11,9 @@ public interface EntityDaoInterceptor {
 
     <R> R intercept(EntityDaoInvocation<R> invocation);
 
+    /**
+     * 拦截器执行排序，sortIndex值越大越先执行
+     */
     default int sortIndex() {
         return 0;
     }

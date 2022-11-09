@@ -1,6 +1,7 @@
 package cn.veasion.db.jdbc;
 
 import cn.veasion.db.base.JdbcTypeEnum;
+import cn.veasion.db.utils.ISort;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -12,7 +13,7 @@ import java.sql.SQLException;
  * @author luozhuowei
  * @date 2021/12/5
  */
-public interface DataSourceProvider {
+public interface DataSourceProvider extends ISort {
 
     /**
      * 获取数据源

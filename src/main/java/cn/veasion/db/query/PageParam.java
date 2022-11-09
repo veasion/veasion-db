@@ -1,5 +1,7 @@
 package cn.veasion.db.query;
 
+import cn.veasion.db.utils.ISort;
+
 import java.util.List;
 
 /**
@@ -8,7 +10,7 @@ import java.util.List;
  * @author luozhuowei
  * @date 2021/12/8
  */
-public abstract class PageParam {
+public abstract class PageParam implements ISort {
 
     protected int page = 1;
     protected int size = 10;
@@ -37,10 +39,6 @@ public abstract class PageParam {
 
     public void setSize(int size) {
         this.size = size;
-    }
-
-    public int sort() {
-        return 0;
     }
 
 }

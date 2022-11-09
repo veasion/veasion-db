@@ -3,7 +3,7 @@
 veasion-db 是一个轻量级持久层ORM框架，除slf4j-api外不依赖任何第三方jar，该框架提供丰富灵活的数据库操作，
 单元测试 query/update 目录下有大量示例及demo。
 
-框架无需写任何SQL，基本支持sql能实现的任意查询或更新，如多表关联查询、多表关联更新、子查询、with、window、insert select、replace、不同数据库分页等。
+框架无需写SQL，基本支持任意查询或更新，如多表关联查询、多表关联更新、子查询、union、with、window、insert select、replace、不同数据库分页等。
 
 框架支持自定义拦截器，内置逻辑删除、数据隔离拦截器，可通过SPI或调用InterceptorUtils.addInterceptor方法加入扩展。
 ## maven 依赖
