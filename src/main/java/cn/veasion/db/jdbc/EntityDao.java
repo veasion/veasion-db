@@ -10,6 +10,10 @@ import cn.veasion.db.update.EntityInsert;
 import cn.veasion.db.update.EntityUpdate;
 import cn.veasion.db.utils.FieldUtils;
 
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +32,35 @@ public interface EntityDao<T, ID> {
     ID add(EntityInsert entityInsert);
 
     default ID[] batchAdd(List<T> entityList) {
-        return batchAdd(new BatchEntityInsert(entityList));
+        return batchAdd(entityList, 50);
+    }
+
+    @SuppressWarnings("unchecked")
+    default ID[] batchAdd(List<T> entityList, int maxBatchSize) {
+        if (entityList.size() <= maxBatchSize) {
+            return batchAdd(new BatchEntityInsert(entityList));
+        } else {
+            List<ID> idList = new ArrayList<>(entityList.size());
+            int num = entityList.size() / maxBatchSize;
+            for (int i = 0; i < num; i++) {
+                ID[] ids = batchAdd(new BatchEntityInsert(entityList.subList(i * maxBatchSize, (i + 1) * maxBatchSize)));
+                if (ids != null && ids.length > 0) {
+                    idList.addAll(Arrays.asList(ids));
+                }
+            }
+            int last = num * maxBatchSize;
+            if (entityList.size() > last) {
+                ID[] ids = batchAdd(new BatchEntityInsert(entityList.subList(last, entityList.size())));
+                if (ids != null && ids.length > 0) {
+                    idList.addAll(Arrays.asList(ids));
+                }
+            }
+            Field idField = FieldUtils.getIdField(getEntityClass());
+            if (idField == null) {
+                return null;
+            }
+            return idList.toArray((ID[]) Array.newInstance(idField.getType(), idList.size()));
+        }
     }
 
     ID[] batchAdd(BatchEntityInsert batchEntityInsert);
