@@ -4,6 +4,8 @@ import cn.veasion.db.BaseTest;
 import cn.veasion.db.TableEntity;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.Operator;
+import cn.veasion.db.model.po.ClassesPO;
+import cn.veasion.db.model.po.StudentPO;
 
 /**
  * SimpleQueryTest
@@ -29,30 +31,37 @@ public class SimpleQueryTest extends BaseTest {
         // 查询学号为s001的学生名称
         // select name from t_student where sno = 's001'
         println(studentDao.queryForType(new Q("name").eq("sno", "s001"), String.class));
+        println(studentDao.queryForType(new LambdaQuery<>(StudentPO::getName).eq(StudentPO::getSno, "s001"), String.class));
 
         // 查询所有班级名称
         // select class_name from t_classes
         println(classesDao.queryList(new Q("className"), String.class));
+        println(classesDao.queryList(new LambdaQuery<>(ClassesPO::getClassName), String.class));
 
         // 查询年龄满18的学生
         // select * from t_student where age >= 18
         println(studentDao.queryList(new Q().gte("age", 18)));
+        println(studentDao.queryList(new LambdaQuery<StudentPO>().gte(StudentPO::getAge, 18)));
 
         // 查询年龄在16-18之间的男学生
         // select * from t_student where sex = 1 and age between 16 and 18
         println(studentDao.queryList(new Q().eq("sex", 1).between("age", 16, 18)));
+        println(studentDao.queryList(new LambdaQuery<StudentPO>().eq(StudentPO::getSex, 1).between(StudentPO::getAge, 16, 18)));
 
         // 查询熊姓学生
         // select * from t_student where name like '熊%'
         println(studentDao.queryList(new Q().likeRight("name", "熊")));
+        println(studentDao.queryList(new LambdaQuery<StudentPO>().likeRight(StudentPO::getName, "熊")));
 
         // 查询特殊备注的学生
         // select sno, name, `desc` from t_student where `desc` is not null
         println(studentDao.queryList(new Q("sno", "name", "desc").isNotNull("desc")));
+        println(studentDao.queryList(new LambdaQuery<>(StudentPO::getSno, StudentPO::getName, StudentPO::getDesc).isNotNull(StudentPO::getDesc)));
 
         // 查询年龄最大学生
         // select * from t_student order by age desc limit 1
         println(studentDao.query(new Q().desc("age").page(1, 1)));
+        println(studentDao.queryList(new LambdaQuery<StudentPO>().desc(StudentPO::getAge).page(1, 1)));
 
         // 查询学生人数和平均年龄
         // select count(1) as count, avg(age) as avgAge from t_student

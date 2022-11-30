@@ -38,9 +38,16 @@ public class TypeUtils {
     }
 
     public static boolean isSimpleClass(Class<?> clazz) {
-        return clazz == BigDecimal.class || clazz == Long.class || clazz == Integer.class || clazz == String.class
+        boolean isSimpleClass = clazz == BigDecimal.class || clazz == Long.class || clazz == Integer.class || clazz == String.class
                 || clazz == Double.class || clazz == Float.class || clazz == Boolean.class || Date.class.isAssignableFrom(clazz)
                 || clazz == Byte.class || clazz == LocalDateTime.class || clazz == LocalDate.class;
+        if (isSimpleClass) {
+            return true;
+        }
+        if (typeConvert != null) {
+            return typeConvert.isSimpleClass(clazz);
+        }
+        return false;
     }
 
     public static <T> T newInstance(Class<T> clazz) {
@@ -49,6 +56,35 @@ public class TypeUtils {
         } catch (Exception e) {
             throw new RuntimeException("初始化对象失败: " + clazz.getName(), e);
         }
+    }
+
+    public static Class<?> loadClass(String className, ClassLoader classLoader) {
+        try {
+            return loadClass(className, getClassLoaders(classLoader));
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException("加载类失败：" + className, e);
+        }
+    }
+
+    private static Class<?> loadClass(String className, ClassLoader[] classLoaders) throws ClassNotFoundException {
+        for (ClassLoader classLoader : classLoaders) {
+            if (classLoader != null) {
+                try {
+                    return Class.forName(className, true, classLoader);
+                } catch (ClassNotFoundException ignored) {
+                }
+            }
+        }
+        throw new ClassNotFoundException("Cannot find class: " + className);
+    }
+
+    private static ClassLoader[] getClassLoaders(ClassLoader classLoader) {
+        ClassLoader systemClassLoader = null;
+        try {
+            systemClassLoader = ClassLoader.getSystemClassLoader();
+        } catch (Exception ignored) {
+        }
+        return new ClassLoader[]{classLoader, Thread.currentThread().getContextClassLoader(), TypeUtils.class.getClassLoader(), systemClassLoader};
     }
 
     public static <E> E map2Obj(Map<String, Object> map, Class<E> clazz) throws Exception {
@@ -117,9 +153,9 @@ public class TypeUtils {
             }
             return (T) Integer.valueOf(toStr);
         } else if (clazz == Boolean.class) {
-            if ("true".equalsIgnoreCase(toStr) || "1".equals(toStr)) {
+            if ("1".equals(toStr) || "true".equalsIgnoreCase(toStr) || "Y".equalsIgnoreCase(toStr) || "Yes".equalsIgnoreCase(toStr)) {
                 return (T) Boolean.TRUE;
-            } else if ("false".equalsIgnoreCase(toStr) || "0".equals(toStr)) {
+            } else if ("0".equals(toStr) || "false".equalsIgnoreCase(toStr) || "N".equalsIgnoreCase(toStr) || "No".equalsIgnoreCase(toStr)) {
                 return (T) Boolean.FALSE;
             }
         } else if (Date.class.isAssignableFrom(clazz) || Temporal.class.isAssignableFrom(clazz)) {

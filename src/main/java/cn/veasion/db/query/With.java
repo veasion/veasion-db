@@ -15,7 +15,7 @@ public class With {
 
     private boolean recursive;
     private boolean asAfter;
-    private List<LeftRight<EntityQuery, String>> withs = new ArrayList<>();
+    private List<LeftRight<AbstractJoinQuery<?>, String>> withs = new ArrayList<>();
 
     private With() {
     }
@@ -44,12 +44,12 @@ public class With {
         return with;
     }
 
-    public With with(EntityQuery entityQuery, String as) {
-        withs.add(new LeftRight<>(entityQuery, as));
+    public With with(AbstractJoinQuery<?> query, String as) {
+        withs.add(new LeftRight<>(query, as));
         return this;
     }
 
-    public EntityQuery buildQuery(EntityQuery mainQuery) {
+    public <T extends AbstractJoinQuery<?>> T buildQuery(T mainQuery) {
         mainQuery.setWith(this);
         return mainQuery;
     }
@@ -62,7 +62,7 @@ public class With {
         return asAfter;
     }
 
-    public List<LeftRight<EntityQuery, String>> getWiths() {
+    public List<LeftRight<AbstractJoinQuery<?>, String>> getWiths() {
         return withs;
     }
 

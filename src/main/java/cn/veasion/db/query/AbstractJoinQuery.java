@@ -6,6 +6,7 @@ import cn.veasion.db.base.JoinType;
 import cn.veasion.db.base.JoinTypeEnum;
 import cn.veasion.db.base.Operator;
 import cn.veasion.db.utils.FilterUtils;
+import cn.veasion.db.utils.LeftRight;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,12 +19,21 @@ import java.util.List;
  */
 public abstract class AbstractJoinQuery<T extends AbstractJoinQuery<?>> extends AbstractQuery<T> {
 
+    private With with;
     protected String tableAs;
     protected List<JoinQueryParam> joins;
     protected List<JoinQueryParam> relations;
 
     public JoinQueryParam join(AbstractJoinQuery<?> entityQuery) {
         return join(JoinTypeEnum.JOIN, entityQuery);
+    }
+
+    public JoinQueryParam innerJoin(AbstractJoinQuery<?> entityQuery) {
+        return join(JoinTypeEnum.INNER_JOIN, entityQuery);
+    }
+
+    public JoinQueryParam outerJoin(AbstractJoinQuery<?> entityQuery) {
+        return join(JoinTypeEnum.OUTER_JOIN, entityQuery);
     }
 
     public JoinQueryParam leftJoin(AbstractJoinQuery<?> entityQuery) {
@@ -82,6 +92,9 @@ public abstract class AbstractJoinQuery<T extends AbstractJoinQuery<?>> extends 
             relations = new ArrayList<>();
         }
         check(mainEntityClass, this, true);
+        if (with != null && with.getWiths() != null) {
+            with.getWiths().stream().map(LeftRight::getLeft).forEach(q -> q.check(mainEntityClass));
+        }
     }
 
     protected void check(Class<?> mainEntityClass, AbstractJoinQuery<?> mainQuery, boolean isMain) {
@@ -130,6 +143,16 @@ public abstract class AbstractJoinQuery<T extends AbstractJoinQuery<?>> extends 
         return joinList;
     }
 
-    protected abstract boolean isEmptySelects();
+    public With getWith() {
+        return with;
+    }
+
+    protected void setWith(With with) {
+        this.with = with;
+    }
+
+    protected boolean isEmptySelects() {
+        return getSelects().isEmpty() && getSelectExpression() == null && getSelectSubQueryList() == null && !isSelectAll();
+    }
 
 }

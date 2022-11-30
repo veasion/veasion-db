@@ -4,7 +4,6 @@ import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.query.AbstractJoinQuery;
 import cn.veasion.db.query.AbstractQuery;
-import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.JoinQueryParam;
 import cn.veasion.db.query.OrderParam;
 import cn.veasion.db.query.SubQuery;
@@ -61,8 +60,8 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
     }
 
     private void buildQuery() {
-        if (query instanceof EntityQuery) {
-            appendWith(((EntityQuery) query).getWith());
+        if (query instanceof AbstractJoinQuery<?>) {
+            appendWith(((AbstractJoinQuery<?>) query).getWith());
         }
         if (query instanceof SubQuery) {
             subQuery = (SubQuery) query;
@@ -160,7 +159,7 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         if (with == null) {
             return;
         }
-        List<LeftRight<EntityQuery, String>> withs = with.getWiths();
+        List<LeftRight<AbstractJoinQuery<?>, String>> withs = with.getWiths();
         if (withs == null || withs.isEmpty()) {
             return;
         }
@@ -168,10 +167,10 @@ public class QuerySQL extends AbstractSQL<QuerySQL> {
         if (with.isRecursive()) {
             sql.append("RECURSIVE ");
         }
-        for (LeftRight<EntityQuery, String> leftRight : withs) {
-            EntityQuery entityQuery = leftRight.getLeft();
+        for (LeftRight<AbstractJoinQuery<?>, String> leftRight : withs) {
+            AbstractJoinQuery<?> abstractJoinQuery = leftRight.getLeft();
             String as = leftRight.getRight();
-            QuerySQL querySQL = build(entityQuery);
+            QuerySQL querySQL = build(abstractJoinQuery);
             if (with.isAsAfter()) {
                 sql.append("(").append(querySQL.getSQL());
                 trimEndSql(" ");

@@ -5,6 +5,8 @@ import cn.veasion.db.DbException;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinType;
 import cn.veasion.db.base.Operator;
+import cn.veasion.db.lambda.LambdaFunction;
+import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;
@@ -34,6 +36,10 @@ public class JoinQueryParam {
         mainField = FilterUtils.tableAsField(mainQuery.getTableAs(), mainField);
         joinField = FilterUtils.tableAsField(joinQuery.getTableAs(), joinField);
         return on(Filter.expression(mainField, Operator.EQ, "${" + joinField + "}"));
+    }
+
+    public <T1, T2> JoinQueryParam on(LambdaFunction<T1, ?> mainField, LambdaFunction<T2, ?> joinField) {
+        return on(FieldUtils.getFieldName(mainField), FieldUtils.getFieldName(joinField));
     }
 
     public JoinQueryParam on(Filter filter) {

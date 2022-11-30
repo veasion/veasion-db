@@ -14,4 +14,8 @@ public interface TypeConvert extends ISort {
         return value;
     }
 
+    default boolean isSimpleClass(Class<?> clazz) {
+        return false;
+    }
+
 }

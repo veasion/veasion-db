@@ -4,17 +4,16 @@ import cn.veasion.db.AbstractFilter;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.query.AbstractJoinQuery;
 import cn.veasion.db.query.AbstractQuery;
-import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.JoinQueryParam;
 import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.query.UnionQueryParam;
 import cn.veasion.db.query.With;
+import cn.veasion.db.update.AbstractJoinUpdate;
 import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityInsert;
-import cn.veasion.db.update.EntityUpdate;
 import cn.veasion.db.update.JoinUpdateParam;
 import cn.veasion.db.utils.LeftRight;
 
@@ -98,10 +97,10 @@ public abstract class AbstractInterceptor implements EntityDaoInterceptor {
         if (query instanceof SubQuery) {
             handleQuery(((SubQuery) query).getSubQuery());
         }
-        if (query instanceof EntityQuery) {
-            With with = ((EntityQuery) query).getWith();
+        if (query instanceof AbstractJoinQuery<?>) {
+            With with = ((AbstractJoinQuery<?>) query).getWith();
             if (with != null && with.getWiths() != null) {
-                for (LeftRight<EntityQuery, String> withWith : with.getWiths()) {
+                for (LeftRight<AbstractJoinQuery<?>, String> withWith : with.getWiths()) {
                     handleQuery(withWith.getLeft());
                 }
             }
@@ -133,11 +132,11 @@ public abstract class AbstractInterceptor implements EntityDaoInterceptor {
 
     protected void handleUpdate(AbstractUpdate<?> update) {
         handleAbstractFilter(update);
-        if (update instanceof EntityUpdate) {
-            List<JoinUpdateParam> joinList = ((EntityUpdate) update).getJoinAll();
+        if (update instanceof AbstractJoinUpdate<?>) {
+            List<JoinUpdateParam> joinList = ((AbstractJoinUpdate<?>) update).getJoinAll();
             if (joinList == null || joinList.isEmpty()) return;
             for (JoinUpdateParam joinUpdateParam : joinList) {
-                EntityUpdate joinUpdate = joinUpdateParam.getJoinUpdate();
+                AbstractJoinUpdate<?> joinUpdate = joinUpdateParam.getJoinUpdate();
                 if (!containSkipClass(joinUpdate)) {
                     handleOnFilter(joinUpdateParam, joinUpdateParam::getOnFilters, joinUpdateParam::on, joinUpdate.getTableAs());
                 }

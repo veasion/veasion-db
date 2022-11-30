@@ -28,6 +28,12 @@ public class JoinQueryTest extends BaseTest {
         student.selectAll();
         println(studentDao.queryList(student, StudentVO.class));
 
+        // lambda
+        LambdaEntityQuery<StudentPO> lambdaStudent = new LambdaEntityQuery<>(StudentPO.class, "s");
+        lambdaStudent.join(new LambdaEntityQuery<>(ClassesPO.class, "c").select(ClassesPO::getClassName)).on(StudentPO::getClassId, ClassesPO::getId);
+        lambdaStudent.selectAll();
+        println(studentDao.queryList(lambdaStudent, StudentVO.class));
+
         // 查询平均分及格的所有课程
         // select c.*, avg(s.score) as avgScore from t_course c join t_score s on c.id = s.course_id having avgScore >= 60
         EQ c = new EQ(CoursePO.class, "c");

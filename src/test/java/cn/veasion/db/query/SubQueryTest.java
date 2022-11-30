@@ -6,6 +6,7 @@ import cn.veasion.db.base.Operator;
 import cn.veasion.db.model.po.ClassesPO;
 import cn.veasion.db.model.po.CoursePO;
 import cn.veasion.db.model.po.StudentPO;
+import cn.veasion.db.model.po.TeacherPO;
 import cn.veasion.db.model.vo.StudentVO;
 
 /**
@@ -42,6 +43,16 @@ public class SubQueryTest extends BaseTest {
                 .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery1))
                 .addFilters(Filter.or())
                 .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery2))
+        ));
+
+        // lambda
+        LambdaEntityQuery<ClassesPO> lambdaSubQuery1 = new LambdaEntityQuery<>(ClassesPO.class).select(ClassesPO::getMasterTno).eq(ClassesPO::getClassName, "初一一班");
+        LambdaEntityQuery<ClassesPO> lambdaSubQuery2 = new LambdaEntityQuery<>(ClassesPO.class, "c").eq(ClassesPO::getClassName, "初一一班");
+        lambdaSubQuery2.join(new LambdaEntityQuery<>(CoursePO.class, "course").select(CoursePO::getTno)).on(ClassesPO::getId, CoursePO::getClassId);
+        println(teacherDao.queryList(new LambdaQuery<TeacherPO>()
+                .filterSubQuery(TeacherPO::getTno, Operator.IN, SubQueryParam.build(lambdaSubQuery1))
+                .addFilters(Filter.or())
+                .filterSubQuery(TeacherPO::getTno, Operator.IN, SubQueryParam.build(lambdaSubQuery2))
         ));
 
         // 通过子查询来查询学生班级名称

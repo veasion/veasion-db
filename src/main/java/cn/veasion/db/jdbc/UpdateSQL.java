@@ -3,8 +3,8 @@ package cn.veasion.db.jdbc;
 import cn.veasion.db.DbException;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.Filter;
+import cn.veasion.db.update.AbstractJoinUpdate;
 import cn.veasion.db.update.AbstractUpdate;
-import cn.veasion.db.update.EntityUpdate;
 import cn.veasion.db.update.JoinUpdateParam;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.LeftRight;
@@ -46,17 +46,17 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
         Map<String, Class<?>> entityClassMap = new HashMap<>();
         sql.append("UPDATE ");
         sql.append(getTableName(update.getEntityClass(), update, update));
-        if (update instanceof EntityUpdate) {
-            joins = ((EntityUpdate) update).getJoinAll();
-            String tableAs = ((EntityUpdate) update).getTableAs();
+        if (update instanceof AbstractJoinUpdate<?>) {
+            joins = ((AbstractJoinUpdate<?>) update).getJoinAll();
+            String tableAs = ((AbstractJoinUpdate<?>) update).getTableAs();
             if (tableAs != null) {
                 sql.append(" ").append(tableAs);
             }
             entityClassMap.put(tableAs, update.getEntityClass());
-            tableEntityMap.put(tableAs, ((EntityUpdate) update).getEntity());
+            tableEntityMap.put(tableAs, ((AbstractJoinUpdate<?>) update).getEntity());
             if (joins != null) {
                 for (JoinUpdateParam join : joins) {
-                    EntityUpdate joinUpdate = join.getJoinUpdate();
+                    AbstractJoinUpdate<?> joinUpdate = join.getJoinUpdate();
                     entityClassMap.put(joinUpdate.getTableAs(), joinUpdate.getEntityClass());
                     tableEntityMap.put(joinUpdate.getTableAs(), joinUpdate.getEntity());
                 }
@@ -79,7 +79,7 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
     private void appendJoinOn(Map<String, Class<?>> entityClassMap) {
         if (joins == null || joins.isEmpty()) return;
         for (JoinUpdateParam join : joins) {
-            EntityUpdate joinUpdate = join.getJoinUpdate();
+            AbstractJoinUpdate<?> joinUpdate = join.getJoinUpdate();
             sql.append(" ").append(join.getJoinType().getJoin());
             sql.append(" ").append(getTableName(joinUpdate.getEntityClass(), joinUpdate, join));
             if (joinUpdate.getTableAs() != null) {
@@ -97,7 +97,7 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
         appendUpdates(entityClassMap, update.getUpdates());
         if (joins == null || joins.isEmpty()) return;
         for (JoinUpdateParam join : joins) {
-            EntityUpdate joinUpdate = join.getJoinUpdate();
+            AbstractJoinUpdate<?> joinUpdate = join.getJoinUpdate();
             if (joinUpdate.getUpdates() != null) {
                 sql.append(",");
                 appendUpdates(entityClassMap, joinUpdate.getUpdates());
@@ -127,7 +127,7 @@ public class UpdateSQL extends AbstractSQL<UpdateSQL> {
         appendFilter(entityClassMap, update.getFilters());
         if (joins == null || joins.isEmpty()) return;
         for (JoinUpdateParam join : joins) {
-            EntityUpdate joinUpdate = join.getJoinUpdate();
+            AbstractJoinUpdate<?> joinUpdate = join.getJoinUpdate();
             if (joinUpdate.hasFilters()) {
                 if (!endsWith(" WHERE")) {
                     sql.append(" AND");

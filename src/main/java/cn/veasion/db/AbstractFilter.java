@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * @author luozhuowei
  * @date 2021/12/2
  */
-public abstract class AbstractFilter<T extends AbstractFilter<?>> {
+public abstract class AbstractFilter<T extends AbstractFilter<?>> implements IFilter<T> {
 
     protected boolean checked;
     private Class<?> entityClass;
@@ -79,6 +79,18 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> {
         return addFilter(Filter.likeRight(field, value));
     }
 
+    public T notLike(String field, Object value) {
+        return addFilter(Filter.notLike(field, value));
+    }
+
+    public T notLikeLeft(String field, Object value) {
+        return addFilter(Filter.notLikeLeft(field, value));
+    }
+
+    public T notLikeRight(String field, Object value) {
+        return addFilter(Filter.notLikeRight(field, value));
+    }
+
     public T isNull(String field) {
         return addFilter(Filter.isNull(field));
     }
@@ -98,11 +110,11 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> {
     }
 
     public T exists(SubQueryParam subQueryParam) {
-        return addFilter(Filter.subQuery(null, Operator.EXISTS, subQueryParam));
+        return addFilter(Filter.subQuery(Operator.EXISTS, subQueryParam));
     }
 
     public T notExists(SubQueryParam subQueryParam) {
-        return addFilter(Filter.subQuery(null, Operator.NOT_EXISTS, subQueryParam));
+        return addFilter(Filter.subQuery(Operator.NOT_EXISTS, subQueryParam));
     }
 
     public T filterSubQuery(String field, Operator operator, SubQueryParam subQueryParam) {
@@ -123,7 +135,7 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> {
     }
 
     public T filterExpression(String field, Operator operator, Expression expression) {
-        return addFilters(Filter.expression(field, operator, expression));
+        return addFilter(Filter.expression(field, operator, expression));
     }
 
     /**
@@ -149,6 +161,7 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> {
         return getSelf();
     }
 
+    @Override
     public T addFilter(Filter filter) {
         if (filters == null) {
             filters = new ArrayList<>();

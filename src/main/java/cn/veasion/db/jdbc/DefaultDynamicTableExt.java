@@ -5,11 +5,11 @@ import cn.veasion.db.DbException;
 import cn.veasion.db.query.AbstractJoinQuery;
 import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.query.JoinQueryParam;
+import cn.veasion.db.update.AbstractJoinUpdate;
 import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.Delete;
 import cn.veasion.db.update.EntityInsert;
-import cn.veasion.db.update.EntityUpdate;
 import cn.veasion.db.update.JoinUpdateParam;
 
 import java.util.Map;
@@ -75,7 +75,7 @@ public class DefaultDynamicTableExt implements DynamicTableExt {
                 }
             } else if (source instanceof JoinUpdateParam) {
                 // update join
-                tableName = handleUpdateJoin(tableName, entityClazz, (JoinUpdateParam) source, (EntityUpdate) filter);
+                tableName = handleUpdateJoin(tableName, entityClazz, (JoinUpdateParam) source, (AbstractJoinUpdate<?>) filter);
             } else if (source instanceof JoinQueryParam) {
                 // query join
                 tableName = handleQueryJoin(tableName, entityClazz, (JoinQueryParam) source, (AbstractJoinQuery<?>) filter);
@@ -101,7 +101,7 @@ public class DefaultDynamicTableExt implements DynamicTableExt {
             throw new DbException("批量新增不支持动态分表，请通过路由条件拆分调用 DefaultDynamicTableExt.withDynamicTableExt 自定义处理");
         }
 
-        protected String handleUpdateJoin(String tableName, Class<?> entityClazz, JoinUpdateParam join, EntityUpdate joinUpdate) {
+        protected String handleUpdateJoin(String tableName, Class<?> entityClazz, JoinUpdateParam join, AbstractJoinUpdate<?> joinUpdate) {
             return handleFilter(tableName, entityClazz, joinUpdate);
         }
 

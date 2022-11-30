@@ -3,6 +3,8 @@ package cn.veasion.db.utils;
 import cn.veasion.db.DbException;
 import cn.veasion.db.base.Column;
 import cn.veasion.db.base.Table;
+import cn.veasion.db.lambda.LambdaFunction;
+import cn.veasion.db.lambda.SerializedLambdaUtils;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -56,6 +58,19 @@ public class FieldUtils {
             }
         }
         return FieldUtils.getField(entityClazz, "id");
+    }
+
+    public static <T, R> String getFieldName(LambdaFunction<T, R> lambdaFunction) {
+        return SerializedLambdaUtils.getLambdaMeta(lambdaFunction).getFieldName();
+    }
+
+    @SafeVarargs
+    public static <T> String[] getFieldNames(LambdaFunction<T, ?>... lambdaFields) {
+        String[] fields = new String[lambdaFields.length];
+        for (int i = 0; i < lambdaFields.length; i++) {
+            fields[i] = getFieldName(lambdaFields[i]);
+        }
+        return fields;
     }
 
     /**
@@ -221,8 +236,8 @@ public class FieldUtils {
                 if (Object.class.equals(method.getDeclaringClass())) {
                     continue;
                 }
-                if (method.getParameterCount() == 0 && methodName.startsWith("get")) {
-                    String field = firstCase(methodName.substring(3), true);
+                if (method.getParameterCount() == 0 && (methodName.startsWith("get") || methodName.startsWith("is"))) {
+                    String field = firstCase(methodName.substring(methodName.startsWith("is") ? 2 : 3), true);
                     result.put(field, method);
                 }
             }

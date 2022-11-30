@@ -24,8 +24,9 @@ public class OraclePage extends PageParam {
         sql.append("SELECT t.* FROM (SELECT  t.*, ROWNUM AS row FROM (");
         sql.append(querySql);
         sql.append(") t WHERE ROWNUM <= ?) t WHERE t.row > ?");
-        values.add(page * size);
-        values.add(page * size - size);
+        int lastRowNum = page * size;
+        values.add(lastRowNum);
+        values.add(lastRowNum - size);
     }
 
 }

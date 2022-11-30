@@ -5,7 +5,9 @@ import cn.veasion.db.DbException;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.JoinType;
 import cn.veasion.db.base.Operator;
+import cn.veasion.db.lambda.LambdaFunction;
 import cn.veasion.db.query.SubQueryParam;
+import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.FilterUtils;
 
 import java.util.ArrayList;
@@ -21,11 +23,11 @@ import java.util.Objects;
 public class JoinUpdateParam {
 
     private JoinType joinType;
-    private EntityUpdate mainUpdate;
-    private EntityUpdate joinUpdate;
+    private AbstractJoinUpdate<?> mainUpdate;
+    private AbstractJoinUpdate<?> joinUpdate;
     private List<Filter> onFilters;
 
-    public JoinUpdateParam(EntityUpdate mainUpdate, JoinType joinType, EntityUpdate joinUpdate) {
+    public JoinUpdateParam(AbstractJoinUpdate<?> mainUpdate, JoinType joinType, AbstractJoinUpdate<?> joinUpdate) {
         this.joinType = joinType;
         this.mainUpdate = mainUpdate;
         this.joinUpdate = joinUpdate;
@@ -48,19 +50,24 @@ public class JoinUpdateParam {
         return on(Filter.expression(mainField, Operator.EQ, "${" + joinField + "}"));
     }
 
+    public <T1, T2> JoinUpdateParam on(LambdaFunction<T1, ?> mainField, LambdaFunction<T2, ?> joinField) {
+        return on(FieldUtils.getFieldName(mainField), FieldUtils.getFieldName(joinField));
+    }
+
     public JoinType getJoinType() {
         return joinType;
     }
 
-    public EntityUpdate getMainUpdate() {
+    public AbstractJoinUpdate<?> getMainUpdate() {
         return mainUpdate;
     }
 
-    public EntityUpdate getJoinUpdate() {
+    public AbstractJoinUpdate<?> getJoinUpdate() {
         return joinUpdate;
     }
 
     public List<Filter> getOnFilters() {
         return onFilters;
     }
+
 }

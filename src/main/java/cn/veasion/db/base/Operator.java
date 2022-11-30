@@ -17,6 +17,7 @@ public enum Operator {
     IN("IN"),
     NOT_IN("NOT IN"),
     LIKE("LIKE"),
+    NOT_LIKE("NOT LIKE"),
     BETWEEN("BETWEEN"),
     EXISTS("EXISTS"),
     NOT_EXISTS("NOT EXISTS"),
@@ -34,8 +35,11 @@ public enum Operator {
     }
 
     public static Operator of(String opt) {
+        if (opt == null || opt.length() == 0) {
+            return null;
+        }
         for (Operator value : values()) {
-            if (value.opt.equalsIgnoreCase(opt)) {
+            if (value.opt.equalsIgnoreCase(opt) || value.name().equalsIgnoreCase(opt)) {
                 return value;
             }
         }
