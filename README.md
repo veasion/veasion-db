@@ -51,94 +51,94 @@ public class SimpleQueryTest extends BaseTest {
     public static void main(String[] args) {
         // 查询全部学生（*）
         // select * from t_student
-        println(studentDao.queryList(new Q()));
+        studentDao.queryList(new Q());
 
         // 查询全部学生（全部字段）
         // select id, sno, name, class_id, sex, age, `desc`, version, is_deleted, create_time, update_time from t_student
-        println(studentDao.queryList(new Q().selectAllWithNoAsterisk()));
+        studentDao.queryList(new Q().selectAllWithNoAsterisk());
 
         // 根据id查询学生
         // select * from t_student where id = 1
-        println(studentDao.getById(1L));
+        studentDao.getById(1L);
 
         // 查询学号为s001的学生名称
         // select name from t_student where sno = 's001'
-        println(studentDao.queryForType(new Q("name").eq("sno", "s001"), String.class));
+        studentDao.queryForType(new Q("name").eq("sno", "s001"), String.class);
         // lambda
-        println(studentDao.queryForType(new LambdaQuery<>(StudentPO::getName).eq(StudentPO::getSno, "s001"), String.class));
+        studentDao.queryForType(new LambdaQuery<>(StudentPO::getName).eq(StudentPO::getSno, "s001"), String.class);
 
         // 查询所有班级名称
         // select class_name from t_classes
-        println(classesDao.queryList(new Q("className"), String.class));
-        println(classesDao.queryList(new LambdaQuery<>(ClassesPO::getClassName), String.class));
+        classesDao.queryList(new Q("className"), String.class);
+        classesDao.queryList(new LambdaQuery<>(ClassesPO::getClassName), String.class);
 
         // 查询年龄满18的学生
         // select * from t_student where age >= 18
-        println(studentDao.queryList(new Q().gte("age", 18)));
-        println(studentDao.queryList(new LambdaQuery<StudentPO>().gte(StudentPO::getAge, 18)));
+        studentDao.queryList(new Q().gte("age", 18));
+        studentDao.queryList(new LambdaQuery<StudentPO>().gte(StudentPO::getAge, 18));
 
         // 查询年龄在16-18之间的男学生
         // select * from t_student where sex = 1 and age between 16 and 18
-        println(studentDao.queryList(new Q().eq("sex", 1).between("age", 16, 18)));
-        println(studentDao.queryList(new LambdaQuery<StudentPO>().eq(StudentPO::getSex, 1).between(StudentPO::getAge, 16, 18)));
+        studentDao.queryList(new Q().eq("sex", 1).between("age", 16, 18));
+        studentDao.queryList(new LambdaQuery<StudentPO>().eq(StudentPO::getSex, 1).between(StudentPO::getAge, 16, 18));
 
         // 查询熊姓学生
         // select * from t_student where name like '熊%'
-        println(studentDao.queryList(new Q().likeRight("name", "熊")));
-        println(studentDao.queryList(new LambdaQuery<StudentPO>().likeRight(StudentPO::getName, "熊")));
+        studentDao.queryList(new Q().likeRight("name", "熊"));
+        studentDao.queryList(new LambdaQuery<StudentPO>().likeRight(StudentPO::getName, "熊"));
 
         // 查询特殊备注的学生
         // select sno, name, `desc` from t_student where `desc` is not null
-        println(studentDao.queryList(new Q("sno", "name", "desc").isNotNull("desc")));
-        println(studentDao.queryList(new LambdaQuery<>(StudentPO::getSno, StudentPO::getName, StudentPO::getDesc).isNotNull(StudentPO::getDesc)));
+        studentDao.queryList(new Q("sno", "name", "desc").isNotNull("desc"));
+        studentDao.queryList(new LambdaQuery<>(StudentPO::getSno, StudentPO::getName, StudentPO::getDesc).isNotNull(StudentPO::getDesc));
 
         // 查询年龄最大学生
         // select * from t_student order by age desc limit 1
-        println(studentDao.query(new Q().desc("age").page(1, 1)));
+        studentDao.query(new Q().desc("age").page(1, 1));
 
         // 查询学生人数和平均年龄
         // select count(1) as count, avg(age) as avgAge from t_student
-        println(studentDao.queryForMap(new Q()
+        studentDao.queryForMap(new Q()
                 .selectExpression("count(1)", "count")
                 .selectExpression("avg(${age})", "avgAge")
-        ));
+        );
 
         // 统计学生性别人数小于5的性别及人数
         // select sex, count(id) as count from t_student group by sex having count < 5
-        println(studentDao.queryForMap(new Q()
+        studentDao.queryForMap(new Q()
                 .select("sex")
                 .selectExpression("count(id)", "count")
                 .groupBy("sex")
                 .having(Filter.lt("count", 5))
-        ));
+        );
 
         // 查询小于平均年龄的女学生
         // select * from t_student where sex = 2 and age < (select avg(age) from t_student)
-        println(studentDao.queryList(new Q()
+        studentDao.queryList(new Q()
                 .eq("sex", 2)
                 .filterSubQuery("age", Operator.LT, SubQueryParam.build(
                         new Q().selectExpression("avg(age)", null)
                 ))
-        ));
+        );
 
         // 查询姓名里存在“熊”或者“小”的男学生
         // select * from t_student where sex = 1 and (name like '%熊%' or name like '%小%')
-        println(studentDao.queryList(new Q()
+        studentDao.queryList(new Q()
                 .eq("sex", 1)
                 .andBracket(Filter.like("name", "熊"), Filter.or(), Filter.like("name", "小"))
-        ));
+        );
 
         // 分页查询学生（第二页）
         // select * from t_student limit 10, 10
-        println(studentDao.queryPage(new Q().page(2, 10)));
+        studentDao.queryPage(new Q().page(2, 10));
 
         // 查询空表
         // select 1 from dual
-        println(studentDao.queryForType(new EQ(new TableEntity("dual")).select("1"), Integer.class));
+        studentDao.queryForType(new EQ(new TableEntity("dual")).select("1"), Integer.class);
 
         // 无表查询
         // select 1
-        println(studentDao.queryForType(new EQ(new TableEntity(null)).select("1"), Integer.class));
+        studentDao.queryForType(new EQ(new TableEntity(null)).select("1"), Integer.class);
     }
 
 }
@@ -153,13 +153,13 @@ public class JoinQueryTest extends BaseTest {
         EQ student = new EQ(StudentPO.class, "s");
         student.join(new EQ(ClassesPO.class, "c").select("className")).on("classId", "id");
         student.selectAll();
-        println(studentDao.queryList(student, StudentVO.class));
+        studentDao.queryList(student, StudentVO.class);
 
         // lambda
         LambdaEntityQuery<StudentPO> lambdaStudent = new LambdaEntityQuery<>(StudentPO.class, "s");
         lambdaStudent.join(new LambdaEntityQuery<>(ClassesPO.class, "c").select(ClassesPO::getClassName)).on(StudentPO::getClassId, ClassesPO::getId);
         lambdaStudent.selectAll();
-        println(studentDao.queryList(lambdaStudent, StudentVO.class));
+        studentDao.queryList(lambdaStudent, StudentVO.class);
 
         // 查询平均分及格的所有课程
         // select c.*, avg(s.score) as avgScore from t_course c join t_score s on c.id = s.course_id having avgScore >= 60
@@ -167,7 +167,7 @@ public class JoinQueryTest extends BaseTest {
         c.join(new EQ(ScorePO.class, "s")).on("id", "courseId");
         c.selectAll().selectExpression("avg(s.score)", "avgScore");
         c.having(Filter.gte("avgScore", 60));
-        println(courseDao.queryList(c, CourseScoreVO.class));
+        courseDao.queryList(c, CourseScoreVO.class);
 
         // 查询 “初一一班” 班主任及所有任课老师
         // select t.* from t_classes c
@@ -193,7 +193,7 @@ public class JoinQueryTest extends BaseTest {
         teacher2.selectAll();
 
         classes1.union(classes2.distinct());
-        println(classesDao.queryList(classes1, TeacherPO.class));
+        classesDao.queryList(classes1, TeacherPO.class);
 
         // 查询学生信息及每门课程对应的分数和所在班级、课程对应的任课老师，学生分数打上标签：及格/不及格
         // select s.sno, s.name, c.class_name, course.course_name, t.name as courseTeacher, score.score, if(score.score>=60, '及格', '不及格') as scoreLabel
@@ -214,7 +214,7 @@ public class JoinQueryTest extends BaseTest {
         _student.select("t.name", "courseTeacher");
         _student.selectExpression("if(score.score>=60, '及格', '不及格')", "scoreLabel");
 
-        println(studentDao.queryList(_student, StudentCourseScoreVO.class));
+        studentDao.queryList(_student, StudentCourseScoreVO.class);
     }
 
 }
@@ -226,7 +226,7 @@ public class SubQueryTest extends BaseTest {
     public static void main(String[] args) {
         // 简单子查询
         // select count(id) from (select * from t_student) t
-        println(studentDao.queryForType(new SubQuery(new Q(), "t").selectExpression("count(id)", "count"), Integer.class));
+        studentDao.queryForType(new SubQuery(new Q(), "t").selectExpression("count(id)", "count"), Integer.class);
 
         // 通过子查询关联查询小于平均年龄的男同学
         // select s.* from t_student s join (select avg(age) as age from t_student) t on s.age < t.age where s.sex = 2
@@ -235,7 +235,7 @@ public class SubQueryTest extends BaseTest {
                 new SubQuery(new Q().selectExpression("avg(age)", "age"), "t")
         ).on(Filter.expression("s.age", Operator.LT, "t.age"));
         student.selectAll().eq("sex", 2);
-        println(studentDao.queryList(student));
+        studentDao.queryList(student);
 
         // 通过子查询查询 “初一一班” 班主任及所有任课老师
         // select * from t_teacher where
@@ -245,29 +245,29 @@ public class SubQueryTest extends BaseTest {
         EntityQuery subQuery1 = new EQ(ClassesPO.class).select("masterTno").eq("className", "初一一班");
         EntityQuery subQuery2 = new EQ(ClassesPO.class, "c").eq("className", "初一一班");
         subQuery2.join(new EQ(CoursePO.class, "course").select("tno")).on("id", "classId");
-        println(teacherDao.queryList(new Q()
+        teacherDao.queryList(new Q()
                 .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery1))
                 .addFilters(Filter.or())
                 .filterSubQuery("tno", Operator.IN, SubQueryParam.build(subQuery2))
-        ));
+        );
 
         // 通过子查询来查询学生班级名称
         // select s.*, (select class_name from t_classes where id = s.class_id) as className from t_student
-        println(studentDao.queryList(new EQ(StudentPO.class, "s")
+        studentDao.queryList(new EQ(StudentPO.class, "s")
                 .selectAll()
                 .selectSubQuery(SubQueryParam.build(
                         new EQ(ClassesPO.class)
                                 .select("className")
                                 .filterExpression("id", Operator.EQ, "${s.classId}")
                 )), StudentVO.class
-        ));
+        );
 
         /*
         // 模拟 oracle 分页
         // 等价于 studentDao.queryList(new Q().page(new OraclePage(1, 10)))
         // select t.* from (select t.*, ROWNUM as row from (select * from t_student) t where ROWNUM <= 10) t where t.row > 0
         int page = 1, size = 10;
-        println(studentDao.queryList(
+        studentDao.queryList(
                 new SubQuery(
                         new SubQuery(new Q(), "t")
                                 .selectAll()
@@ -275,7 +275,7 @@ public class SubQueryTest extends BaseTest {
                                 .realFilter(Filter.lte("ROWNUM", page * size)),
                         "t"
                 ).gt("row", page * size - size)
-        ));
+        );
         */
     }
 
@@ -299,7 +299,7 @@ public class WithQueryTest extends BaseTest {
                 .buildQuery(
                         new EQ(new TableEntity("area1")).unionAll(new EQ(new TableEntity("area2")))
                 );
-        println(areaDao.queryList(entityQuery));
+        areaDao.queryList(entityQuery);
 
         // 通过 with 递归查询
         // with recursive area as (
@@ -316,7 +316,7 @@ public class WithQueryTest extends BaseTest {
         EntityQuery entityQuery2 = With.buildRecursive()
                 .with(new EQ(AreaPO.class).eq("code", "310000").unionAll(t1), "area")
                 .buildQuery(new EQ(new TableEntity("area")));
-        println(areaDao.queryList(entityQuery2));
+        areaDao.queryList(entityQuery2);
     }
 
 }
@@ -330,11 +330,11 @@ public class InsertTest extends BaseTest {
 
         // 新增一个学生
         // insert into t_student(...) values (...)
-        println(studentDao.add(getStudent()));
+        studentDao.add(getStudent());
 
         // 批量新增学生
         // insert into t_student(...) values (...), (...), (...)
-        println(studentDao.batchAdd(Arrays.asList(getStudent(), getStudent(), getStudent())));
+        studentDao.batchAdd(Arrays.asList(getStudent(), getStudent(), getStudent()));
 
         // insert select 新增学生
         // insert into t_student(...) select ... from student order by id desc limit 1
@@ -345,20 +345,19 @@ public class InsertTest extends BaseTest {
                         .selectExpression("concat('copy_', sno)", "sno")
                         .desc("id").page(1, 1)
         ));
-        println(ids);
-        println(studentDao.queryList(new Q().in("id", ids)));
+        studentDao.queryList(new Q().in("id", ids));
 
         // 防学号重复新增学生
         // insert into t_student(...) select concat('copy_', sno), ... from t_student
         // where sno = 's001' and not exists (select 1 from t_student where sno = 'copy_s001')
-        println(studentDao.batchAdd(new BatchEntityInsert(
+        studentDao.batchAdd(new BatchEntityInsert(
                 new EQ(StudentPO.class)
                         .selects("age", "sex", "version", "isDeleted", "createTime")
                         .selectExpression("concat('copy_', name)", "name")
                         .selectExpression("concat('copy_', sno)", "sno")
                         .eq("sno", "s001")
                         .notExists(SubQueryParam.build(new Q("1").eq("sno", "copy_s001")))
-        )));
+        ));
 
         // replace into
         StudentPO student = getStudent();
