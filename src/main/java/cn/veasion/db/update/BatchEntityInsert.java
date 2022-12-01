@@ -5,6 +5,7 @@ import cn.veasion.db.jdbc.InsertSQL;
 import cn.veasion.db.query.AbstractQuery;
 import cn.veasion.db.utils.FieldUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -20,7 +21,7 @@ import java.util.Set;
  * @author luozhuowei
  * @date 2021/12/5
  */
-public class BatchEntityInsert {
+public class BatchEntityInsert implements Serializable {
 
     private List<?> entityList;
     private Class<?> entityClass;

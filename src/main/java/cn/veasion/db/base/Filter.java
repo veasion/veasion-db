@@ -6,6 +6,7 @@ import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.FilterUtils;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -16,7 +17,7 @@ import java.util.Objects;
  * @author luozhuowei
  * @date 2021/12/1
  */
-public class Filter {
+public class Filter implements Serializable {
 
     public static Filter eq(String field, Object value) {
         return build(field, Operator.EQ, value);
@@ -168,6 +169,14 @@ public class Filter {
 
     public static <T, R> Filter between(LambdaFunction<T, R> fieldLambda, Object value1, Object value2) {
         return build(fieldLambda, Operator.BETWEEN, new Object[]{value1, value2}, Operator.BETWEEN.getOpt().concat(" ? AND ?"));
+    }
+
+    public static Filter notBetween(String field, Object value1, Object value2) {
+        return build(field, Operator.NOT_BETWEEN, new Object[]{value1, value2}, Operator.NOT_BETWEEN.getOpt().concat(" ? AND ?"));
+    }
+
+    public static <T, R> Filter notBetween(LambdaFunction<T, R> fieldLambda, Object value1, Object value2) {
+        return build(fieldLambda, Operator.NOT_BETWEEN, new Object[]{value1, value2}, Operator.NOT_BETWEEN.getOpt().concat(" ? AND ?"));
     }
 
     public static Filter subQuery(Operator operator, SubQueryParam subQueryParam) {
@@ -343,6 +352,23 @@ public class Filter {
 
     public boolean isSpecial() {
         return special;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) return true;
+        if (object == null || getClass() != object.getClass()) return false;
+        Filter filter = (Filter) object;
+        return Objects.equals(sql, filter.sql) &&
+                Objects.equals(field, filter.field) &&
+                operator == filter.operator &&
+                special == filter.special &&
+                Objects.equals(value, filter.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(field, operator, sql, value, special);
     }
 
     @Override

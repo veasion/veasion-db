@@ -46,23 +46,21 @@ public abstract class AbstractInterceptor implements EntityDaoInterceptor {
         Object[] args = invocation.getArgs();
         if (args != null && !skip()) {
             for (Object arg : args) {
-                if (arg instanceof AbstractQuery && handleQuery) {
+                if (handleQuery && arg instanceof AbstractQuery) {
                     handleQuery((AbstractQuery<?>) arg);
-                } else if (arg instanceof AbstractUpdate && handleUpdate) {
+                } else if (handleUpdate && arg instanceof AbstractUpdate) {
                     handleUpdate((AbstractUpdate<?>) arg);
-                } else if (arg instanceof Delete && handleDelete) {
+                } else if (handleDelete && arg instanceof Delete) {
                     if (!containSkipClass(((Delete) arg).getEntityClass())) {
                         handleDelete((Delete) arg);
                     }
-                } else if (arg instanceof AbstractFilter) {
-                    if (handleAbstractFilter) {
-                        handleAbstractFilter((AbstractFilter<?>) arg);
-                    }
+                } else if (handleAbstractFilter && arg instanceof AbstractFilter) {
+                    handleAbstractFilter((AbstractFilter<?>) arg);
                 } else if (arg instanceof BatchEntityInsert) {
                     if (!containSkipClass(((BatchEntityInsert) arg).getEntityClass())) {
                         handleBatchInsert((BatchEntityInsert) arg);
                     }
-                } else if (arg instanceof EntityInsert && handleInsert) {
+                } else if (handleInsert && arg instanceof EntityInsert) {
                     EntityInsert insert = (EntityInsert) arg;
                     if (!containSkipClass(insert.getEntityClass())) {
                         handleInsert(insert.getEntityClass(), Collections.singletonList(insert.getEntity()), Collections.singletonList(insert.getFieldValueMap()));
@@ -147,11 +145,10 @@ public abstract class AbstractInterceptor implements EntityDaoInterceptor {
 
     protected void handleBatchInsert(BatchEntityInsert insert) {
         AbstractQuery<?> insertSelectQuery = insert.getInsertSelectQuery();
-        if (insertSelectQuery != null) {
-            if (handleQuery) {
-                handleQuery(insertSelectQuery);
-            }
-        } else if (handleInsert) {
+        if (handleQuery && insertSelectQuery != null) {
+            handleQuery(insertSelectQuery);
+        }
+        if (handleInsert && insert.getEntityList() != null) {
             handleInsert(insert.getEntityClass(), insert.getEntityList(), insert.getFieldValueMapList());
         }
     }

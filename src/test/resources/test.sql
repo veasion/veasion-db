@@ -1,8 +1,10 @@
-create database `veasion_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+-- 创建数据库
+CREATE DATABASE `veasion_db` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 
-use `veasion_db`;
+USE `veasion_db`;
 
 -- 学生表
+DROP TABLE IF EXISTS `t_student`;
 CREATE TABLE `t_student` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
   `sno` varchar(50) NOT NULL COMMENT '学号',
@@ -20,6 +22,7 @@ CREATE TABLE `t_student` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学生';
 
 -- 班级表
+DROP TABLE IF EXISTS `t_classes`;
 CREATE TABLE `t_classes` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
   `class_name` varchar(255) NOT NULL COMMENT '班级名称',
@@ -33,6 +36,7 @@ CREATE TABLE `t_classes` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='班级';
 
 -- 教师表
+DROP TABLE IF EXISTS `t_teacher`;
 CREATE TABLE `t_teacher` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
   `tno` varchar(50) NOT NULL COMMENT '教师编号',
@@ -50,6 +54,7 @@ CREATE TABLE `t_teacher` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='教师';
 
 -- 课程表
+DROP TABLE IF EXISTS `t_course`;
 CREATE TABLE `t_course` (
   `id` bigint(20) NOT NULL AUTO_INCREMENT COMMENT 'ID',
   `course_name` varchar(255) NOT NULL COMMENT '课程名称',
@@ -63,6 +68,7 @@ CREATE TABLE `t_course` (
 ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='课程';
 
 -- 分数表
+DROP TABLE IF EXISTS `t_score`;
 CREATE TABLE `t_score` (
   `sno` varchar(50) NOT NULL COMMENT '学号',
   `course_id` bigint(20) NOT NULL COMMENT '课程',
@@ -73,7 +79,22 @@ CREATE TABLE `t_score` (
   KEY `idx_sno_course` (`sno`,`course_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='分数';
 
+-- SaaS用户
+DROP TABLE IF EXISTS `t_saas_user`;
+CREATE TABLE `t_saas_user` (
+ `id` varchar(32) NOT NULL COMMENT 'ID',
+ `phone` varchar(11) NOT NULL COMMENT '手机号',
+ `name` varchar(50) NOT NULL COMMENT '姓名',
+ `sex` tinyint(2) NULL DEFAULT NULL COMMENT '1-男，2-女',
+ `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+ `is_deleted` bigint(20) DEFAULT '0',
+ `tenant_id` bigint(20) COMMENT '租户隔离字段',
+ PRIMARY KEY (`id`),
+ KEY `idx_tenant_phone` (`tenant_id`, `phone`) USING BTREE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='SaaS用户';
+
 -- 区域表
+DROP TABLE IF EXISTS `t_area`;
 CREATE TABLE `t_area` (
  `id` bigint NOT NULL AUTO_INCREMENT,
  `code` varchar(20) DEFAULT NULL COMMENT '区域编码',
@@ -89,6 +110,7 @@ CREATE TABLE `t_area` (
  UNIQUE KEY `idx_code` (`code`, `is_deleted`) USING BTREE,
  KEY `idx_parent_code` (`parent_code`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci ROW_FORMAT=DYNAMIC COMMENT='区域表';
+
 
 -- 初始化数据
 INSERT INTO `t_teacher`(`id`, `tno`, `name`, `sex`, `work_years`, `competent`, `department`, `version`, `is_deleted`, `create_time`, `update_time`) VALUES
@@ -155,6 +177,12 @@ INSERT INTO `t_score`(`sno`, `course_id`, `score`, `is_deleted`, `create_time`, 
 ('s012', 1, 100, 0, NOW(), NOW()),
 ('s012', 2, 100, 0, NOW(), NOW()),
 ('s012', 3, 100, 0, NOW(), NOW());
+
+INSERT INTO `t_saas_user`(`id`, `phone`, `name`, `sex`, `create_time`, `is_deleted`, `tenant_id`) VALUES
+('1584786963125370880', '18888888888', '小王', 1, NOW(), 0, 1000),
+('1584786963125370881', '17777777777', '小李', 1, NOW(), 0, 1000),
+('1584786963125370882', '16666666666', '小张', 0, NOW(), 0, 1001),
+('1584786963125370883', '15555555555', '小红', 2, NOW(), 0, 1002);
 
 INSERT INTO `t_area`(`code`, `name`, `level`, `abbreviation`, `parent_code`, `is_deleted`, `create_time`, `post_code`, `name_lan2`) VALUES
 ('310000', '上海', 1, 'S', '100000', 0, NOW(), NULL, 'shanghai'),

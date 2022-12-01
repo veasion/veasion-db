@@ -1,6 +1,7 @@
 package cn.veasion.db.update;
 
 import cn.veasion.db.BaseTest;
+import cn.veasion.db.model.enums.SexEnum;
 import cn.veasion.db.model.po.StudentPO;
 import cn.veasion.db.query.EQ;
 import cn.veasion.db.query.Q;
@@ -71,7 +72,7 @@ public class InsertTest extends BaseTest {
         studentPO.setName("学生_" + s);
         studentPO.setSno("s" + s);
         studentPO.setAge(18);
-        studentPO.setSex(1);
+        studentPO.setSex(SexEnum.MALE);
         studentPO.setClassId(1L);
         studentPO.setIsDeleted(0L);
         studentPO.setVersion(0);

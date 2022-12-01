@@ -10,6 +10,7 @@ import cn.veasion.db.query.SubQueryParam;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.FilterUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -20,7 +21,7 @@ import java.util.Objects;
  * @author luozhuowei
  * @date 2021/12/3
  */
-public class JoinUpdateParam {
+public class JoinUpdateParam implements Serializable {
 
     private JoinType joinType;
     private AbstractJoinUpdate<?> mainUpdate;

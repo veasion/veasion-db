@@ -1,12 +1,14 @@
 package cn.veasion.db.base;
 
+import java.io.Serializable;
+
 /**
  * Operator
  *
  * @author luozhuowei
  * @date 2021/12/13
  */
-public enum Operator {
+public enum Operator implements Serializable {
 
     EQ("="),
     NEQ("<>"),
@@ -19,6 +21,7 @@ public enum Operator {
     LIKE("LIKE"),
     NOT_LIKE("NOT LIKE"),
     BETWEEN("BETWEEN"),
+    NOT_BETWEEN("NOT BETWEEN"),
     EXISTS("EXISTS"),
     NOT_EXISTS("NOT EXISTS"),
     NULL("IS NULL"),

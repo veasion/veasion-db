@@ -3,6 +3,7 @@ package cn.veasion.db.update;
 import cn.veasion.db.jdbc.InsertSQL;
 import cn.veasion.db.utils.FieldUtils;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -16,7 +17,7 @@ import java.util.Set;
  * @author luozhuowei
  * @date 2021/12/5
  */
-public class EntityInsert {
+public class EntityInsert implements Serializable {
 
     private Object entity;
     private Class<?> entityClass;

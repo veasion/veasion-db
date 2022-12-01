@@ -8,6 +8,7 @@ import cn.veasion.db.base.Operator;
 import cn.veasion.db.jdbc.DataSourceProvider;
 import cn.veasion.db.jdbc.DefaultDynamicTableExt;
 import cn.veasion.db.jdbc.JdbcDao;
+import cn.veasion.db.model.enums.SexEnum;
 import cn.veasion.db.model.po.ClassesPO;
 import cn.veasion.db.model.po.StudentPO;
 import cn.veasion.db.model.vo.StudentVO;
@@ -142,7 +143,7 @@ public class DynamicTableTest extends BaseTest {
         studentPO.setName("学生_" + s);
         studentPO.setSno("s" + s);
         studentPO.setAge(18);
-        studentPO.setSex(1);
+        studentPO.setSex(SexEnum.MALE);
         studentPO.setClassId(1L);
         studentPO.setIsDeleted(0L);
         studentPO.setVersion(0);

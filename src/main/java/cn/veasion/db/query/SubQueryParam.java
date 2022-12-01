@@ -1,12 +1,14 @@
 package cn.veasion.db.query;
 
+import java.io.Serializable;
+
 /**
  * SubQueryParam
  *
  * @author luozhuowei
  * @date 2021/12/2
  */
-public class SubQueryParam {
+public class SubQueryParam implements Serializable {
 
     private AbstractQuery<?> query;
 

@@ -92,6 +92,10 @@ public interface ILambdaFilter<T, E> extends IFilter<T> {
         return addFilter(Filter.between(lambdaField, value1, value2));
     }
 
+    default <R> T notBetween(LambdaFunction<E, R> lambdaField, Object value1, Object value2) {
+        return addFilter(Filter.notBetween(lambdaField, value1, value2));
+    }
+
     default <R> T filterSubQuery(LambdaFunction<E, R> lambdaField, Operator operator, SubQueryParam subQueryParam) {
         return addFilter(Filter.subQuery(lambdaField, operator, subQueryParam));
     }

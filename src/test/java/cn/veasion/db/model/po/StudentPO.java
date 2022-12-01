@@ -2,6 +2,7 @@ package cn.veasion.db.model.po;
 
 import cn.veasion.db.base.Column;
 import cn.veasion.db.base.Table;
+import cn.veasion.db.model.enums.SexEnum;
 
 /**
  * StudentPO
@@ -15,7 +16,7 @@ public class StudentPO extends BasePO {
     private String sno;
     private String name;
     private Long classId;
-    private Integer sex;
+    private SexEnum sex;
     private Integer age;
     @Column("`desc`")
     private String desc;
@@ -44,11 +45,11 @@ public class StudentPO extends BasePO {
         this.classId = classId;
     }
 
-    public Integer getSex() {
+    public SexEnum getSex() {
         return sex;
     }
 
-    public void setSex(Integer sex) {
+    public void setSex(SexEnum sex) {
         this.sex = sex;
     }
 

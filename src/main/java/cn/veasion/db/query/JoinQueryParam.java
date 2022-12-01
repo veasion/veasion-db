@@ -9,6 +9,7 @@ import cn.veasion.db.lambda.LambdaFunction;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.FilterUtils;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -19,7 +20,7 @@ import java.util.Objects;
  * @author luozhuowei
  * @date 2021/12/2
  */
-public class JoinQueryParam {
+public class JoinQueryParam implements Serializable {
 
     private JoinType joinType;
     private AbstractJoinQuery<?> mainQuery;

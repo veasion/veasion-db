@@ -27,6 +27,7 @@ public class DeleteSQL extends AbstractSQL<DeleteSQL> {
         this.reset();
         sql.append("DELETE FROM ").append(getTableName(delete.getEntityClass(), delete, delete)).append(" WHERE");
         appendFilter(Collections.singletonMap(null, delete.getEntityClass()), delete.getFilters());
+        trimEndSql(" WHERE");
         return this;
     }
 

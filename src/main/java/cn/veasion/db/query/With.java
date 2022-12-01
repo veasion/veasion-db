@@ -2,6 +2,7 @@ package cn.veasion.db.query;
 
 import cn.veasion.db.utils.LeftRight;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -11,7 +12,7 @@ import java.util.List;
  * @author luozhuowei
  * @date 2022/11/7
  */
-public class With {
+public class With implements Serializable {
 
     private boolean recursive;
     private boolean asAfter;

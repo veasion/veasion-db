@@ -1,1 +1,3 @@
 cn.veasion.db.interceptor.MyLogicDeleteInterceptor
+cn.veasion.db.interceptor.UpdateDeleteNoFilterInterceptor
+cn.veasion.db.interceptor.TenantInterceptor

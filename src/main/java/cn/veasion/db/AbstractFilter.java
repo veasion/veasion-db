@@ -11,6 +11,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -103,6 +104,10 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> implements IFi
         return addFilter(Filter.between(field, value1, value2));
     }
 
+    public T notBetween(String field, Object value1, Object value2) {
+        return addFilter(Filter.notBetween(field, value1, value2));
+    }
+
     public T andBracket(Filter... filters) {
         addFilter(Filter.leftBracket());
         addFilters(filters);
@@ -146,6 +151,11 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> implements IFi
      */
     public T sqlFilter(Filter.SqlFilterHandler sqlFilterHandler, Object... values) {
         return addFilter(Filter.sqlFilter(sqlFilterHandler, values));
+    }
+
+    public T exec(Consumer<T> consumer) {
+        consumer.accept(getSelf());
+        return getSelf();
     }
 
     public List<Filter> getFilters() {

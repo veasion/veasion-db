@@ -1,12 +1,14 @@
 package cn.veasion.db.utils;
 
+import java.io.Serializable;
+
 /**
  * LeftRight
  *
  * @author luozhuowei
  * @date 2021/12/6
  */
-public class LeftRight<L, R> {
+public class LeftRight<L, R> implements Serializable {
 
     private L left;
     private R right;

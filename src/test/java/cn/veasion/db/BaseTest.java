@@ -1,14 +1,12 @@
 package cn.veasion.db;
 
-import cn.veasion.db.base.Expression;
 import cn.veasion.db.dao.AreaDao;
 import cn.veasion.db.dao.ClassesDao;
 import cn.veasion.db.dao.CourseDao;
+import cn.veasion.db.dao.SaasUserDao;
 import cn.veasion.db.dao.ScoreDao;
 import cn.veasion.db.dao.StudentDao;
 import cn.veasion.db.dao.TeacherDao;
-import cn.veasion.db.interceptor.InterceptorUtils;
-import cn.veasion.db.interceptor.LogicDeleteInterceptor;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.TypeUtils;
 
@@ -30,18 +28,12 @@ public class BaseTest {
     static final String user = "root";
     static final String password = "123456";
 
-    static {
-        // 添加一个拦截器，默认查询没有逻辑删除的数据（也可以通过 spi 添加）
-        InterceptorUtils.addInterceptor(
-                new LogicDeleteInterceptor("isDeleted", 0, Expression.update("${id}"))
-        );
-    }
-
     protected static final StudentDao studentDao = new StudentDao();
     protected static final TeacherDao teacherDao = new TeacherDao();
     protected static final ClassesDao classesDao = new ClassesDao();
     protected static final CourseDao courseDao = new CourseDao();
     protected static final ScoreDao scoreDao = new ScoreDao();
+    protected static final SaasUserDao saasUserDao = new SaasUserDao();
     protected static final AreaDao areaDao = new AreaDao();
 
     private static Set<String> printSkipField = new HashSet<String>() {{

@@ -1,13 +1,8 @@
 package cn.veasion.db.lambda;
 
 import cn.veasion.db.DbException;
+import cn.veasion.db.utils.TypeUtils;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectStreamClass;
 import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Field;
@@ -58,24 +53,10 @@ public class SerializedLambdaUtils {
     }
 
     private static LambdaMeta invoke(Serializable serializable) throws Exception {
-        try (ByteArrayOutputStream byteOs = new ByteArrayOutputStream(); ObjectOutputStream objOs = new ObjectOutputStream(byteOs)) {
-            objOs.writeObject(serializable);
-            objOs.flush();
-            try (ObjectInputStream objIs = new ObjectInputStream(new ByteArrayInputStream(byteOs.toByteArray())) {
-                @Override
-                protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
-                    return super.resolveClass(desc);
-                }
-
-            }) {
-                Object object = objIs.readObject();
-                Method method = object.getClass().getDeclaredMethod("writeReplace");
-                method.setAccessible(true);
-                return new LambdaMeta((SerializedLambda) method.invoke(object));
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            throw new DbException(e);
-        }
+        Object object = TypeUtils.serializableCopy(serializable);
+        Method method = object.getClass().getDeclaredMethod("writeReplace");
+        method.setAccessible(true);
+        return new LambdaMeta((SerializedLambda) method.invoke(object));
     }
 
     private static LambdaMeta getLambdaMetaByProxy(Proxy proxy) throws Throwable {

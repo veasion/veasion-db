@@ -2,6 +2,7 @@ package cn.veasion.db.query;
 
 import cn.veasion.db.base.Expression;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 /**
@@ -10,7 +11,7 @@ import java.util.Objects;
  * @author luozhuowei
  * @date 2022/11/4
  */
-public class Window {
+public class Window implements Serializable {
 
     private String alias;
     private Expression expression;

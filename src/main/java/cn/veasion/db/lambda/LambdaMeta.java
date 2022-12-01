@@ -3,6 +3,7 @@ package cn.veasion.db.lambda;
 import cn.veasion.db.utils.FieldUtils;
 import cn.veasion.db.utils.TypeUtils;
 
+import java.io.Serializable;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Field;
 
@@ -12,7 +13,7 @@ import java.lang.reflect.Field;
  * @author luozhuowei
  * @date 2022/11/29
  */
-public class LambdaMeta {
+public class LambdaMeta implements Serializable {
 
     private String fieldName;
     private String implMethodName;

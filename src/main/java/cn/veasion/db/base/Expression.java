@@ -2,13 +2,15 @@ package cn.veasion.db.base;
 
 import cn.veasion.db.DbException;
 
+import java.io.Serializable;
+
 /**
  * Expression
  *
  * @author luozhuowei
  * @date 2021/12/2
  */
-public class Expression {
+public class Expression implements Serializable {
 
     private String alias;
     private String expression;

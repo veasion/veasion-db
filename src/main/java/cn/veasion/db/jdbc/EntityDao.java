@@ -35,34 +35,6 @@ public interface EntityDao<T, ID> {
         return batchAdd(entityList, 50);
     }
 
-    @SuppressWarnings("unchecked")
-    default ID[] batchAdd(List<T> entityList, int maxBatchSize) {
-        if (entityList.size() <= maxBatchSize) {
-            return batchAdd(new BatchEntityInsert(entityList));
-        } else {
-            List<ID> idList = new ArrayList<>(entityList.size());
-            int num = entityList.size() / maxBatchSize;
-            for (int i = 0; i < num; i++) {
-                ID[] ids = batchAdd(new BatchEntityInsert(entityList.subList(i * maxBatchSize, (i + 1) * maxBatchSize)));
-                if (ids != null && ids.length > 0) {
-                    idList.addAll(Arrays.asList(ids));
-                }
-            }
-            int last = num * maxBatchSize;
-            if (entityList.size() > last) {
-                ID[] ids = batchAdd(new BatchEntityInsert(entityList.subList(last, entityList.size())));
-                if (ids != null && ids.length > 0) {
-                    idList.addAll(Arrays.asList(ids));
-                }
-            }
-            Field idField = FieldUtils.getIdField(getEntityClass());
-            if (idField == null) {
-                return null;
-            }
-            return idList.toArray((ID[]) Array.newInstance(idField.getType(), idList.size()));
-        }
-    }
-
     ID[] batchAdd(BatchEntityInsert batchEntityInsert);
 
     default T getById(ID id) {
@@ -110,6 +82,41 @@ public interface EntityDao<T, ID> {
     }
 
     int delete(Delete delete);
+
+    @SuppressWarnings("unchecked")
+    default ID[] batchAdd(List<T> entityList, int maxBatchSize) {
+        if (entityList == null || entityList.isEmpty()) {
+            Field idField = FieldUtils.getIdField(getEntityClass());
+            if (idField == null) {
+                return null;
+            }
+            return (ID[]) Array.newInstance(idField.getType(), 0);
+        }
+        if (entityList.size() <= maxBatchSize) {
+            return batchAdd(new BatchEntityInsert(entityList));
+        } else {
+            List<ID> idList = new ArrayList<>(entityList.size());
+            int num = entityList.size() / maxBatchSize;
+            for (int i = 0; i < num; i++) {
+                ID[] ids = batchAdd(new BatchEntityInsert(entityList.subList(i * maxBatchSize, (i + 1) * maxBatchSize)));
+                if (ids != null && ids.length > 0) {
+                    idList.addAll(Arrays.asList(ids));
+                }
+            }
+            int last = num * maxBatchSize;
+            if (entityList.size() > last) {
+                ID[] ids = batchAdd(new BatchEntityInsert(entityList.subList(last, entityList.size())));
+                if (ids != null && ids.length > 0) {
+                    idList.addAll(Arrays.asList(ids));
+                }
+            }
+            Field idField = FieldUtils.getIdField(getEntityClass());
+            if (idField == null) {
+                return null;
+            }
+            return idList.toArray((ID[]) Array.newInstance(idField.getType(), idList.size()));
+        }
+    }
 
     default String getIdField() {
         return FieldUtils.getIdField(getEntityClass()).getName();

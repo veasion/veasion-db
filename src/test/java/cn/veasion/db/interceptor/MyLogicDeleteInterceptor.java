@@ -11,6 +11,7 @@ import cn.veasion.db.base.Expression;
 public class MyLogicDeleteInterceptor extends cn.veasion.db.interceptor.LogicDeleteInterceptor {
 
     public MyLogicDeleteInterceptor() {
+        // super("isDeleted", 0, 1);
         super("isDeleted", 0, Expression.update("${id}"));
     }
 

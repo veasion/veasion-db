@@ -12,7 +12,7 @@ veasion-db 是一个轻量级持久层ORM框架，除slf4j-api外不依赖任何
 <dependency>
     <groupId>cn.veasion</groupId>
     <artifactId>veasion-db</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.4</version>
 </dependency>
 ```
 支持sql解析生成veasion-db代码
@@ -60,6 +60,10 @@ public class SimpleQueryTest extends BaseTest {
         // 根据id查询学生
         // select * from t_student where id = 1
         studentDao.getById(1L);
+
+        // 根据id查询学生性别（性别转枚举）
+        // select sex from t_student where id = 1
+        SexEnum sexEnum = studentDao.queryForType(new Q("sex").eq("id", 1), SexEnum.class);
 
         // 查询学号为s001的学生名称
         // select name from t_student where sno = 's001'
@@ -379,7 +383,7 @@ public class InsertTest extends BaseTest {
         studentPO.setName("学生_" + s);
         studentPO.setSno("s" + s);
         studentPO.setAge(18);
-        studentPO.setSex(1);
+        studentPO.setSex(SexEnum.MALE);
         studentPO.setClassId(1L);
         studentPO.setIsDeleted(0L);
         studentPO.setVersion(0);
@@ -410,9 +414,33 @@ public class InsertTest extends BaseTest {
 前端传 { id: 1 } 自动映射成 select * from t_student where id = 1 <br>
 前端传 { id: 1, className: '三年二班' } 自动映射成 select s.* from t_student s join t_classes c on s.class_id = c.id where s.id = 1 and c.name = '三年二班' <br>
 
-具体参考单元测试 QueryCriteriaTest
+具体参考单元测试 cn.veasion.db.criteria.QueryCriteriaTest
+
+### 拦截器
+自定义拦截器可继承抽象类 cn.veasion.db.interceptor.AbstractInterceptor<br>
+
+内置：逻辑删除拦截器 cn.veasion.db.interceptor.LogicDeleteInterceptor <br>
+内置：拒绝无条件修改删除拦截器 cn.veasion.db.interceptor.UpdateDeleteNoFilterInterceptor <br>
+
+其他如租户SaaS数据隔离拦截器实现见单元测试：cn.veasion.db.interceptor.TenantInterceptor <br>
+
+需要使用上面拦截器功能可在项目 resources/META-INF/services 目录下新建 SPI 文件 cn.veasion.db.interceptor.EntityDaoInterceptor 中加入指定拦截器类，或显性调用InterceptorUtils.addInterceptor方法添加<br>
+
+具体参考单元测试代码示例。
+
+### 类型转换
+框架默认支持基本数据类型转换，其他类型可自定义扩展，SPI 实现 cn.veasion.db.utils.TypeConvert 接口<br>
+
+示例：枚举转换扩展见单元测试 cn.veasion.db.interceptor.ExtTypeConvert
+
+### 动态表名
+见 cn.veasion.db.jdbc.DefaultDynamicTableExt 加入SPI支持。<br>
+
+具体参考单元测试：cn.veasion.db.table.DynamicTableTest
 
 ### spring 项目接入 veasion-db
+推荐使用基础框架 [veasion-project-base](https://github.com/veasion/veasion-project-base) 接入
+
 SPI 实现 cn.veasion.db.jdbc.DataSourceProvider 接口
 ```java
 public class DefaultDataSourceProvider implements DataSourceProvider {

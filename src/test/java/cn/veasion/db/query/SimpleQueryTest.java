@@ -4,6 +4,7 @@ import cn.veasion.db.BaseTest;
 import cn.veasion.db.TableEntity;
 import cn.veasion.db.base.Filter;
 import cn.veasion.db.base.Operator;
+import cn.veasion.db.model.enums.SexEnum;
 import cn.veasion.db.model.po.ClassesPO;
 import cn.veasion.db.model.po.StudentPO;
 
@@ -27,6 +28,10 @@ public class SimpleQueryTest extends BaseTest {
         // 根据id查询学生
         // select * from t_student where id = 1
         println(studentDao.getById(1L));
+
+        // 根据id查询学生性别
+        // select sex from t_student where id = 1
+        println(studentDao.queryForType(new Q("sex").eq("id", 1), SexEnum.class));
 
         // 查询学号为s001的学生名称
         // select name from t_student where sno = 's001'
