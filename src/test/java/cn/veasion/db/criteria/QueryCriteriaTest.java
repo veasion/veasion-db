@@ -73,6 +73,10 @@ public class QueryCriteriaTest extends BaseTest {
         }});
         queryList(student);
 
+        // 通用查询
+        CommonQueryCriteria commonQueryCriteria = new CommonQueryCriteria();
+        commonQueryCriteria.addFilter("name", "熊%");
+        println(studentDao.queryList(commonQueryCriteria));
     }
 
     private static void queryList(StudentInVO student) {

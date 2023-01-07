@@ -1,8 +1,11 @@
 package cn.veasion.db.jdbc;
 
 import cn.veasion.db.base.Page;
+import cn.veasion.db.criteria.CommonQueryCriteria;
 import cn.veasion.db.query.AbstractQuery;
+import cn.veasion.db.query.EntityQuery;
 import cn.veasion.db.query.Query;
+import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.update.AbstractUpdate;
 import cn.veasion.db.update.BatchEntityInsert;
 import cn.veasion.db.update.Delete;
@@ -14,8 +17,14 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 /**
  * EntityDao
@@ -32,7 +41,7 @@ public interface EntityDao<T, ID> {
     ID add(EntityInsert entityInsert);
 
     default ID[] batchAdd(List<T> entityList) {
-        return batchAdd(entityList, 50);
+        return batchAdd(entityList, 100);
     }
 
     ID[] batchAdd(BatchEntityInsert batchEntityInsert);
@@ -65,11 +74,31 @@ public interface EntityDao<T, ID> {
 
     <E> List<E> queryList(AbstractQuery<?> query, Class<E> clazz);
 
+    <E> List<E> queryList(CommonQueryCriteria queryCriteria, Class<E> clazz, Consumer<EntityQuery> consumer);
+
+    default <E> List<E> queryList(CommonQueryCriteria queryCriteria, Class<E> clazz) {
+        return queryList(queryCriteria, clazz, null);
+    }
+
+    default List<T> queryList(CommonQueryCriteria queryCriteria) {
+        return queryList(queryCriteria, getEntityClass());
+    }
+
     default Page<T> queryPage(AbstractQuery<?> query) {
         return queryPage(query, getEntityClass());
     }
 
     <E> Page<E> queryPage(AbstractQuery<?> query, Class<E> clazz);
+
+    <E> Page<E> queryPage(CommonQueryCriteria queryCriteria, Class<E> clazz, Consumer<EntityQuery> consumer);
+
+    default <E> Page<E> queryPage(CommonQueryCriteria queryCriteria, Class<E> clazz) {
+        return queryPage(queryCriteria, clazz, null);
+    }
+
+    default Page<T> queryPage(CommonQueryCriteria queryCriteria) {
+        return queryPage(queryCriteria, getEntityClass());
+    }
 
     default int updateById(T entity) {
         return update(new EntityUpdate(entity).eq(getIdField()).excludeUpdateFilterFields().skipNullField());
@@ -77,11 +106,47 @@ public interface EntityDao<T, ID> {
 
     int update(AbstractUpdate<?> update);
 
+    int delete(Delete delete);
+
     default int deleteById(ID id) {
-        return delete(new Delete().eq(getIdField(), id));
+        return deleteByIds(Collections.singletonList(id));
     }
 
-    int delete(Delete delete);
+    default int deleteByIds(List<ID> ids) {
+        return delete(new Delete().in(getIdField(), ids));
+    }
+
+    default int queryCount(AbstractQuery<?> query) {
+        Integer count = queryForType(new SubQuery(query, "t").selectExpression("count(1)", "count"), Integer.class);
+        return count != null ? count : 0;
+    }
+
+    default <K, E, V> Map<K, V> groupQuery(AbstractQuery<?> query, Class<E> resultClass, Function<? super E, K> keyMapper, Function<? super E, V> valueMapper) {
+        List<E> list = queryList(query, resultClass);
+        if (list == null || list.isEmpty()) {
+            return new HashMap<>();
+        }
+        return list.stream().collect(Collectors.toMap(keyMapper, valueMapper, (a, b) -> a));
+    }
+
+    default <K, E> Map<K, List<E>> groupListQuery(AbstractQuery<?> query, Class<E> resultClass, Function<? super E, K> keyMapper) {
+        List<E> list = queryList(query, resultClass);
+        if (list == null || list.isEmpty()) {
+            return new HashMap<>();
+        }
+        return list.stream().collect(Collectors.groupingBy(keyMapper));
+    }
+
+    default <K, E, V> Map<K, List<V>> groupListQuery(AbstractQuery<?> query, Class<E> resultClass, Function<? super E, K> keyMapper, Function<? super E, V> valueMapper) {
+        List<E> list = queryList(query, resultClass);
+        if (list == null || list.isEmpty()) {
+            return new HashMap<>();
+        }
+        return list.stream().collect(Collectors.groupingBy(keyMapper, Collector.of(ArrayList::new, (l, t) -> l.add(valueMapper.apply(t)), (a, b) -> {
+            a.addAll(b);
+            return a;
+        })));
+    }
 
     @SuppressWarnings("unchecked")
     default ID[] batchAdd(List<T> entityList, int maxBatchSize) {

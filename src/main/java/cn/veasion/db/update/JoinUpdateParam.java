@@ -14,6 +14,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * JoinUpdateParam
@@ -40,6 +41,7 @@ public class JoinUpdateParam implements Serializable {
         if (filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {
             throw new DbException("on条件不支持子查询");
         }
+        filter.fieldAs(joinUpdate.getTableAs());
         onFilters.add(filter);
         AbstractFilter.checkFilter(null, onFilters, false);
         return this;
@@ -53,6 +55,16 @@ public class JoinUpdateParam implements Serializable {
 
     public <T1, T2> JoinUpdateParam on(LambdaFunction<T1, ?> mainField, LambdaFunction<T2, ?> joinField) {
         return on(FieldUtils.getFieldName(mainField), FieldUtils.getFieldName(joinField));
+    }
+
+    public JoinUpdateParam exec(Consumer<AbstractJoinUpdate<?>> mainUpdateConsumer, Consumer<AbstractJoinUpdate<?>> joinUpdateConsumer) {
+        if (mainUpdateConsumer != null) {
+            mainUpdateConsumer.accept(mainUpdate);
+        }
+        if (joinUpdateConsumer != null) {
+            joinUpdateConsumer.accept(joinUpdate);
+        }
+        return this;
     }
 
     public JoinType getJoinType() {

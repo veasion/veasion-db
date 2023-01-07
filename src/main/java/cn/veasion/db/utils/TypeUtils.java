@@ -237,14 +237,39 @@ public class TypeUtils {
 
     private static Date toDate(String toStr) {
         try {
-            if (toStr.matches("\\d+")) {
-                return new Date(Long.parseLong(toStr));
-            } else if (toStr.matches("\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
-                // yyyy-MM-dd HH:mm:ss
-                return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(toStr);
-            } else if (toStr.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            int length = toStr.length();
+            if ((length == 10 || length == 13) && toStr.matches("\\d+")) {
+                long timestamp = Long.parseLong(toStr);
+                if (length == 10) {
+                    timestamp *= 1000;
+                }
+                return new Date(timestamp);
+            }
+            if (length == 10 && toStr.matches("\\d{4}-\\d{2}-\\d{2}")) {
                 // yyyy-MM-dd
                 return new SimpleDateFormat("yyyy-MM-dd").parse(toStr);
+            } else if (length > 20 && toStr.contains("+")) {
+                // -timezone
+                toStr = toStr.split("\\+")[0];
+            }
+            if (length == 19) {
+                // toStr.matches("\\d{4}-\\d{2}-\\d{2}(\\s|T)\\d{2}:\\d{2}:\\d{2}")
+                if (toStr.charAt(10) == 'T') {
+                    // yyyy-MM-dd'T'HH:mm:ss
+                    return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").parse(toStr);
+                } else {
+                    // yyyy-MM-dd HH:mm:ss
+                    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(toStr);
+                }
+            } else if (length == 23) {
+                // toStr.matches("\\d{4}-\\d{2}-\\d{2}(\\s|T)\\d{2}:\\d{2}:\\d{2}\\.\\d{3}")
+                if (toStr.charAt(10) == 'T') {
+                    // yyyy-MM-dd'T'HH:mm:ss.SSS
+                    return new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS").parse(toStr);
+                } else {
+                    // yyyy-MM-dd HH:mm:ss.SSS
+                    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse(toStr);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();

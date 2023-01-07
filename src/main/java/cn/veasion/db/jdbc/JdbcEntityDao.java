@@ -1,13 +1,18 @@
 package cn.veasion.db.jdbc;
 
 import cn.veasion.db.DbException;
+import cn.veasion.db.FilterException;
 import cn.veasion.db.base.Expression;
 import cn.veasion.db.base.IBaseId;
 import cn.veasion.db.base.JdbcTypeEnum;
 import cn.veasion.db.base.Page;
+import cn.veasion.db.criteria.CommonQueryCriteria;
+import cn.veasion.db.criteria.QueryCriteriaConvert;
 import cn.veasion.db.interceptor.EntityDaoInvocation;
 import cn.veasion.db.interceptor.InterceptorUtils;
 import cn.veasion.db.query.AbstractQuery;
+import cn.veasion.db.query.EntityQuery;
+import cn.veasion.db.query.OrderParam;
 import cn.veasion.db.query.PageParam;
 import cn.veasion.db.query.SubQuery;
 import cn.veasion.db.update.AbstractUpdate;
@@ -30,6 +35,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -162,6 +168,21 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
     }
 
     @Override
+    public <E> List<E> queryList(CommonQueryCriteria queryCriteria, Class<E> clazz, Consumer<EntityQuery> consumer) {
+        QueryCriteriaConvert convert = new QueryCriteriaConvert(queryCriteria, getEntityClass());
+        handleQueryCriteria(convert, queryCriteria);
+        EntityQuery entityQuery = convert.getEntityQuery();
+        if (consumer != null) {
+            consumer.accept(entityQuery);
+        }
+        List<E> list = queryList(entityQuery, clazz);
+        if (list != null && !list.isEmpty()) {
+            handleQueryCriteriaResult(convert, queryCriteria, list);
+        }
+        return list;
+    }
+
+    @Override
     public <E> Page<E> queryPage(AbstractQuery<?> query, Class<E> clazz) {
         if (query.getPageParam() == null) {
             throw new DbException("分页参数不能为空");
@@ -189,6 +210,25 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                 query.page(pageParam);
             }
         }));
+    }
+
+    @Override
+    public <E> Page<E> queryPage(CommonQueryCriteria queryCriteria, Class<E> clazz, Consumer<EntityQuery> consumer) {
+        QueryCriteriaConvert convert = new QueryCriteriaConvert(queryCriteria, getEntityClass());
+        handleQueryCriteria(convert, queryCriteria);
+        EntityQuery entityQuery = convert.getEntityQuery();
+        if (entityQuery.getPageParam() == null) {
+            entityQuery.page(1, 10);
+        }
+        if (consumer != null) {
+            consumer.accept(entityQuery);
+        }
+        Page<E> page = queryPage(entityQuery, clazz);
+        List<E> list = page.getList();
+        if (list != null && !list.isEmpty()) {
+            handleQueryCriteriaResult(convert, queryCriteria, list);
+        }
+        return page;
     }
 
     @Override
@@ -228,6 +268,26 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
         }));
     }
 
+    protected void handleQueryCriteria(QueryCriteriaConvert convert, CommonQueryCriteria queryCriteria) {
+        EntityQuery entityQuery = convert.getEntityQuery().selectAll();
+        if (queryCriteria.getPage() != null && queryCriteria.getSize() != null) {
+            entityQuery.page(queryCriteria.getPage(), queryCriteria.getSize());
+        }
+        if (queryCriteria.getOrders() != null) {
+            for (OrderParam order : queryCriteria.getOrders()) {
+                String field = order.getField();
+                if (!QueryCriteriaConvert.FIELD_PATTERN.matcher(field).matches() || field.length() > 30) {
+                    throw new FilterException("非法字段：" + field);
+                }
+                entityQuery.order(order);
+            }
+        }
+    }
+
+    protected void handleQueryCriteriaResult(QueryCriteriaConvert convert, CommonQueryCriteria queryCriteria, List<?> list) {
+        convert.handleResultLoadRelation(this, list);
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public Class<T> getEntityClass() {
@@ -247,7 +307,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
 
     private <R> R executeJdbc(JdbcTypeEnum jdbcTypeEnum, Function<Connection, R> function) {
         if (dataSourceProvider == null) {
-            logger.info("请通过SPI实现cn.veasion.db.jdbc.DataSourceProvider接口");
+            logger.error("请通过SPI实现cn.veasion.db.jdbc.DataSourceProvider接口");
             throw new DbException("未获取到 dataSourceProvider");
         }
         DataSource dataSource = dataSourceProvider.getDataSource(this, jdbcTypeEnum);

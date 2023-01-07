@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * JoinQueryParam
@@ -49,8 +50,19 @@ public class JoinQueryParam implements Serializable {
         if (filter.isSpecial() && filter.getValue() instanceof SubQueryParam) {
             throw new DbException("on条件不支持子查询");
         }
+        filter.fieldAs(joinQuery.getTableAs());
         onFilters.add(filter);
         AbstractFilter.checkFilter(null, onFilters, false);
+        return this;
+    }
+
+    public JoinQueryParam exec(Consumer<AbstractJoinQuery<?>> mainQueryConsumer, Consumer<AbstractJoinQuery<?>> joinQueryConsumer) {
+        if (mainQueryConsumer != null) {
+            mainQueryConsumer.accept(mainQuery);
+        }
+        if (joinQueryConsumer != null) {
+            joinQueryConsumer.accept(joinQuery);
+        }
         return this;
     }
 
