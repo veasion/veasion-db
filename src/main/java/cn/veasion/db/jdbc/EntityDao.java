@@ -41,7 +41,7 @@ public interface EntityDao<T, ID> {
     ID add(EntityInsert entityInsert);
 
     default ID[] batchAdd(List<T> entityList) {
-        return batchAdd(entityList, 100);
+        return batchAdd(entityList, 200);
     }
 
     ID[] batchAdd(BatchEntityInsert batchEntityInsert);

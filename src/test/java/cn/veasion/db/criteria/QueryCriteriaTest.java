@@ -53,16 +53,16 @@ public class QueryCriteriaTest extends BaseTest {
         // 根据班级id区间查询
         student = new StudentInVO();
         student.setFilters(new HashMap<String, Object>() {{
-            put("start_classId", 1);
-            put("end_classId", 10);
+            put("gte_classId", 1);
+            put("lte_classId", 10);
         }});
         queryList(student);
 
         // 根据班级id区间查询（关联班级）
         student = new StudentInVO();
         student.setClassFilters(new HashMap<String, Object>() {{
-            put("start_id", 1);
-            put("end_id", 10);
+            put("gte_id", 1);
+            put("lte_id", 10);
         }});
         queryList(student);
 

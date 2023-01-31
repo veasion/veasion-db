@@ -12,7 +12,7 @@ veasion-db 是一个轻量级持久层ORM框架，除slf4j-api外不依赖任何
 <dependency>
     <groupId>cn.veasion</groupId>
     <artifactId>veasion-db</artifactId>
-    <version>1.2.5</version>
+    <version>1.2.6</version>
 </dependency>
 ```
 支持sql解析生成veasion-db代码
@@ -402,8 +402,12 @@ public class InsertTest extends BaseTest {
 动态查询说明：<br>
 前端传 { id: 1 } 自动映射成 id = 1 <br>
 前端传 { id: [1, 2, 3] } 自动映射成 id in (1,2,3) <br>
-前端传 { start_age: 18 } 自动映射成 age >= 18 <br>
-前端传 { end_age: 30 } 自动映射成 age <= 30 <br>
+前端传 { gte_age: 18 } 自动映射成 age >= 18 <br>
+前端传 { gt_age: 18 } 自动映射成 age > 18 <br>
+前端传 { lte_age: 30 } 自动映射成 age <= 30 <br>
+前端传 { lt_age: 30 } 自动映射成 age < 30 <br>
+前端传 { neq_age: 30 } 自动映射成 age != 30 <br>
+前端传 { neq_age: [1, 2, 3] } 自动映射成 age not in (1,2,3) <br>
 前端传 { name: '罗' } 自动映射成 name = '罗' <br>
 前端传 { name: '罗%' } 自动映射成 name like '罗%' <br>
 前端传 { name: '%罗%' } 自动映射成 name like '%罗%' <br>

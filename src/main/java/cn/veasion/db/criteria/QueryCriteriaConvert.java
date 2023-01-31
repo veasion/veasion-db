@@ -153,6 +153,10 @@ public class QueryCriteriaConvert {
             if (annotation.skipEmpty() && isEmpty(value)) {
                 continue;
             }
+            boolean xdEQ = key.startsWith("-");
+            if (xdEQ) {
+                key = key.substring(1);
+            }
             if (!FIELD_PATTERN.matcher(key).matches() || key.length() > 30) {
                 throw new FilterException("非法字段：" + key);
             }
@@ -161,16 +165,32 @@ public class QueryCriteriaConvert {
             }
             Operator operator = Operator.EQ;
             if (value instanceof Collection || value instanceof Object[]) {
-                operator = Operator.IN;
-            } else if (key.startsWith("start_")) {
-                key = key.substring(6);
-                operator = Operator.GTE;
-            } else if (key.startsWith("end_")) {
-                key = key.substring(4);
-                operator = Operator.LTE;
-            } else if (value instanceof String &&
-                    (String.valueOf(value).startsWith("%") || String.valueOf(value).endsWith("%"))) {
-                operator = Operator.LIKE;
+                if (!xdEQ && key.startsWith("neq_")) {
+                    key = key.substring(4);
+                    operator = Operator.NOT_IN;
+                } else {
+                    operator = Operator.IN;
+                }
+            } else if (!xdEQ) {
+                if (key.startsWith("gt_")) {
+                    key = key.substring(3);
+                    operator = Operator.GT;
+                } else if (key.startsWith("gte_")) {
+                    key = key.substring(4);
+                    operator = Operator.GTE;
+                } else if (key.startsWith("start_")) {
+                    key = key.substring(6);
+                    operator = Operator.GTE;
+                } else if (key.startsWith("lt_")) {
+                    key = key.substring(3);
+                    operator = Operator.LT;
+                } else if (key.startsWith("lte_") || key.startsWith("end_")) {
+                    key = key.substring(4);
+                    operator = Operator.LTE;
+                } else if (value instanceof String &&
+                        (String.valueOf(value).startsWith("%") || String.valueOf(value).endsWith("%"))) {
+                    operator = Operator.LIKE;
+                }
             }
             if (value instanceof Date) {
                 value = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format((Date) value);

@@ -95,12 +95,24 @@ public class CommonQueryCriteria {
         return this;
     }
 
+    public CommonQueryCriteria gt(String key, Object value) {
+        return addFilter("gt_" + key, value);
+    }
+
     public CommonQueryCriteria gte(String key, Object value) {
-        return addFilter("start_" + key, value);
+        return addFilter("gte_" + key, value);
+    }
+
+    public CommonQueryCriteria lt(String key, Object value) {
+        return addFilter("lt_" + key, value);
     }
 
     public CommonQueryCriteria lte(String key, Object value) {
-        return addFilter("end_" + key, value);
+        return addFilter("lte_" + key, value);
+    }
+
+    public CommonQueryCriteria neq(String key, Object value) {
+        return addFilter("neq_" + key, value);
     }
 
     public Object remove(String key) {
