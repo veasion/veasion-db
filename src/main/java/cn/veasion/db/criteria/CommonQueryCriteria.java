@@ -16,7 +16,7 @@ import java.util.Map;
 public class CommonQueryCriteria {
 
     @AutoCriteria
-    private Map<String, Object> filters;
+    private Map<String, Object> filters = new HashMap<>();
 
     private Integer page;
     private Integer size;

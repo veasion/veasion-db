@@ -172,7 +172,10 @@ public class QueryCriteriaConvert {
                     operator = Operator.IN;
                 }
             } else if (!xdEQ) {
-                if (key.startsWith("gt_")) {
+                if (key.startsWith("neq_")) {
+                    key = key.substring(4);
+                    operator = Operator.NEQ;
+                } else if (key.startsWith("gt_")) {
                     key = key.substring(3);
                     operator = Operator.GT;
                 } else if (key.startsWith("gte_")) {
