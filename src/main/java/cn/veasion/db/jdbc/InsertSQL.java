@@ -72,7 +72,7 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
 
         sql.append(getTableName(entityClazz, null, source)).append(" (");
         for (String field : fields) {
-            appendInsertColumn(fieldColumns.get(field));
+            appendInsertColumn(fieldColumns.getOrDefault(field, field), ",");
         }
         trimEndSql(",");
         sql.append(") VALUES");
@@ -83,6 +83,19 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
             sql.append(" (").append(sqlPlaceholder(map.size())).append(")").append(",");
         }
         trimEndSql(",");
+        if (source instanceof EntityInsert) {
+            Map<String, Object> valueMap = fieldValueMapList.get(0);
+            Set<String> duplicateKeyUpdateByFields = ((EntityInsert) source).getDuplicateKeyUpdateByFields();
+            if (duplicateKeyUpdateByFields != null) {
+                sql.append(" ON DUPLICATE KEY UPDATE ");
+                for (String field : duplicateKeyUpdateByFields) {
+                    String column = fieldColumns.getOrDefault(field, field);
+                    values.add(valueMap.get(field));
+                    appendInsertColumn(column, " = ? and ");
+                }
+                trimEndSql(" and ");
+            }
+        }
     }
 
     private void insertSelect(Class<?> entityClass, AbstractQuery<?> query) {
@@ -94,7 +107,7 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
         sql.append("INSERT INTO ");
         sql.append(getTableName(entityClass, query, batchEntityInsert)).append(" (");
         for (String field : selectFieldColumnMap.keySet()) {
-            appendInsertColumn(fieldColumns.getOrDefault(field, selectFieldColumnMap.getOrDefault(field, field)));
+            appendInsertColumn(fieldColumns.getOrDefault(field, selectFieldColumnMap.getOrDefault(field, field)), ",");
         }
         trimEndSql(",");
         sql.append(") ");
@@ -102,11 +115,11 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
         values.addAll(Arrays.asList(querySQL.getValues()));
     }
 
-    private void appendInsertColumn(String column) {
+    private void appendInsertColumn(String column, String append) {
         if (column.startsWith("`") && column.endsWith("`")) {
-            sql.append(column).append(",");
+            sql.append(column).append(append);
         } else {
-            sql.append("`").append(column).append("`").append(",");
+            sql.append("`").append(column).append("`").append(append);
         }
     }
 

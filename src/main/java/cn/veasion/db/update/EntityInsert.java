@@ -1,5 +1,6 @@
 package cn.veasion.db.update;
 
+import cn.veasion.db.DbException;
 import cn.veasion.db.jdbc.InsertSQL;
 import cn.veasion.db.utils.FieldUtils;
 
@@ -25,6 +26,7 @@ public class EntityInsert implements Serializable {
     private boolean useGeneratedKeys = true;
     private Map<String, Object> fieldValueMap;
     private boolean replace;
+    private Set<String> duplicateKeyUpdateByFields;
 
     public EntityInsert(Object entity) {
         this.entity = Objects.requireNonNull(entity);
@@ -63,12 +65,30 @@ public class EntityInsert implements Serializable {
     }
 
     public EntityInsert withReplace() {
+        if (this.duplicateKeyUpdateByFields != null) {
+            throw new DbException("withDuplicateKeyUpdate 不能和 withReplace同时调用");
+        }
         this.replace = true;
+        return this;
+    }
+
+    public EntityInsert withDuplicateKeyUpdate(String... fields) {
+        if (fields.length == 0) {
+            throw new DbException("fields 不能为空");
+        }
+        if (this.replace) {
+            throw new DbException("withDuplicateKeyUpdate 不能和 withReplace同时调用");
+        }
+        this.duplicateKeyUpdateByFields = new HashSet<>(Arrays.asList(fields));
         return this;
     }
 
     public boolean isReplace() {
         return replace;
+    }
+
+    public Set<String> getDuplicateKeyUpdateByFields() {
+        return duplicateKeyUpdateByFields;
     }
 
     public void check(Class<?> mainEntityClass) {
