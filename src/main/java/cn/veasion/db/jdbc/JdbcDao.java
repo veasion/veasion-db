@@ -314,9 +314,9 @@ public class JdbcDao {
         StringBuilder sb = new StringBuilder();
         for (Object param : params) {
             if (param instanceof Object[]) {
-                sb.append(subWithLen(Arrays.toString((Object[]) param), 30));
+                sb.append(subWithLen(Arrays.toString((Object[]) param), 100));
             } else {
-                sb.append(subWithLen(String.valueOf(param), 20));
+                sb.append(subWithLen(String.valueOf(param), 50));
             }
             if (param != null) {
                 sb.append("(").append(param.getClass().getSimpleName()).append(")");
