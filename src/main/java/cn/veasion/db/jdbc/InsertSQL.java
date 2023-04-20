@@ -91,9 +91,9 @@ public class InsertSQL extends AbstractSQL<InsertSQL> {
                 for (String field : duplicateKeyUpdateByFields) {
                     String column = fieldColumns.getOrDefault(field, field);
                     values.add(valueMap.get(field));
-                    appendInsertColumn(column, " = ? and ");
+                    appendInsertColumn(column, " = ?,");
                 }
-                trimEndSql(" and ");
+                trimEndSql(",");
             }
         }
     }

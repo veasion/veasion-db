@@ -314,9 +314,9 @@ public class JdbcDao {
         StringBuilder sb = new StringBuilder();
         for (Object param : params) {
             if (param instanceof Object[]) {
-                sb.append(Arrays.toString((Object[]) param));
+                sb.append(subWithLen(Arrays.toString((Object[]) param), 30));
             } else {
-                sb.append(param);
+                sb.append(subWithLen(String.valueOf(param), 20));
             }
             if (param != null) {
                 sb.append("(").append(param.getClass().getSimpleName()).append(")");
@@ -327,6 +327,14 @@ public class JdbcDao {
             sb.setLength(sb.length() - 2);
         }
         return sb.toString();
+    }
+
+    private static String subWithLen(String str, int maxLength) {
+        if (str.length() > maxLength) {
+            return str.substring(0, maxLength) + "...";
+        } else {
+            return str;
+        }
     }
 
     private static void closeAll(Statement ps, ResultSet rs) {
