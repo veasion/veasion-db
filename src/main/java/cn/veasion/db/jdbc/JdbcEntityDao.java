@@ -67,7 +67,7 @@ public abstract class JdbcEntityDao<T, ID> implements EntityDao<T, ID> {
                     JdbcDao.executeInsertNoKeys(connection, insertSQL.getSQL(), insertSQL.getValues());
                     objects = new Object[0];
                 }
-                if (objects.length > 0) {
+                if (objects.length > 0 && idField != null) {
                     ID id = (ID) TypeUtils.convert(objects[0], idField.getType());
                     if (entity instanceof IBaseId) {
                         ((IBaseId<ID>) entity).setId(id);

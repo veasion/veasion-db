@@ -12,7 +12,7 @@ veasion-db 是一个轻量级持久层ORM框架，除slf4j-api外不依赖任何
 <dependency>
     <groupId>cn.veasion</groupId>
     <artifactId>veasion-db</artifactId>
-    <version>1.2.6</version>
+    <version>1.2.7</version>
 </dependency>
 ```
 支持sql解析生成veasion-db代码

@@ -95,6 +95,10 @@ public class CommonQueryCriteria {
         return this;
     }
 
+    public CommonQueryCriteria eq(String key, Object value) {
+        return addFilter(key, value);
+    }
+
     public CommonQueryCriteria gt(String key, Object value) {
         return addFilter("gt_" + key, value);
     }
