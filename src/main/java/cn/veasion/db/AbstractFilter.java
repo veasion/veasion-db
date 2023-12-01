@@ -114,6 +114,14 @@ public abstract class AbstractFilter<T extends AbstractFilter<?>> implements IFi
         return addFilter(Filter.rightBracket());
     }
 
+    public T andBracket(List<Filter> filters) {
+        addFilter(Filter.leftBracket());
+        for (Filter filter : filters) {
+            addFilter(filter);
+        }
+        return addFilter(Filter.rightBracket());
+    }
+
     public T exists(SubQueryParam subQueryParam) {
         return addFilter(Filter.subQuery(Operator.EXISTS, subQueryParam));
     }

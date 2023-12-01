@@ -62,7 +62,10 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
                 if (object instanceof Throwable) {
                     continue;
                 }
-                s = s.replaceFirst("\\{}", String.valueOf(object));
+                int i = s.indexOf("{}");
+                if (i > -1) {
+                    s = s.substring(0, i) + object + s.substring(i + 2);
+                }
             }
             ("error".equalsIgnoreCase(level) ? System.err : System.out).println(
                     String.format("%s [%s] [%s] [%s] - %s",
@@ -143,202 +146,322 @@ public class StaticLoggerBinder implements LoggerFactoryBinder {
 
         @Override
         public void trace(String s) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s);
         }
 
         @Override
         public void trace(String s, Object o) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s, o);
         }
 
         @Override
         public void trace(String s, Object o, Object o1) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s, o, o1);
         }
 
         @Override
         public void trace(String s, Object... objects) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s, objects);
         }
 
         @Override
         public void trace(String s, Throwable throwable) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s, throwable);
         }
 
         @Override
         public void trace(Marker marker, String s) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s);
         }
 
         @Override
         public void trace(Marker marker, String s, Object o) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s, o);
         }
 
         @Override
         public void trace(Marker marker, String s, Object o, Object o1) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s, o, o1);
         }
 
         @Override
         public void trace(Marker marker, String s, Object... objects) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s, objects);
         }
 
         @Override
         public void trace(Marker marker, String s, Throwable throwable) {
+            if (!isTraceEnabled()) {
+                return;
+            }
             println("trace", s, throwable);
         }
 
 
         @Override
         public void debug(String s) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s);
         }
 
         @Override
         public void debug(String s, Object o) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s, o);
         }
 
         @Override
         public void debug(String s, Object o, Object o1) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s, o, o1);
         }
 
         @Override
         public void debug(String s, Object... objects) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s, objects);
         }
 
         @Override
         public void debug(String s, Throwable throwable) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s, throwable);
         }
 
         @Override
         public void debug(Marker marker, String s) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s);
         }
 
         @Override
         public void debug(Marker marker, String s, Object o) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s, o);
         }
 
         @Override
         public void debug(Marker marker, String s, Object o, Object o1) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s, o, o1);
         }
 
         @Override
         public void debug(Marker marker, String s, Object... objects) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s, objects);
         }
 
         @Override
         public void debug(Marker marker, String s, Throwable throwable) {
+            if (!isDebugEnabled()) {
+                return;
+            }
             println("debug", s, throwable);
         }
 
         @Override
         public void info(String s) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s);
         }
 
         @Override
         public void info(String s, Object o) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s, o);
         }
 
         @Override
         public void info(String s, Object o, Object o1) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s, o, o1);
         }
 
         @Override
         public void info(String s, Object... objects) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s, objects);
         }
 
         @Override
         public void info(String s, Throwable throwable) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s, throwable);
         }
 
         @Override
         public void info(Marker marker, String s) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s);
         }
 
         @Override
         public void info(Marker marker, String s, Object o) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s, o);
         }
 
         @Override
         public void info(Marker marker, String s, Object o, Object o1) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s, o, o1);
         }
 
         @Override
         public void info(Marker marker, String s, Object... objects) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s, objects);
         }
 
         @Override
         public void info(Marker marker, String s, Throwable throwable) {
+            if (!isInfoEnabled()) {
+                return;
+            }
             println("info", s, throwable);
         }
 
         @Override
         public void warn(String s) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s);
         }
 
         @Override
         public void warn(String s, Object o) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s, o);
         }
 
         @Override
         public void warn(String s, Object... objects) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s, objects);
         }
 
         @Override
         public void warn(String s, Object o, Object o1) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s, o, o1);
         }
 
         @Override
         public void warn(String s, Throwable throwable) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s, throwable);
         }
 
         @Override
         public void warn(Marker marker, String s) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s);
         }
 
         @Override
         public void warn(Marker marker, String s, Object o) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s, o);
         }
 
         @Override
         public void warn(Marker marker, String s, Object o, Object o1) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s, o, o1);
         }
 
         @Override
         public void warn(Marker marker, String s, Object... objects) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s, objects);
         }
 
         @Override
         public void warn(Marker marker, String s, Throwable throwable) {
+            if (!isWarnEnabled()) {
+                return;
+            }
             println("warn", s, throwable);
         }
 

@@ -103,6 +103,11 @@ public class QueryCriteriaConvert {
         JoinCriteriaMulti joinCriteriaMulti = object.getClass().getAnnotation(JoinCriteriaMulti.class);
         if (joinCriteriaMulti != null) {
             array = joinCriteriaMulti.value();
+        } else {
+            JoinCriteria annotation = object.getClass().getAnnotation(JoinCriteria.class);
+            if (annotation != null) {
+                array = new JoinCriteria[]{annotation};
+            }
         }
         initJoinClassMap();
         Map<String, Field> fields = FieldUtils.fields(object.getClass());

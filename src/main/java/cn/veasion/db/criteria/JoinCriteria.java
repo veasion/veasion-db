@@ -2,12 +2,21 @@ package cn.veasion.db.criteria;
 
 import cn.veasion.db.base.JoinTypeEnum;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+
 /**
  * 定义动态触发或静态关联查询
  *
  * @author luozhuowei
  * @date 2021/12/15
  */
+
+@Target(TYPE)
+@Retention(RUNTIME)
 public @interface JoinCriteria {
 
     /**
