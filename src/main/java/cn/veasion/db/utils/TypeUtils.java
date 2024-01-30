@@ -19,6 +19,7 @@ import java.time.ZoneId;
 import java.time.temporal.Temporal;
 import java.util.Date;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * TypeUtils
@@ -30,18 +31,36 @@ import java.util.Map;
 public class TypeUtils {
 
     static TypeConvert typeConvert = ServiceLoaderUtils.typeConvert();
+    private final static Map<Class<?>, String> TABLE_MAP = new ConcurrentHashMap<>();
 
     public static String getTableName(Class<?> entityClazz) {
+        if (TABLE_MAP.containsKey(entityClazz)) {
+            return TABLE_MAP.get(entityClazz);
+        }
         Table annotation = entityClazz.getAnnotation(Table.class);
         if (annotation != null) {
             if (!"".equals(annotation.value())) {
-                return annotation.value();
+                String tableName = annotation.value();
+                TABLE_MAP.put(entityClazz, tableName);
+                return tableName;
             }
-            if (annotation.entityClass() != Void.class) {
-                return getTableName(annotation.entityClass());
+            if (annotation.entityClass() != Void.class && annotation.entityClass() != entityClazz) {
+                String tableName = getTableName(annotation.entityClass());
+                TABLE_MAP.put(entityClazz, tableName);
+                return tableName;
             }
         }
-        return FieldUtils.humpToLine(entityClazz.getSimpleName());
+        String tableName = FieldUtils.humpToLine(entityClazz.getSimpleName());
+        int idx = tableName.lastIndexOf("_");
+        if (idx > -1 && tableName.length() - idx <= 4) {
+            String end = tableName.substring(idx + 1);
+            if ("vo".equals(end) || "vO".equals(end) || "po".equals(end) || "pO".equals(end)
+                    || "do".equals(end) || "dO".equals(end) || "dto".equals(end) || "dTO".equals(end)) {
+                tableName = tableName.substring(0, idx);
+            }
+        }
+        TABLE_MAP.put(entityClazz, tableName);
+        return tableName;
     }
 
     public static boolean isSimpleClass(Class<?> clazz) {
@@ -175,9 +194,9 @@ public class TypeUtils {
             }
             return (T) Integer.valueOf(toStr);
         } else if (clazz == Boolean.class) {
-            if ("1".equals(toStr) || "true".equalsIgnoreCase(toStr) || "Y".equalsIgnoreCase(toStr) || "Yes".equalsIgnoreCase(toStr)) {
+            if ("1".equals(toStr) || "true".equalsIgnoreCase(toStr) || "Y".equalsIgnoreCase(toStr) || "Yes".equalsIgnoreCase(toStr) || "是".equals(toStr)) {
                 return (T) Boolean.TRUE;
-            } else if ("0".equals(toStr) || "false".equalsIgnoreCase(toStr) || "N".equalsIgnoreCase(toStr) || "No".equalsIgnoreCase(toStr)) {
+            } else if ("0".equals(toStr) || "false".equalsIgnoreCase(toStr) || "N".equalsIgnoreCase(toStr) || "No".equalsIgnoreCase(toStr) || "否".equals(toStr)) {
                 return (T) Boolean.FALSE;
             }
         } else if (Date.class.isAssignableFrom(clazz) || Temporal.class.isAssignableFrom(clazz)) {
@@ -271,8 +290,7 @@ public class TypeUtils {
                     return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").parse(toStr);
                 }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception ignored) {
         }
         return null;
     }
