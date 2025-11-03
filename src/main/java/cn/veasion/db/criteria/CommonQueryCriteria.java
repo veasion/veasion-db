@@ -18,6 +18,8 @@ public class CommonQueryCriteria {
     @AutoCriteria
     private Map<String, Object> filters = new HashMap<>();
 
+    private List<Map<String,Object>> orFilters = new ArrayList<>();
+
     private Integer page;
     private Integer size;
 
@@ -64,6 +66,14 @@ public class CommonQueryCriteria {
 
     public void setOrders(List<OrderParam> orders) {
         this.orders = orders;
+    }
+
+    public List<Map<String, Object>> getOrFilters() {
+        return orFilters;
+    }
+
+    public void setOrFilters(List<Map<String, Object>> orFilters) {
+        this.orFilters = orFilters;
     }
 
     public void withLike(String key) {
